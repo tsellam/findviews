@@ -1,6 +1,7 @@
 ######################################
 # Zig-Dissimilarity for numeric data #
 ######################################
+# Utils
 enumerate_char <- function(v){
    stopifnot(is.character(v))
    if (length(v) == 0) {
@@ -16,10 +17,12 @@ enumerate_char <- function(v){
    }
 }
 
+# Difference between the means with Cohen's D
 zig_means <- function(view, in_data, out_data) {
    stopifnot(is.data.frame(in_data))
    stopifnot(is.data.frame(out_data))
    stopifnot(is.character(view))
+   stopifnot(length(view)>0)
 
    # Computes the difference between the means for each column
    diffs <- sapply(view, function(col){
@@ -36,29 +39,29 @@ zig_means <- function(view, in_data, out_data) {
       # Gets Glass Delta
       delta <- (in_mean - out_mean) / out_sd
 
-      # # Performs t.test
-      # t_test_out <- tryCatch(
-      #    t.test(col_in, col_out)$p.value,
-      #    error=function(e) return(NA)
-      # )
+      # Performs t.test
+      t_test_out <- tryCatch(
+         t.test(col_in, col_out)$p.value,
+         error=function(e) return(NA)
+      )
 
       # Returns
-      # c(delta = delta, pvalue = t_test_out)
-      delta
+      c(size = delta, pvalue = t_test_out)
    })
    diffs <- as.matrix(diffs)
-   names(diffs) <- view
+   colnames(diffs) <- view
 
    # Aggregates them
-   agg_diffs <- mean(diffs, na.rm = T)
+   agg_diffs <- mean(abs(diffs['size',]), na.rm = T)
    if(!is.finite(agg_diffs)) agg_diffs <- NA
 
    # Generates description
-   large_effects <- diffs[abs(diffs) > 0.2]
+   is_significant <- (diffs['pvalue',] < P_VALUE_ZIG)
+   large_effects  <- colnames(diffs[,is_significant])
    tip <- if (length(large_effects) == 0){
       character(0)
    } else if (length(large_effects) >= 1){
-      col_enum <- enumerate_char(names(large_effects))
+      col_enum <- enumerate_char(large_effects)
       paste0('the difference between the means on ', col_enum)
    }
 
@@ -70,19 +73,56 @@ zig_means <- function(view, in_data, out_data) {
 
 }
 
+
+# Difference between the variances with the ratio of the variances
 zig_sds <- function(view, in_data, out_data) {
    stopifnot(is.data.frame(in_data))
    stopifnot(is.data.frame(out_data))
    stopifnot(is.character(view))
+   stopifnot(length(view)>0)
+
+   # Computes the ratio between the variances for each column
+   diffs <- sapply(view, function(col){
+      # Scrubs missing values
+      col_in <- na.omit(in_data[[col]])
+      col_out <- na.omit(out_data[[col]])
+
+      # Performs F test
+      tryCatch({
+         f_out <- var.test(col_in, col_out)
+         c(size = as.numeric(f_out$statistic), pvalue = f_out$p.value)
+      }, error=function(e) c(size = NA, pvalue = NA)
+      )
+   })
+   diffs <- as.matrix(diffs)
+   colnames(diffs) <- view
+
+   # Aggregates them
+   corr_F <- ifelse(diffs['size',] < 1,
+                    sqrt(1 / diffs['size',]),
+                    sqrt(diffs['size',]))
+   agg_diffs <- mean(corr_F, na.rm = T)
+   if(!is.finite(agg_diffs)) agg_diffs <- NA
+
+   # Generates description
+   is_significant <- (diffs['pvalue',] < P_VALUE_ZIG)
+   large_effects  <- colnames(diffs[,is_significant])
+   tip <- if (length(large_effects) == 0){
+      character(0)
+   } else if (length(large_effects) >= 1){
+      col_enum <- enumerate_char(large_effects)
+      paste0('the difference between the variances on ', col_enum)
+   }
 
    list(
-      score  = c(),
-      detail = c(),
-      tip    = character(0)
+      score  = agg_diffs,
+      detail = diffs,
+      tip    = tip
    )
-
 }
 
+
+# Difference between the correlations with the Fisher transformation
 zig_corrs <- function(view, in_data, out_data) {
    stopifnot(is.data.frame(in_data))
    stopifnot(is.data.frame(out_data))

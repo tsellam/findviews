@@ -30,7 +30,7 @@ df_onecol_cat <- df_cat[,1,drop=F]
 to_describe <- (mtcars$cyl == 4)
 
 
-
+# data frames with useless colummns
 df_flat1 <- data.frame(
    x0 = c(4,3,2,1),
    x1 = c(1,2,3,4),
