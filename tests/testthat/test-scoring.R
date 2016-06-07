@@ -41,13 +41,16 @@ test_that("scoring works for numeric data", {
 ##################
 check_zig_output <- function(zigfun, ...){
    out <- zigfun(...)
-   expect_true(is.matrix(out$detail))
-   expect_equivalent(rownames(out$detail), c('size', 'pvalue'))
-   expect_type(out$tip, "character")
    expect_is(out, "list")
    expect_named(out, c('score', 'detail', 'tip'), ignore.order = T)
+   expect_is(out$tip, "character")
+   expect_is(out$detail, 'list')
+   return(out)
 }
 
+#------------------------------------#
+# Numeric, univariate Zig-Components #
+#------------------------------------#
 test_that("zig_mean does the job", {
    dfin<- data.frame(x=c(1,2), y=c(1,2))
    dfout<- data.frame(x=c(4,5), y=c(4,5))
@@ -60,7 +63,6 @@ test_that("zig_mean does the job", {
    expect_equal(out$score, NA)
 })
 
-
 test_that("zig_sd does the job", {
    dfin<- data.frame(x=c(1,2), y=c(1,2))
    dfout<- data.frame(x=c(4,10), y=c(4,20))
@@ -70,6 +72,37 @@ test_that("zig_sd does the job", {
    dfin  <- data.frame(x=c(1), y=c(1))
    dfout <- data.frame(x=c(10), y=c(10))
    out <- check_zig_output(zig_means, c("x", "y"), dfin, dfout)
+   expect_equal(out$score, NA)
+})
+
+#-----------------------------------#
+# Numeric, bivariate Zig-Components #
+#-----------------------------------#
+test_that("test for correlation coefficients works", {
+   expect_true(is.na(corr_diff_test(1.1, .3, 20, 20)))
+   expect_true(is.na(corr_diff_test(.1, .3, 2, 2)))
+   expect_equal(corr_diff_test(.40196, .28250, 327, 273), 0.09987974)
+})
+
+test_that("function which_true_elements works", {
+   M <- matrix(c(T, T, T,
+                 T, F, F,
+                 T, F, NA), nrow=3, byrow = T)
+   rownames(M) <- colnames(M) <- c("a", "b", "c")
+   equals(which_true_elements(M), list(c("a", "a"), c("a", "b"), c("a", "c")))
+})
+
+test_that("zig_corr does the job", {
+   out <- check_zig_output(zig_corr, names(df_num),
+                           df_num[1:16,], df_num[17:32,])
+   expect_equal(out$detail$pvalues['disp', 'cyl'], 0.07622094)
+
+   out <- check_zig_output(zig_corr, names(df_num)[1],
+                           df_num[1:16,], df_num[17:32,])
+   expect_equal(out$score, NA)
+
+   out <- check_zig_output(zig_corr, names(df_num)[1==2],
+                           df_num[1:16,], df_num[17:32,])
    expect_equal(out$score, NA)
 })
 
