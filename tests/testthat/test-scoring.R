@@ -43,6 +43,7 @@ check_zig_output <- function(zigfun, ...){
    out <- zigfun(...)
    expect_is(out, "list")
    expect_named(out, c('score', 'detail', 'tip'), ignore.order = T)
+   expect_true(is.numeric(out$score) | is.na(out$score))
    expect_is(out$tip, "character")
    expect_is(out$detail, 'list')
    return(out)
@@ -89,7 +90,7 @@ test_that("function which_true_elements works", {
                  T, F, F,
                  T, F, NA), nrow=3, byrow = T)
    rownames(M) <- colnames(M) <- c("a", "b", "c")
-   equals(which_true_elements(M), list(c("a", "a"), c("a", "b"), c("a", "c")))
+   expect_equal(which_true_elements(M), list(c("a", "a"), c("a", "b"), c("a", "c")))
 })
 
 test_that("zig_corr does the job", {
@@ -107,3 +108,11 @@ test_that("zig_corr does the job", {
 })
 
 
+#----------------------------------------#
+# Categorical, univariate Zig-Components #
+#----------------------------------------#
+test_that("zig_histogram does the job", {
+   out <- check_zig_output(zig_histogram, names(df_cat),
+                           df_cat[to_describe,], df_cat[!to_describe,])
+   # TODO! Normalize Chi-Squared into Cramer V
+})

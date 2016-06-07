@@ -11,7 +11,7 @@ enumerate_char <- function(v){
       return(paste0(v[1], ' and ', v[2]))
    } else if (length(v) > 2){
       out <- paste0(v[1:length(v)-1], collapse = ', ')
-      out <- paste0(out, ' and ', names(v[length(v)]))
+      out <- paste0(out, ' and ', v[length(v)])
       return(out)
    }
 }
@@ -48,6 +48,8 @@ which_true_elements <- function(M, deduplicate = T) {
          if (M[i,j]) c(i, j) else NULL
       })
    })
+   positions <- unlist(positions, recursive = F)
+   positions <- positions[!sapply(positions, is.null)]
 
    if (deduplicate){
       positions <- lapply(positions, sort)
@@ -217,7 +219,7 @@ zig_corr <- function(view, in_data, out_data) {
    if (nrow(view_in) == 0 | nrow(view_out) == 0)
       return(list(
          score  = NA,
-         detail = NULL,
+         detail = list(),
          tip = character(0)
       ))
 
@@ -256,7 +258,101 @@ zig_corr <- function(view, in_data, out_data) {
 }
 
 
+######################################
+# Zig-Dissimilarity for nominal data #
+######################################
+wrap_chi_squared <- function(table_in, table_out){
 
+   chisq_out <- if (any(table_in < 5)){
+      chisq.test(x=table_in, p=table_out,
+                 simulate.p.value = TRUE, rescale.p = TRUE, B = 250)
+   } else {
+      chisq.test(x=table_in, p=table_out, rescale.p = TRUE)
+   }
+
+   if (!grepl("given probabilities", chisq_out$method))
+       stop("Something went wrong with Chi-Squared calculations")
+
+   chi <- as.numeric(chisq_out$statistic)
+   if (!is.finite(chi)) chi <- NA
+
+   residual_pvalues <- 2*pnorm(-abs(chisq_out$stdres))
+   names(residual_pvalues) <- names(table_in)
+
+   return(list(
+      chi_squared      = chi,
+      pvalue           = chisq_out$p.value,
+      residual_pvalues = residual_pvalues
+   ))
+
+}
+
+comment_chi_squared_analysis <- function(chisq_results, max_levels = 3){
+   stopifnot(is.list(chisq_results))
+
+   comments_per_variable <- sapply(names(chisq_results), function(col){
+      # Gets the results of Chi-Squared test
+      results <- chisq_results[[col]]
+      # Discards if non significant
+      if (!is.finite(results$pvalue)) return(NULL)
+      if (results$pvalue > P_VALUE_ZIG) return(NULL)
+
+      # Builds sentence 'colname (in particular values v1, v2 and v3)'
+      # Gets values associated with high Pearson residuals
+      is_exceptional <- results$residual_pvalues < P_VALUE_PEARSON_RESIDUALS
+      exceptional_levels <- names(results$residual_pvalues)[is_exceptional]
+      if (length(exceptional_levels) > max_levels)
+         exceptional_levels <- exceptional_levels[1:3]
+
+      # Concatenates
+      parenthesis <- if (length(exceptional_levels) > 0){
+         str <- enumerate_char(exceptional_levels)
+         str <- paste0(' (values ', str, ')')
+      } else {
+         character(0)
+      }
+
+      descr <- paste0(col, parenthesis)
+
+      return(descr)
+   })
+
+   is_null <- sapply(comments_per_variable, is.null)
+   comments_per_variable <- comments_per_variable[!is_null]
+   comments_per_variable <- as.character(comments_per_variable)
+
+   return(enumerate_char(comments_per_variable))
+}
+
+zig_histogram <- function(view, in_data, out_data) {
+   stopifnot(is.data.frame(in_data))
+   stopifnot(is.data.frame(out_data))
+   stopifnot(is.character(view))
+   stopifnot(length(view)>0)
+
+   # Computes and compares the histograms
+   chisq_analysis <- lapply(view, function(v){
+      hist_in  <- table(in_data[[v]],  useNA = "no")
+      hist_out <- table(out_data[[v]], useNA = "no")
+      wrap_chi_squared(hist_in, hist_out)
+   })
+   names(chisq_analysis) <- view
+
+   # Aggregates scores
+   scores <- sapply(chisq_analysis, function(x) x$chi_squared)
+   score <- mean(scores, na.rm = T)
+   if (!is.finite(score)) score <- NA
+
+   # Generates the comments
+   out <- comment_chi_squared_analysis(chisq_analysis)
+
+   list(
+      score  = score,
+      detail = chisq_analysis,
+      tip    = out
+   )
+
+}
 
 ##################################
 # Generic View Analysis Function #
