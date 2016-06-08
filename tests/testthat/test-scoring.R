@@ -115,8 +115,20 @@ test_that("zig_corr does the job", {
 #----------------------------------------#
 # Categorical, univariate Zig-Components #
 #----------------------------------------#
+test_that("distance and chi-squared test work", {
+   tab_in  <- c(b=100, a=100, c=100)
+   tab_out <- c(b=100, d=100, c=200)
+
+   expect_equal(hist_diss_score(tab_in, tab_out), 0.456, tolerance = .001)
+   expect_equal(wrap_chi_squared(tab_in, tab_out)$chi2, 100, tolerance = .001)
+})
+
 test_that("zig_histogram does the job", {
    out <- check_zig_output(zig_histogram, names(df_cat),
                            df_cat[to_describe,], df_cat[!to_describe,])
-   # TODO! Normalize Chi-Squared into Cramer V
+
+   dfin  <- data.frame(x=factor(c('a', 'b', 'c')))
+   dfout <- data.frame(x=factor(c('b', 'c', 'c', 'd')))
+   out <- check_zig_output(zig_histogram, c("x"), dfin, dfout)
+   expect_equal(out$score, 0.456,  tolerance = .001)
 })

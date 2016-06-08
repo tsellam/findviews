@@ -265,32 +265,64 @@ zig_corr <- function(view, in_data, out_data) {
 ######################################
 # Zig-Dissimilarity for nominal data #
 ######################################
+
+hist_diss_score <- function(table_in, table_out){
+   # First, aligns tables
+   in_minus_out <- setdiff(names(table_in), names(table_out))
+   table_out[in_minus_out] <- 0
+
+   out_minus_in <- setdiff(names(table_out), names(table_in))
+   table_in[out_minus_in] <- 0
+
+   table_out <- table_out[sort(names(table_out))]
+   table_in  <- table_in[sort(names(table_in))]
+
+   stopifnot(names(table_in) == names(table_out))
+
+   # Then, computes the Euclidean distance between the two histograms
+   hist_in  <- table_in / sum(table_in)
+   hist_out <- table_out/ sum(table_out)
+
+   diss_score <- sqrt(sum((hist_out - hist_in)^2))
+
+   return(diss_score)
+}
+
+# Performs Chi-2 test
+# WARNING! Ignores all the levels in table_in which are not in table_out
 wrap_chi_squared <- function(table_in, table_out){
 
-   if (length(table_in) != length(table_out))
-      warning("Tables must have the same size!")
+   # Detects what type of test to use
+   small_sample <- (any(table_out < 5) | any(table_in < 5))
 
-   chisq_out <- if (any(table_out < 5) | any(table_in < 5)){
+   # Aligns the tables
+   out_minus_in <- setdiff(names(table_out), names(table_in))
+   table_in[out_minus_in] <- 0
+
+   in_minus_out <- setdiff(names(table_in), names(table_out))
+   table_in <- table_in[!names(table_in) %in% in_minus_out]
+
+   table_out <- table_out[sort(names(table_out))]
+   table_in  <- table_in[sort(names(table_in))]
+
+   stopifnot(names(table_in) == names(table_out))
+
+   # Runs the test
+   chisq_out <- if (small_sample){
       chisq.test(x=table_in, p=table_out,
                  simulate.p.value = TRUE, rescale.p = TRUE, B = 100)
    } else {
       chisq.test(x=table_in, p=table_out, rescale.p = TRUE)
    }
-
    if (!grepl("given probabilities", chisq_out$method))
        stop("Something went wrong with Chi-Squared calculations")
 
-   chi <- as.numeric(chisq_out$statistic)
-   # Custom variation of Cramer's V - please contact me if you find better!
-   chi_score <- sqrt(chi / (sum(table_in) * length(table_out)))
-   if (!is.finite(chi_score)) chi_score <- NA
-
+   # Extracts residuals
    residual_pvalues <- 2*pnorm(-abs(chisq_out$stdres))
    names(residual_pvalues) <- names(table_in)
 
    return(list(
-      chi_squared      = chi,
-      chi_score        = chi_score,
+      chi2             = as.numeric(chisq_out$statistic),
       pvalue           = chisq_out$p.value,
       residual_pvalues = residual_pvalues
    ))
@@ -344,12 +376,15 @@ zig_histogram <- function(view, in_data, out_data) {
    chisq_analysis <- lapply(view, function(v){
       hist_in  <- table(in_data[[v]],  useNA = "no")
       hist_out <- table(out_data[[v]], useNA = "no")
-      wrap_chi_squared(hist_in, hist_out)
+
+      diss_score  <- hist_diss_score(hist_in, hist_out)
+      chi_squared <- wrap_chi_squared(hist_in, hist_out)
+      c(diss_score=diss_score, chi_squared)
    })
    names(chisq_analysis) <- view
 
    # Aggregates scores
-   scores <- sapply(chisq_analysis, function(x) x$chi_score)
+   scores <- sapply(chisq_analysis, function(x) x$diss_score)
    score <- mean(scores, na.rm = T)
    if (!is.finite(score)) score <- NA
 
