@@ -140,11 +140,18 @@ zig_sds <- function(view, in_data, out_data) {
       col_in <- na.omit(in_data[[col]])
       col_out <- na.omit(out_data[[col]])
 
+      # Computes difference between SDs
+      s_in  <- sd(col_in)
+      s_out <- sd(col_out)
+      sd_diss <- (s_in - s_out) / s_out
+
       # Performs F test
-      tryCatch({
-         f_out <- var.test(col_in, col_out)
-         c(size = as.numeric(f_out$statistic), pvalue = f_out$p.value)
-      }, error=function(e) c(size = NA, pvalue = NA)
+      pvalue <- tryCatch(var.test(col_in, col_out)$p.value,
+                         error=function(e) return(NA))
+
+      c(
+         'sd_diss'= sd_diss,
+         'pvalue' = pvalue
       )
 
    })
@@ -152,10 +159,7 @@ zig_sds <- function(view, in_data, out_data) {
    colnames(diffs) <- view
 
    # Aggregates them
-   corr_F <- ifelse(diffs['size',] < 1,
-                    sqrt(1 / diffs['size',]),
-                    sqrt(diffs['size',]))
-   agg_diffs <- mean(corr_F, na.rm = T)
+   agg_diffs <- mean(abs(diffs['sd_diss',]), na.rm = T)
    if(!is.finite(agg_diffs)) agg_diffs <- NA
 
    # Generates description
@@ -263,9 +267,12 @@ zig_corr <- function(view, in_data, out_data) {
 ######################################
 wrap_chi_squared <- function(table_in, table_out){
 
-   chisq_out <- if (any(table_in < 5)){
+   if (length(table_in) != length(table_out))
+      warning("Tables must have the same size!")
+
+   chisq_out <- if (any(table_out < 5) | any(table_in < 5)){
       chisq.test(x=table_in, p=table_out,
-                 simulate.p.value = TRUE, rescale.p = TRUE, B = 250)
+                 simulate.p.value = TRUE, rescale.p = TRUE, B = 100)
    } else {
       chisq.test(x=table_in, p=table_out, rescale.p = TRUE)
    }
@@ -274,13 +281,16 @@ wrap_chi_squared <- function(table_in, table_out){
        stop("Something went wrong with Chi-Squared calculations")
 
    chi <- as.numeric(chisq_out$statistic)
-   if (!is.finite(chi)) chi <- NA
+   # Custom variation of Cramer's V - please contact me if you find better!
+   chi_score <- sqrt(chi / (sum(table_in) * length(table_out)))
+   if (!is.finite(chi_score)) chi_score <- NA
 
    residual_pvalues <- 2*pnorm(-abs(chisq_out$stdres))
    names(residual_pvalues) <- names(table_in)
 
    return(list(
       chi_squared      = chi,
+      chi_score        = chi_score,
       pvalue           = chisq_out$p.value,
       residual_pvalues = residual_pvalues
    ))
@@ -339,17 +349,17 @@ zig_histogram <- function(view, in_data, out_data) {
    names(chisq_analysis) <- view
 
    # Aggregates scores
-   scores <- sapply(chisq_analysis, function(x) x$chi_squared)
+   scores <- sapply(chisq_analysis, function(x) x$chi_score)
    score <- mean(scores, na.rm = T)
    if (!is.finite(score)) score <- NA
 
    # Generates the comments
-   out <- comment_chi_squared_analysis(chisq_analysis)
+   tip <- comment_chi_squared_analysis(chisq_analysis)
 
    list(
       score  = score,
       detail = chisq_analysis,
-      tip    = out
+      tip    = tip
    )
 
 }

@@ -65,14 +65,18 @@ test_that("zig_mean does the job", {
 })
 
 test_that("zig_sd does the job", {
+   out <- check_zig_output(zig_sds, names(df_num),
+                           df_num[1:16,], df_num[17:32,])
+   expect_equal(out$score, 0.2314, tolerance = .001)
+
    dfin<- data.frame(x=c(1,2), y=c(1,2))
    dfout<- data.frame(x=c(4,10), y=c(4,20))
    out <- check_zig_output(zig_sds, c("x", "y"), dfin, dfout)
-   expect_equal(out$score, 11)
+   expect_equal(out$score, 0.8854,  tolerance = .001)
 
    dfin  <- data.frame(x=c(1), y=c(1))
    dfout <- data.frame(x=c(10), y=c(10))
-   out <- check_zig_output(zig_means, c("x", "y"), dfin, dfout)
+   out <- check_zig_output(zig_sds, c("x", "y"), dfin, dfout)
    expect_equal(out$score, NA)
 })
 
