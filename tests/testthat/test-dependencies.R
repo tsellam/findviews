@@ -12,7 +12,7 @@ test_that("CramerV computations work", {
       matrix(rep(c(0,1), 25), ncol=2, byrow = T),
       matrix(rep(c(1,1), 25), ncol=2, byrow = T)
    )
-   expect_equal(cramerV(test_data[,1], test_data[,2]), 0.75)
+   expect_equal(cramerV(test_data[,1], test_data[,2]), 0.25)
 })
 
 test_that("Dependency functions work consistently", {

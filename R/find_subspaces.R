@@ -66,14 +66,14 @@ cluster_columns <- function(data, max_cols, dependency_name){
        !nrow(dependency_mat) == ncol(data) &
        !ncol(dependency_mat) == ncol(data))
       stop("Error during dependency matrix computations: wrong output")
-
-   # Checks for NAs
-   if (any(is.na(dependency_mat))){
+   if (any(is.na(dependency_mat)))
       stop('NAs detected in dependency matrix')
-   }
+   if (any(dependency_mat > 1 | dependency_mat < 0))
+      stop('Dependency must vary between 0 and 1')
 
    # Runs complete link clustering on the remainder
-   dist_obj <- as.dist(dependency_mat)
+   inv_dependency <- 1 - dependency_mat
+   dist_obj <-  as.dist(inv_dependency)
    clust_out <- hclust(dist_obj, method = "complete")
    dendrogram <- as.dendrogram(clust_out)
 
