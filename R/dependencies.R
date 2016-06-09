@@ -16,12 +16,12 @@ cor_matrix <- function(data){
       return(m)
    }
 
-   abs(cor(data, use = "pairwise.complete.obs"))
+   1 - abs(cor(data, use = "pairwise.complete.obs"))
 }
 
 
 ####################################
-# For categotical data: Cramer's V #
+# For categorical data: Cramer's V #
 ####################################
 cramerV <- function(v1, v2){
    stopifnot(length(v1) > 0, length(v2) > 0)
@@ -40,7 +40,7 @@ cramerV <- function(v1, v2){
    norm <- min(r - 1, c - 1)
    V <- sqrt(chi2 / (length(v1) * norm))
 
-   return(V)
+   return(1 - V)
 }
 
 cramerV_matrix <- function(data){
@@ -54,7 +54,7 @@ cramerV_matrix <- function(data){
    # Trivial cases
    if (ncol(data) == 0) return(matrix(nrow=0, ncol=0))
    if (ncol(data) == 1){
-      m <- matrix(1)
+      m <- matrix(0)
       colnames(m) <- rownames(m) <- names(data)
       return(m)
    }
@@ -71,7 +71,7 @@ cramerV_matrix <- function(data){
    M <- matrix(nrow=ncol(data), ncol=ncol(data))
    M[lower.tri(M)] <- dep_vect
    M[upper.tri(M)] <- t(M)[upper.tri(M)]
-   diag(M) <- 1.0
+   diag(M) <- 0
 
    colnames(M) <- colnames(data)
    rownames(M) <- colnames(data)

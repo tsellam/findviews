@@ -43,9 +43,8 @@ check_output <- function(df, to_describe, num, ...){
 
    # Structure checks
    expect_is(out, "list")
-   expect_named(out,
-                c('views_cat', 'views_num', 'scores_cat', 'scores_num'),
-                ignore.order=T)
+   expect_named(out, c('views_cat', 'views_num', 'scores_cat', 'scores_num',
+                       'components_cat', 'components_num'), ignore.order=T)
 
    # Content check
    expect_is(out$views_num, "list")
@@ -54,8 +53,10 @@ check_output <- function(df, to_describe, num, ...){
       expect_true(all(sapply(out$views_num, function(v) length(v) <= num)))
       expect_true(all(sapply(out$views_num, function(v) length(v) > 0)))
 
-      expect_named(out$scores_num, names(ZIG_COMPONENTS_NUM), ignore.order=T)
-      expect_equal(nrow(out$scores_num), length(out$views_num))
+      expect_named(out$components_num, names(ZIG_COMPONENTS_NUM), ignore.order=T)
+      expect_equal(nrow(out$components_num), length(out$views_num))
+
+      expect_is(out$scores_num, 'numeric')
    }
 
    expect_is(out$views_cat, "list")
@@ -63,8 +64,10 @@ check_output <- function(df, to_describe, num, ...){
       expect_true(all(sapply(out$views_cat, is.character)))
       expect_true(all(sapply(out$views_cat, function(v) length(v) > 0)))
 
-      expect_named(out$scores_cat, names(ZIG_COMPONENTS_CAT), ignore.order=T)
-      expect_equal(nrow(out$scores_cat), length(out$views_cat))
+      expect_named(out$components_cat, names(ZIG_COMPONENTS_CAT), ignore.order=T)
+      expect_equal(nrow(out$components_cat), length(out$views_cat))
+
+      expect_is(out$scores_cat, 'numeric')
    }
 
    expect_true(all(names(df) %in% unlist(c(out$views_num, out$views_cat))))

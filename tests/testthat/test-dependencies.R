@@ -12,7 +12,7 @@ test_that("CramerV computations work", {
       matrix(rep(c(0,1), 25), ncol=2, byrow = T),
       matrix(rep(c(1,1), 25), ncol=2, byrow = T)
    )
-   expect_equal(cramerV(test_data[,1], test_data[,2]), 0.25)
+   expect_equal(cramerV(test_data[,1], test_data[,2]), 0.75)
 })
 
 test_that("Dependency functions work consistently", {
@@ -31,7 +31,7 @@ test_that("Cramer V function gives correct output", {
       M <- cramerV_matrix(df)
       tests <- sapply(1:nrow(M), function(i){
          sapply(1:ncol(M), function(j){
-            M[i,j] == cramerV(df[,i], df[,j])
+            M[i,j] == abs(cramerV(df[,i], df[,j]))
          })
       })
       expect_true(all(tests))

@@ -405,6 +405,36 @@ zig_histogram <- function(view, in_data, out_data) {
 ##################################
 # Generic View Analysis Function #
 ##################################
+zig_aggregate <- function(table_score, weights){
+   stopifnot(is.data.frame(table_score))
+   stopifnot(is.numeric(weights))
+
+   if (!setequal(names(table_score), names(weights)))
+      stop("Weights do not match Zig-Components")
+
+   if (nrow(table_score) == 0) return(numeric(0))
+
+   scores <- sapply(1:nrow(table_score), function(i){
+
+      # Extracts all the scores for view i
+      view_scores <- sapply(1:ncol(table_score), function(j){
+         table_score[[i,j]]$score
+      })
+      view_scores <- as.numeric(view_scores)
+      names(view_scores) <- names(table_score)
+
+      # Aggregates
+      weighted_zigs <- sapply(names(view_scores), function(z){
+         view_scores[z] * weights[z]
+      })
+      sum(weighted_zigs, na.rm = T)
+
+   })
+
+   return(scores)
+}
+
+
 score_views <- function(views, target, data, zig_components){
    stopifnot(is.list(views))
    stopifnot(is.data.frame(data), nrow(data) >= 2)
@@ -434,8 +464,8 @@ score_views <- function(views, target, data, zig_components){
 
    # Converts into a data frame
    names(zig_structure) <- names(zig_components)
-   zig_structure <- lapply(zig_structure, I)
-   zig_scores <- do.call(data.frame, zig_structure)
+   zig_structure_I <- lapply(zig_structure, I)
+   zig_scores <- do.call(data.frame, zig_structure_I)
 
    return(zig_scores)
 }

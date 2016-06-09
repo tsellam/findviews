@@ -6,7 +6,7 @@ get_dend_attributes <- function(den, attr_name){
    stopifnot(class(attr_name) == "character")
 
    # Trivial cases: empty of terminal nodes
-   if (length(den) == 0) return(numeric(0))
+   if (length(den) == 0) return(c())
    if (length(den) == 1) return(attr(den, attr_name))
 
    # Recursive call is higher up in the hierarchy
@@ -27,13 +27,18 @@ cut_max_size <- function(den, max_size){
    node_members <- get_dend_attributes(den, 'members')
 
    # Detects split point
-   under_thresh <- node_members <= max_size
-   cand_splits <- node_heights[under_thresh]
-   split_point <- max(cand_splits)
+   over_thresh <- node_members >= max_size
 
-   # Cuts and fetches node labels
-   subtrees <- cut(den, h = split_point)
-   clusters <- lapply(subtrees$lower, get_dend_attributes, 'label')
+   # If applicable, cuts and fetches node labels
+   clusters <- if (!any(over_thresh)){
+     get_dend_attributes(den, 'label')
+   } else {
+      split_point <- min(node_heights[over_thresh])
+      subtrees <- cut(den, h = split_point)
+      clusters <- lapply(subtrees$lower, get_dend_attributes, 'label')
+   }
+
+
 
    return(clusters)
 }
@@ -78,6 +83,19 @@ cluster_columns <- function(data, max_cols, dependency_name){
    return(clusters)
 }
 
+generate_views <- function(data, max_cols, flat_cols, dep_fun_name){
+   stopifnot(is.data.frame(data))
+   stopifnot(is.numeric(max_cols))
+   stopifnot(is.character(flat_cols))
+   stopifnot(is.character(dep_fun_name))
+
+   # Clusters non-flat colummns
+   to_clust <- !colnames(data) %in% flat_cols
+   col_clust <- cluster_columns(data[to_clust], max_cols, dep_fun_name)
+   views <- c(as.list(flat_cols), col_clust)
+
+   return(views)
+}
 
 #################
 # Preprocessing #
@@ -135,21 +153,6 @@ preprocess <- function(data){
 #################
 # Main function #
 #################
-
-generate_views <- function(data, max_cols, flat_cols, dep_fun_name){
-   stopifnot(is.data.frame(data))
-   stopifnot(is.numeric(max_cols))
-   stopifnot(is.character(flat_cols))
-   stopifnot(is.character(dep_fun_name))
-
-   # Clusters non-flat colummns
-   to_clust <- !colnames(data) %in% flat_cols
-   col_clust <- cluster_columns(data[to_clust], max_cols, dep_fun_name)
-   views <- c(as.list(flat_cols), col_clust)
-
-   return(views)
-}
-
 characteristic_views <- function(data, target, max_cols=NULL){
 
    # Input checks
@@ -168,7 +171,6 @@ characteristic_views <- function(data, target, max_cols=NULL){
    stopifnot(is.numeric(max_cols), max_cols >= 1)
    max_cols <- as.integer(max_cols)
 
-
    # Type detection and conversions
    # Flat columns = pimary keys, or columns with only 1 distinct value
    preprocessed <- preprocess(data)
@@ -177,21 +179,28 @@ characteristic_views <- function(data, target, max_cols=NULL){
    data_cat <- preprocessed$data_cat
    flat_cols_cat <- preprocessed$flat_cols_cat
 
-
    # Creates views
    views_num <- generate_views(data_num, max_cols, flat_cols_num, DEP_FUNC_NUM)
    views_cat <- generate_views(data_cat, max_cols, flat_cols_cat, DEP_FUNC_CAT)
 
-
    # Dissimilarity analysis of each view
-   zig_dissim_num <- score_views(views_num, target, data_num, ZIG_COMPONENTS_NUM)
-   zig_dissim_cat <- score_views(views_cat, target, data_cat, ZIG_COMPONENTS_CAT)
+   zig_components_num <- score_views(views_num, target, data_num, ZIG_COMPONENTS_NUM)
+   zig_components_cat <- score_views(views_cat, target, data_cat, ZIG_COMPONENTS_CAT)
 
+   # Aggregates all the Zig-Components into one score
+   zig_scores_num <- zig_aggregate(zig_components_num, WEIGHT_COMPONENTS_NUM)
+   zig_scores_cat <- zig_aggregate(zig_components_cat, WEIGHT_COMPONENTS_CAT)
+
+   # Ranks the views accordingly
+   order_num <- order(zig_scores_num, decreasing = T)
+   order_cat <- order(zig_scores_cat, decreasing = T)
 
    return(list(
-      views_cat = views_cat,
-      scores_cat = zig_dissim_cat,
-      views_num = views_num,
-      scores_num = zig_dissim_num
+      views_cat      = views_cat[order_cat],
+      scores_cat     = zig_scores_cat[order_cat],
+      components_cat = zig_components_cat[order_cat,,drop=FALSE],
+      views_num      = views_num[order_num],
+      scores_num     = zig_scores_num[order_num],
+      components_num = zig_components_num[order_num,,drop=FALSE]
    ))
 }
