@@ -6,33 +6,46 @@ source('generate_df.R')
 ############################
 # General Scoring Function #
 ############################
-test_that("scoring works for numeric data", {
-   zig_components <- c(mean_diff = zig_means)
-                     # sd_diff    = zig_sds,
-                     # corr_dif   = zig_corrs)
+test_score <- function(views, target, df, zig_components){
+   out <- score_views(views, target, df, zig_components)
 
-   test_score <- function(views, target, df){
-      out <- score_views(views, target, df, zig_components)
+   expect_is(out, "data.frame")
+   expect_equal(nrow(out), length(views))
+   expect_equivalent(colnames(out), names(zig_components))
 
-      expect_is(out, "data.frame")
-      expect_equal(nrow(out), length(views))
-      expect_equivalent(colnames(out), names(zig_components))
-
-      t_obj <- sapply(out, function(col){
-         sapply(col, function(zig){
-            is.list(zig) & c('score', 'detail', 'tip') %in% names(zig)
-         })
+   t_obj <- sapply(out, function(col){
+      sapply(col, function(zig){
+         is.list(zig) & c('score', 'detail', 'tip') %in% names(zig)
       })
-      t_obj <- unlist(t_obj)
-      expect_true(all(t_obj))
-   }
+   })
+   t_obj <- unlist(t_obj)
+   expect_true(all(t_obj))
+
+   out
+}
+
+test_that("scoring works for numeric data", {
+   zig_components <- c(mean_diff = 'zig_means',
+                      sd_diff    = 'zig_sds',
+                      corr_dif   = 'zig_corr')
+
 
    test_score(list(c("mpg", "cyl"), c("disp"), c("drat", "wt", "qsec")),
-               to_describe,
-               df_num)
-   test_score(list(c("mpg", "cyl")), to_describe, df_num)
-   test_score(list(), to_describe, df_num)
-   test_score(list(c("mpg")), to_describe, df_onecol)
+               to_describe, df_num, zig_components)
+   test_score(list(c("mpg", "cyl")), to_describe, df_num, zig_components)
+   test_score(list(), to_describe, df_num, zig_components)
+   test_score(list(c("mpg")), to_describe, df_onecol, zig_components)
+})
+
+
+test_that("scoring works for categorical data", {
+   zig_components <- c(hist_diff = 'zig_histogram')
+
+   test_score(list(c("mpg", "cyl"), c("disp"), c("drat", "wt", "qsec")),
+              to_describe, df_cat, zig_components)
+   test_score(list(c("mpg", "cyl")), to_describe, df_cat, zig_components)
+   test_score(list(), to_describe, df_cat, zig_components)
+   test_score(list(c("mpg")), to_describe, df_cat, zig_components)
 })
 
 

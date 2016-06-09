@@ -26,29 +26,29 @@ test_that("dendrogram cutting function does its job", {
 
 
 test_that("column clustering function works properly with num data", {
-   clu <- cluster_columns(df_num, 2, cor_matrix)
+   clu <- cluster_columns(df_num, 2, "cor_matrix")
    expect_is(clu, "list")
    expect_true(length(clu) > 0)
    expect_true(length(clu) <= ncol(df_num))
-   expect_is(cluster_columns(df_num, 2, cor_matrix)[[1]], "character")
+   expect_is(cluster_columns(df_num, 2, "cor_matrix")[[1]], "character")
 
-   expect_is(cluster_columns(df_zerocol, 2, cor_matrix), "list")
-   expect_length(cluster_columns(df_zerocol, 2, cor_matrix), 0)
-   expect_is(cluster_columns(df_onecol, 2, cor_matrix), "list")
-   expect_length(cluster_columns(df_onecol, 2, cor_matrix), 1)
+   expect_is(cluster_columns(df_zerocol, 2, "cor_matrix"), "list")
+   expect_length(cluster_columns(df_zerocol, 2, "cor_matrix"), 0)
+   expect_is(cluster_columns(df_onecol, 2, "cor_matrix"), "list")
+   expect_length(cluster_columns(df_onecol, 2, "cor_matrix"), 1)
 })
 
 test_that("column clustering function works properly with cat data", {
-   clu <- cluster_columns(df_cat, 2, cramerV_matrix)
+   clu <- cluster_columns(df_cat, 2, "cramerV_matrix")
    expect_is(clu, "list")
    expect_true(length(clu) > 0)
    expect_true(length(clu) <= ncol(df_cat))
-   expect_is(cluster_columns(df_cat, 2, cramerV_matrix)[[1]], "character")
+   expect_is(cluster_columns(df_cat, 2, "cramerV_matrix")[[1]], "character")
 
-   expect_is(cluster_columns(df_zerocol, 2, cramerV_matrix), "list")
-   expect_length(cluster_columns(df_zerocol, 2, cramerV_matrix), 0)
-   expect_is(cluster_columns(df_onecol_cat, 2, cramerV_matrix), "list")
-   expect_length(cluster_columns(df_onecol_cat, 2, cramerV_matrix), 1)
+   expect_is(cluster_columns(df_zerocol, 2, "cramerV_matrix"), "list")
+   expect_length(cluster_columns(df_zerocol, 2, "cramerV_matrix"), 0)
+   expect_is(cluster_columns(df_onecol_cat, 2, "cramerV_matrix"), "list")
+   expect_length(cluster_columns(df_onecol_cat, 2, "cramerV_matrix"), 1)
 })
 
 test_that("column clustering fails with NAs", {

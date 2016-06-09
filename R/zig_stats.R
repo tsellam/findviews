@@ -185,7 +185,8 @@ zig_sds <- function(view, in_data, out_data) {
 #--------------------------------------------------------------------#
 # Tests the difference between correlations with Fisher transformation
 fisher_transform <- function(r) {
-   if (any(r < -1) | any(r > 1)) return(NA)
+   if (!is.finite(r)) return(NA)
+   if (r < -1 | r > 1) return(NA)
    0.5*log((1+r)/(1-r))
 }
 
@@ -232,7 +233,9 @@ zig_corr <- function(view, in_data, out_data) {
    cor_out <- suppressWarnings(cor(view_out))
 
    # Gets differences and aggregates into one score
-   cor_diff <- fisher_transform(cor_in) - fisher_transform(cor_out)
+   f_in  <- apply(cor_in, c(1,2), fisher_transform)
+   f_out <- apply(cor_out, c(1,2), fisher_transform)
+   cor_diff <- f_in - f_out
    score <- mean(abs(cor_diff), na.rm = TRUE)
    if (!is.finite(score)) score <- NA
 
@@ -406,16 +409,26 @@ score_views <- function(views, target, data, zig_components){
    stopifnot(is.list(views))
    stopifnot(is.data.frame(data), nrow(data) >= 2)
    stopifnot(is.logical(target), length(target) == nrow(data), sum(target) > 0)
+   stopifnot(is.character(zig_components))
 
+   # Checks that all columns exist
    col_exists <- unlist(views) %in% names(data)
    if (!all(col_exists)) stop('Column missing in dataset')
+
+   # Checks and retrieves the zig_components
+   zig_components_fun <- lapply(zig_components, function(zig_name){
+      if (!exists(zig_name)) stop('Zig-Component ', zig_name,' not found')
+      fun <- get(zig_name)
+      if (!is.function(fun)) stop(zig_name, ' is not a function')
+      return(fun)
+   })
 
    # Separates the two populations
    in_sel  <- data[target,,drop=F]
    out_sel <- data[!target,,drop=F]
 
    # Does the heavy lifting
-   zig_structure <- lapply(zig_components, function(zig_fun){
+   zig_structure <- lapply(zig_components_fun, function(zig_fun){
        lapply(views, zig_fun, in_sel, out_sel)
    })
 

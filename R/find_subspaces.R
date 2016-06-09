@@ -38,11 +38,18 @@ cut_max_size <- function(den, max_size){
    return(clusters)
 }
 
-cluster_columns <- function(data, max_cols, dependency_fun){
+cluster_columns <- function(data, max_cols, dependency_name){
    stopifnot(is.data.frame(data), nrow(data) >= 2)
    stopifnot(is.numeric(max_cols))
    if (max_cols < 1) stop('max_cols must be at least one')
-   stopifnot(is.function(dependency_fun))
+   stopifnot(is.character(dependency_name))
+
+   # Checks and retrieves dependency function
+   if (!exists(dependency_name))
+      stop("Dependency function not found!")
+   dependency_fun <- get(dependency_name)
+   if (!is.function(dependency_fun))
+      stop('Dependency function is not a function!')
 
    # Trivial case: 0 or 1 column
    if (ncol(data) == 0) return(list())
@@ -128,6 +135,21 @@ preprocess <- function(data){
 #################
 # Main function #
 #################
+
+generate_views <- function(data, max_cols, flat_cols, dep_fun_name){
+   stopifnot(is.data.frame(data))
+   stopifnot(is.numeric(max_cols))
+   stopifnot(is.character(flat_cols))
+   stopifnot(is.character(dep_fun_name))
+
+   # Clusters non-flat colummns
+   to_clust <- !colnames(data) %in% flat_cols
+   col_clust <- cluster_columns(data[to_clust], max_cols, dep_fun_name)
+   views <- c(as.list(flat_cols), col_clust)
+
+   return(views)
+}
+
 characteristic_views <- function(data, target, max_cols=NULL){
 
    # Input checks
@@ -141,35 +163,35 @@ characteristic_views <- function(data, target, max_cols=NULL){
    if (sum(target) == 0)
       stop("The selection should contain between 1 and N-1 items")
 
+   # Sets max_cols = log2(ncol(data)) is no value specified
    if (is.null(max_cols)) max_cols <- max(1, log2(ncol(data)))
    stopifnot(is.numeric(max_cols), max_cols >= 1)
    max_cols <- as.integer(max_cols)
 
+
    # Type detection and conversions
+   # Flat columns = pimary keys, or columns with only 1 distinct value
    preprocessed <- preprocess(data)
    data_num <- preprocessed$data_num
-   data_cat <- preprocessed$data_cat
    flat_cols_num <- preprocessed$flat_cols_num
+   data_cat <- preprocessed$data_cat
    flat_cols_cat <- preprocessed$flat_cols_cat
 
-   # View construction
-   to_clust_num <- !colnames(data_num) %in% flat_cols_num
-   to_clust_cat <- !colnames(data_cat) %in% flat_cols_cat
 
-   col_clust_num <- cluster_columns(data_num[to_clust_num],
-                                    max_cols,
-                                    DEP_FUNC_NUM)
-   col_clust_cat <- cluster_columns(data_cat[to_clust_cat],
-                                    max_cols,
-                                    DEP_FUNC_CAT)
+   # Creates views
+   views_num <- generate_views(data_num, max_cols, flat_cols_num, DEP_FUNC_NUM)
+   views_cat <- generate_views(data_cat, max_cols, flat_cols_cat, DEP_FUNC_CAT)
 
-   views_num <- c(as.list(flat_cols_num), col_clust_num)
-   views_cat <- c(as.list(flat_cols_cat), col_clust_cat)
+
+   # Dissimilarity analysis of each view
+   zig_dissim_num <- score_views(views_num, target, data_num, ZIG_COMPONENTS_NUM)
+   zig_dissim_cat <- score_views(views_cat, target, data_cat, ZIG_COMPONENTS_CAT)
+
 
    return(list(
       views_cat = views_cat,
-      scores_cat = data.frame(),
+      scores_cat = zig_dissim_cat,
       views_num = views_num,
-      scores_num = data.frame()
+      scores_num = zig_dissim_num
    ))
 }
