@@ -36,9 +36,9 @@ data_table_js <- "
       });
    }"
 
-##############################
-# Formatters and prettifiers #
-##############################
+##############
+# View Table #
+##############
 create_view_table <- function(view_type, ziggy_out){
    stopifnot(view_type %in% c('num', 'cat'))
    stopifnot(c('views_num', 'views_cat') %in% names(ziggy_out))
@@ -58,22 +58,92 @@ create_view_table <- function(view_type, ziggy_out){
               viewName = view_strings)
 }
 
-create_view_title <- function(view_id, view_type, ziggy_out){
-   stopifnot(is.integer(view_id))
-   stopifnot(view_type %in% c('num', 'cat'))
-   stopifnot(c('views_num', 'views_cat') %in% names(ziggy_out))
-
-   # Retrieves the views to output
+###########################
+# Plotting & View Details #
+###########################
+retrieve_view <- function(view_id, view_type, ziggy_out){
    to_output <- if (view_type == 'num') ziggy_out$views_num
    else ziggy_out$views_cat
 
    if (!view_id >= 1 | !view_id <= length(to_output))
       stop("Incorrect view requested.")
 
-   col_string  <- paste0(to_output[[view_id]], collapse = ', ')
+   return(to_output[[view_id]])
+}
+
+#-------#
+# Title #
+#-------#
+create_view_title <- function(view_id, view_type, ziggy_out){
+   stopifnot(is.integer(view_id))
+   stopifnot(view_type %in% c('num', 'cat'))
+   stopifnot(c('views_num', 'views_cat') %in% names(ziggy_out))
+
+   view_cols <- retrieve_view(view_id, view_type, ziggy_out)
+   col_string  <- paste0(view_cols, collapse = ', ')
    full_string <- paste0("View: ", col_string)
 
    return(full_string)
+}
+
+#----------#
+# Plotting #
+#----------#
+plot_selection_numeric <- function(data, target){
+   col_types <- sapply(data, class)
+   if (!all(col_types == 'numeric')) stop('Cannot plot, type not supported')
+
+   zig_in_target <- ifelse(target, 'In the selection', 'Outside the selection')
+   data <- cbind(data, zig_in_target)
+
+   # 1D data -> density plot
+   if (ncol(data) == 2){
+      title <- paste0('Density plot for the variable ', names(data)[[1]])
+
+      ggplot2::ggplot(data,
+                      ggplot2::aes_string(x    = names(data)[[1]],
+                                         color = names(data)[[2]],
+                                         fill  = names(data)[[2]])) +
+         ggplot2::geom_density(alpha = .5) +
+         ggplot2::scale_color_discrete('') +
+         ggplot2::scale_fill_discrete('') +
+         ggplot2::ggtitle(title)
+
+
+   # 2D data -> scatter plot
+   } else if (ncol(data) == 3){
+      title <- paste0('Scatter plot of the variables ', names(data)[[1]],
+                      ' and ', names(data)[[2]])
+
+      ggplot2::ggplot(data,
+                      ggplot2::aes_string(x    = names(data)[[1]],
+                                          y    = names(data)[[2]],
+                                          color = names(data)[[3]],
+                                          fill  = names(data)[[3]]),
+                                          shape = names(data)[[3]]) +
+         ggplot2::geom_point() +
+         ggplot2::scale_color_discrete('') +
+         ggplot2::scale_fill_discrete('') +
+         ggplot2::scale_shape_discrete('') +
+         ggplot2::ggtitle(title)
+   }
+
+}
+
+plot_selection <- function(view_id, view_type, ziggy_out, target, data){
+   stopifnot(is.integer(view_id))
+   stopifnot(view_type %in% c('num', 'cat'))
+   stopifnot(c('views_num', 'views_cat') %in% names(ziggy_out))
+   stopifnot(is.logical(target))
+   stopifnot(is.data.frame(data))
+
+   # Retrieves the views to output
+   view_cols <- retrieve_view(view_id, view_type, ziggy_out)
+
+   plot <- if (view_type == 'num') plot_selection_numeric(data[view_cols], target)
+   else plot_selection_categorical(data[view_cols], target)
+
+   return(plot)
 }
 
 ######################
@@ -99,7 +169,8 @@ shinyServer(function(input, output) {
    })
 
    output$viewTitle <- renderUI({
-      if (is.na(view_id())) return("")
+      if (is.na(view_id()) | is.na(view_type()))
+         return("")
 
       view_title <- create_view_title(view_id(),
                                       view_type(),
@@ -108,7 +179,11 @@ shinyServer(function(input, output) {
    })
 
    output$viewPlot <- renderPlot({
-      plot(ziggy_data[,c(1,2)])
+      if (is.na(view_id()) | is.na(view_type()))
+         return(NULL)
+
+      plot_selection(view_id(), view_type(),
+                     ziggy_out, ziggy_target, ziggy_data)
    })
 
 })

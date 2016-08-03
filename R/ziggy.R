@@ -210,10 +210,16 @@ characteristic_views <- function(data, target, max_cols=NULL){
 ziggy_web <- function(data, target, max_cols=NULL){
 
    # Loads the Shiny package
-   if (!requireNamespace("shiny", quietly = TRUE)) {
-      stop("This function needs the package Shiny. Please install it.",
+   if (!requireNamespace("shiny", quietly = TRUE))
+      stop("This function needs the packages Shiny, ggplot2 and ggally; Shiny is missing.",
            call. = FALSE)
-   }
+   # Loads the plotting functions
+   if (!requireNamespace("ggplot2", quietly = TRUE))
+      stop("This function needs the packages Shiny, ggplot2 and ggally; ggplot2 is missing.",
+           call. = FALSE)
+   if (!requireNamespace("GGally", quietly = TRUE))
+      stop("This function needs the packages Shiny, ggplot2 and ggally; GGally is missing.",
+           call. = FALSE)
    # Finds the Web app
    appDir <- system.file("ziggy-web", package = "ziggy")
    if (appDir == "")
@@ -221,11 +227,13 @@ ziggy_web <- function(data, target, max_cols=NULL){
            call. = FALSE)
 
    # Runs Ziggy, makes the results accessible to Shiny
-   ziggy_out  <<- characteristic_views(data, target, max_cols)
-   ziggy_data <<- data
+   ziggy_out    <<- characteristic_views(data, target, max_cols)
+   ziggy_data   <<- data
+   ziggy_target <<- target
    on.exit({
-      ziggy_out  <<- NULL
-      ziggy_data <<- NULL
+      ziggy_out    <<- NULL
+      ziggy_data   <<- NULL
+      ziggy_target <<- NULL
    }, add = TRUE)
 
    # Launches the app
