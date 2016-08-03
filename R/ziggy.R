@@ -5,7 +5,7 @@ get_dend_attributes <- function(den, attr_name){
    stopifnot(class(den) == "dendrogram")
    stopifnot(class(attr_name) == "character")
 
-   # Trivial cases: empty of terminal nodes
+   # Trivial cases: empty or terminal nodes
    if (length(den) == 0) return(c())
    if (length(den) == 1) return(attr(den, attr_name))
 
@@ -153,6 +153,7 @@ preprocess <- function(data){
 #################
 # Main function #
 #################
+#' @export
 characteristic_views <- function(data, target, max_cols=NULL){
 
    # Input checks
@@ -203,4 +204,30 @@ characteristic_views <- function(data, target, max_cols=NULL){
       scores_num     = zig_scores_num[order_num],
       components_num = zig_components_num[order_num,,drop=FALSE]
    ))
+}
+
+#' @export
+ziggy_web <- function(data, target, max_cols=NULL){
+
+   # Loads the Shiny package
+   if (!requireNamespace("shiny", quietly = TRUE)) {
+      stop("This function needs the package Shiny. Please install it.",
+           call. = FALSE)
+   }
+   # Finds the Web app
+   appDir <- system.file("ziggy-web", package = "ziggy")
+   if (appDir == "")
+      stop("Could not find Ziggy Web sources - something is wrong with your installation.",
+           call. = FALSE)
+
+   # Runs Ziggy, makes the results accessible to Shiny
+   ziggy_out  <<- characteristic_views(data, target, max_cols)
+   ziggy_data <<- data
+   on.exit({
+      ziggy_out  <<- NULL
+      ziggy_data <<- NULL
+   }, add = TRUE)
+
+   # Launches the app
+   shiny::runApp(appDir, display.mode = "normal")
 }
