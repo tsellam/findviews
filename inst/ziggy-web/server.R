@@ -22,17 +22,15 @@ data_table_js <- "
             table.$('tr.selected').removeClass('selected');
             $(this).toggleClass('selected');
 
-            var oldViewType = $('div#view-specs input#currentViewType').val();
             var viewType = 'num';
             $('div#view-specs input#currentViewType').val(viewType);
-            if (oldViewType != viewType)
-               $('div#view-specs input#currentViewType').trigger('change');
+            $('div#view-specs input#currentViewType').trigger('change');
 
-            var oldViewId = $('div#view-specs input#currentView').val();
             var viewId = table.rows('.selected').data()[0][0];
             $('div#view-specs input#currentView').val(viewId);
-            if (oldViewId != viewId)
-               $('div#view-specs input#currentView').trigger('change');
+            $('div#view-specs input#currentView').trigger('change');
+
+            $('div#view-specs button#submitView').click();
       });
    }"
 
@@ -89,43 +87,93 @@ create_view_title <- function(view_id, view_type, ziggy_out){
 #----------#
 # Plotting #
 #----------#
+# Util function (1) takes the the legend of the (i,j)th plot of a grid
+# and places it at the top right corner, and (2) erases all the other legends
+factorize_legend <- function(grid_plot, i_reference=1, j_reference=1){
+   stopifnot('ggmatrix' %in% class(grid_plot))
+
+   ndims <- grid_plot$nrow
+
+   for (i in 1:ndims){
+      for (j in 1:ndims){
+         if (i==i_reference & j==j_reference) next
+         grid_plot[i,j] <- grid_plot[i,j] +
+                           ggplot2::theme(legend.position="none")
+      }
+   }
+
+   grid_plot[i_reference,j_reference] <- grid_plot[1,1] +
+                     ggplot2::theme(legend.position = c(ndims,1),
+                                    legend.justification = c(1,1))
+
+   grid_plot
+}
+
 plot_selection_numeric <- function(data, target){
    col_types <- sapply(data, class)
    if (!all(col_types == 'numeric')) stop('Cannot plot, type not supported')
 
+
+   # Prepares the data frame to be visualized
    zig_in_target <- ifelse(target, 'In the selection', 'Outside the selection')
    data <- cbind(data, zig_in_target)
+
+   # Subsamples if necessary
+   if (nrow(data) > SCATTERPLOT_SAMPLE_SIZE){
+      warning('The dataframe contains more that',SCATTERPLOT_SAMPLE_SIZE,
+              ' rows, I am subsampling the data')
+      data <- data[sample(1:nrow(data), SCATTERPLOT_SAMPLE_SIZE, F)]
+   }
+
+   # Other settings
+   scat_pt_size_default <- if (nrow(data) > 1000) .5
+                           else if (nrow(data) > 500) .75
+                           else 1
+   scat_alpha_default   <- if (sum(target) > nrow(data) / 3) .5
+                           else 1
 
    # 1D data -> density plot
    if (ncol(data) == 2){
       title <- paste0('Density plot for the variable ', names(data)[[1]])
 
       ggplot2::ggplot(data,
-                      ggplot2::aes_string(x    = names(data)[[1]],
+                      ggplot2::aes_string(x = names(data)[[1]],
                                          color = names(data)[[2]],
                                          fill  = names(data)[[2]])) +
          ggplot2::geom_density(alpha = .5) +
-         ggplot2::scale_color_discrete('') +
-         ggplot2::scale_fill_discrete('') +
-         ggplot2::ggtitle(title)
+         ggplot2::ggtitle(title) +
+         ggplot2::theme(legend.text     = ggplot2::element_text(size = 12),
+                        legend.key.size = ggplot2::unit(1, "cm"),
+                        legend.title    = ggplot2::element_text(size = 0))
 
 
-   # 2D data -> scatter plot
-   } else if (ncol(data) == 3){
-      title <- paste0('Scatter plot of the variables ', names(data)[[1]],
-                      ' and ', names(data)[[2]])
+   # 2d and more -> scatterplot matrix
+   } else if (ncol(data) >= 3){
 
-      ggplot2::ggplot(data,
-                      ggplot2::aes_string(x    = names(data)[[1]],
-                                          y    = names(data)[[2]],
-                                          color = names(data)[[3]],
-                                          fill  = names(data)[[3]]),
-                                          shape = names(data)[[3]]) +
-         ggplot2::geom_point() +
-         ggplot2::scale_color_discrete('') +
-         ggplot2::scale_fill_discrete('') +
-         ggplot2::scale_shape_discrete('') +
-         ggplot2::ggtitle(title)
+      to_plot_index <- 1:(ncol(data)-1)
+      to_plot_col   <- names(data)[to_plot_index]
+      labels_col    <- names(data)[[ncol(data)]]
+
+      # Main plots
+      pairs <- GGally::ggpairs(data,
+                      mapping = ggplot2::aes_string(color = labels_col,
+                                                    fill  = labels_col),
+                      columns = to_plot_index,
+                      lower = list('continuous' = GGally::wrap('points',
+                                                    size = scat_pt_size_default,
+                                                    alpha = scat_alpha_default)
+                                                   ),
+                      diag  = list('continuous' = GGally::wrap('densityDiag',
+                                                               alpha = 0.5)),
+                      upper = list('continuous' = 'blank'),
+                      legends = TRUE) +
+               ggplot2::theme(legend.text     = ggplot2::element_text(size = 12),
+                              legend.key.size = ggplot2::unit(1, "cm"),
+                              legend.title    = ggplot2::element_text(size = 0))
+
+      pairs <- factorize_legend(pairs)
+      pairs
+
    }
 
 }
@@ -159,10 +207,11 @@ shinyServer(function(input, output) {
    )
 
    # Main panel maintenance
-   view_id <- reactive({
+   view_id <- eventReactive(input$submitView, {
       as.integer(input$currentView)
    })
-   view_type <- reactive({
+
+   view_type <- eventReactive(input$submitView, {
       if (!input$currentViewType %in% c('num', 'cat', ''))
          stop('Incorrect request to Ziggy server.')
       input$currentViewType

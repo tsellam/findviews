@@ -17,3 +17,8 @@ WEIGHT_COMPONENTS_CAT <- c(hist_diff = 1)
 # Significance thresholds
 P_VALUE_ZIG <- 0.05
 P_VALUE_PEARSON_RESIDUALS <- 0.05
+
+
+
+# Graphing parameters
+SCATTERPLOT_SAMPLE_SIZE <- 2500

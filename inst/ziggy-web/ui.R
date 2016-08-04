@@ -6,9 +6,10 @@ shinyUI(fluidPage(
 
       sidebarPanel(
          dataTableOutput("viewsTable"),
-         div(id="view-specs",#class="hidden",
+         div(id="view-specs", class="hidden",
             textInput("currentView", NULL),
-            textInput("currentViewType", NULL)
+            textInput("currentViewType", NULL),
+            actionButton("submitView", "Go!")
          )
       ),
 
