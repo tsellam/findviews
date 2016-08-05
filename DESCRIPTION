@@ -9,7 +9,10 @@ Description: Ziggy is a data characterization engine. Give it a data frame,
     special?"
 License: What license is it under?
 LazyData: TRUE
+Imports:
+   shiny,
+   ggplot2,
+   GGally
 Suggests:
-    shiny,
     testthat
 RoxygenNote: 5.0.1

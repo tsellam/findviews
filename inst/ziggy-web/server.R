@@ -102,7 +102,7 @@ factorize_legend <- function(grid_plot, i_reference=1, j_reference=1){
       }
    }
 
-   grid_plot[i_reference,j_reference] <- grid_plot[1,1] +
+   grid_plot[i_reference,j_reference] <- grid_plot[i_reference,j_reference] +
                      ggplot2::theme(legend.position = c(ndims,1),
                                     legend.justification = c(1,1))
 
@@ -166,7 +166,8 @@ plot_selection_numeric <- function(data, target){
                       diag  = list('continuous' = GGally::wrap('densityDiag',
                                                                alpha = 0.5)),
                       upper = list('continuous' = 'blank'),
-                      legends = TRUE) +
+                      legends = TRUE,
+                      title   = "Density plots (diagonal) and 2D scatterplots (all the other charts)") +
                ggplot2::theme(legend.text     = ggplot2::element_text(size = 12),
                               legend.key.size = ggplot2::unit(1, "cm"),
                               legend.title    = ggplot2::element_text(size = 0))
