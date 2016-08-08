@@ -107,12 +107,16 @@ zig_means <- function(view, in_data, out_data) {
 
    # Generates description
    is_significant <- (diffs['pvalue',] < P_VALUE_ZIG)
-   large_effects  <- colnames(diffs[,is_significant])
+   large_effects  <- colnames(diffs[,is_significant,drop=F])
    tip <- if (length(large_effects) == 0){
       ""
    } else if (length(large_effects) >= 1){
-      col_enum <- enumerate_char(large_effects)
-      paste0('the difference between the means on ', col_enum)
+      if (length(view) == 1){
+         paste0('the difference between the means')
+      } else {
+         col_enum <- enumerate_char(large_effects)
+         paste0('the difference between the means on ', col_enum)
+      }
    }
 
    list(
@@ -164,12 +168,16 @@ zig_sds <- function(view, in_data, out_data) {
 
    # Generates description
    is_significant <- (diffs['pvalue',] < P_VALUE_ZIG)
-   large_effects  <- colnames(diffs[,is_significant])
+   large_effects  <- colnames(diffs[,is_significant,drop=F])
    tip <- if (length(large_effects) == 0){
       ""
    } else if (length(large_effects) >= 1){
-      col_enum <- enumerate_char(large_effects)
-      paste0('the difference between the variances on ', col_enum)
+      if (length(view) == 1){
+         paste0('the difference between the variances')
+      } else {
+         col_enum <- enumerate_char(large_effects)
+         paste0('the difference between the variances on ', col_enum)
+      }
    }
 
    list(
