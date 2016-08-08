@@ -15,8 +15,8 @@ WEIGHT_COMPONENTS_NUM <- c(mean_diff = 1,
 WEIGHT_COMPONENTS_CAT <- c(hist_diff = 1)
 
 # Significance thresholds
-P_VALUE_ZIG <- 0.05
-P_VALUE_PEARSON_RESIDUALS <- 0.05
+P_VALUE_ZIG <- 0.01
+P_VALUE_PEARSON_RESIDUALS <- 0.01
 
 
 

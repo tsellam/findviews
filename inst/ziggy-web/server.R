@@ -69,6 +69,17 @@ retrieve_view <- function(view_id, view_type, ziggy_out){
    return(to_output[[view_id]])
 }
 
+retrieve_details <- function(view_id, view_type, ziggy_out){
+   to_output <- if (view_type == 'num') ziggy_out$details_num
+   else ziggy_out$details_cat
+
+   if (!view_id >= 1 | !view_id <= nrow(to_output))
+      stop("Incorrect view requested.")
+
+   out <- unlist(to_output[view_id,], recursive = F)
+   return(out)
+}
+
 #-------#
 # Title #
 #-------#
@@ -81,7 +92,9 @@ create_view_title <- function(view_id, view_type, ziggy_out){
    col_string  <- paste0(view_cols, collapse = ', ')
    full_string <- paste0("View: ", col_string)
 
-   return(full_string)
+   html_block <- h5(full_string)
+
+   return(html_block)
 }
 
 #----------#
@@ -131,6 +144,8 @@ plot_selection_numeric <- function(data, target){
                            else 1
    scat_alpha_default   <- if (sum(target) > nrow(data) / 3) .5
                            else 1
+   bi_plot_type <- if (nrow(data) > 20) 'smooth'
+                   else 'points'
 
    # 1D data -> density plot
    if (ncol(data) == 2){
@@ -159,7 +174,7 @@ plot_selection_numeric <- function(data, target){
                       mapping = ggplot2::aes_string(color = labels_col,
                                                     fill  = labels_col),
                       columns = to_plot_index,
-                      lower = list('continuous' = GGally::wrap('points',
+                      lower = list('continuous' = GGally::wrap(bi_plot_type,
                                                     size = scat_pt_size_default,
                                                     alpha = scat_alpha_default)
                                                    ),
@@ -195,6 +210,45 @@ plot_selection <- function(view_id, view_type, ziggy_out, target, data){
    return(plot)
 }
 
+#-------------------#
+# Comments the view #
+#-------------------#
+create_view_comments <- function(view_id, view_type, ziggy_out){
+   stopifnot(is.integer(view_id))
+   stopifnot(view_type %in% c('num', 'cat'))
+   stopifnot(c('details_num', 'details_cat') %in% names(ziggy_out))
+
+   components <- retrieve_details(view_id, view_type, ziggy_out)
+
+   tip_lines <- sapply(components, function(component){
+      if ('tip' %in% names(component)) component$tip
+      else NA
+   })
+   tip_lines <- as.character(tip_lines)
+   tip_lines <- na.omit(tip_lines)
+   tip_lines <- tip_lines[nchar(tip_lines) > 0]
+
+   if (length(tip_lines) == 0) {
+      tip_html <- ""
+      tip_lines_html <- ""
+
+   } else if (length(tip_lines) == 1) {
+      tip_html <- "You may be interested in "
+      tip_lines_html <- tip_lines
+
+   } else if (length(tip_lines) > 1) {
+      tip_html <- "You could check out the following differences:\n"
+      tip_lines_html <- sapply(tip_lines,
+                               function(s) paste0('<li>',s,'</li>'))
+      tip_lines_html <- paste0(tip_lines_html, collapse = "\n")
+      tip_lines_html <- paste0('<ul>\n',tip_lines_html,'\n</ul>')
+   }
+
+   html_block <- HTML(paste0(tip_html, tip_lines_html, collapse = ' '))
+
+   return(html_block)
+}
+
 ######################
 # Actual server code #
 ######################
@@ -208,6 +262,7 @@ shinyServer(function(input, output) {
    )
 
    # Main panel maintenance
+   # Reactive variables
    view_id <- eventReactive(input$submitView, {
       as.integer(input$currentView)
    })
@@ -218,14 +273,14 @@ shinyServer(function(input, output) {
       input$currentViewType
    })
 
+   # Output bindings
    output$viewTitle <- renderUI({
       if (is.na(view_id()) | is.na(view_type()))
-         return("")
+         return(NULL)
 
-      view_title <- create_view_title(view_id(),
-                                      view_type(),
-                                      ziggy_out)
-      h4(view_title)
+      create_view_title(view_id(),
+                        view_type(),
+                        ziggy_out)
    })
 
    output$viewPlot <- renderPlot({
@@ -234,6 +289,15 @@ shinyServer(function(input, output) {
 
       plot_selection(view_id(), view_type(),
                      ziggy_out, ziggy_target, ziggy_data)
+   })
+
+   output$viewComment <- renderUI({
+      if (is.na(view_id()) | is.na(view_type()))
+         return("")
+
+      create_view_comments(view_id(),
+                           view_type(),
+                           ziggy_out)
    })
 
 })

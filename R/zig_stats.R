@@ -109,7 +109,7 @@ zig_means <- function(view, in_data, out_data) {
    is_significant <- (diffs['pvalue',] < P_VALUE_ZIG)
    large_effects  <- colnames(diffs[,is_significant])
    tip <- if (length(large_effects) == 0){
-      character(0)
+      ""
    } else if (length(large_effects) >= 1){
       col_enum <- enumerate_char(large_effects)
       paste0('the difference between the means on ', col_enum)
@@ -166,7 +166,7 @@ zig_sds <- function(view, in_data, out_data) {
    is_significant <- (diffs['pvalue',] < P_VALUE_ZIG)
    large_effects  <- colnames(diffs[,is_significant])
    tip <- if (length(large_effects) == 0){
-      character(0)
+      ""
    } else if (length(large_effects) >= 1){
       col_enum <- enumerate_char(large_effects)
       paste0('the difference between the variances on ', col_enum)
@@ -225,7 +225,7 @@ zig_corr <- function(view, in_data, out_data) {
       return(list(
          score  = NA,
          detail = list(),
-         tip = character(0)
+         tip = NA
       ))
 
    # Computes correlation matrices
@@ -246,12 +246,12 @@ zig_corr <- function(view, in_data, out_data) {
    # Generates comments
    is_significant <- ( pvalues < P_VALUE_ZIG)
    tip <- if (!any(is_significant, na.rm = T)) {
-      character(0)
+      ""
    } else {
       sig_columns <- which_true_elements(is_significant)
       sig_columns_str <- sapply(sig_columns, paste, collapse = "/")
       sig_columns_str <- enumerate_char(sig_columns_str)
-      tip <- paste0('Check the difference in correlations on these columns:',
+      tip <- paste0('the difference in correlations on these columns : ',
                     sig_columns_str)
    }
 
@@ -354,7 +354,7 @@ comment_chi_squared_analysis <- function(chisq_results, max_levels = 3){
          str <- enumerate_char(exceptional_levels)
          str <- paste0(' (values ', str, ')')
       } else {
-         character(0)
+         ""
       }
 
       descr <- paste0(col, parenthesis)

@@ -197,12 +197,12 @@ characteristic_views <- function(data, target, max_cols=NULL){
    order_cat <- order(zig_scores_cat, decreasing = T)
 
    return(list(
-      views_cat      = views_cat[order_cat],
-      scores_cat     = zig_scores_cat[order_cat],
-      components_cat = zig_components_cat[order_cat,,drop=FALSE],
-      views_num      = views_num[order_num],
-      scores_num     = zig_scores_num[order_num],
-      components_num = zig_components_num[order_num,,drop=FALSE]
+      views_cat   = views_cat[order_cat],
+      scores_cat  = zig_scores_cat[order_cat],
+      details_cat = zig_components_cat[order_cat,,drop=FALSE],
+      views_num   = views_num[order_num],
+      scores_num  = zig_scores_num[order_num],
+      details_num = zig_components_num[order_num,,drop=FALSE]
    ))
 }
 
