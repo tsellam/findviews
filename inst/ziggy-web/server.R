@@ -90,9 +90,9 @@ create_view_title <- function(view_id, view_type, ziggy_out){
 
    view_cols <- retrieve_view(view_id, view_type, ziggy_out)
    col_string  <- paste0(view_cols, collapse = ', ')
-   full_string <- paste0("View: ", col_string)
+   full_string <- paste0("Plots for the view ", col_string)
 
-   html_block <- h5(full_string)
+   html_block <- h4(full_string)
 
    return(html_block)
 }
@@ -100,28 +100,6 @@ create_view_title <- function(view_id, view_type, ziggy_out){
 #----------#
 # Plotting #
 #----------#
-# Util function (1) takes the the legend of the (i,j)th plot of a grid
-# and places it at the top right corner, and (2) erases all the other legends
-factorize_legend <- function(grid_plot, i_reference=1, j_reference=1){
-   stopifnot('ggmatrix' %in% class(grid_plot))
-
-   ndims <- grid_plot$nrow
-
-   for (i in 1:ndims){
-      for (j in 1:ndims){
-         if (i==i_reference & j==j_reference) next
-         grid_plot[i,j] <- grid_plot[i,j] +
-                           ggplot2::theme(legend.position="none")
-      }
-   }
-
-   grid_plot[i_reference,j_reference] <- grid_plot[i_reference,j_reference] +
-                     ggplot2::theme(legend.position = c(ndims,1),
-                                    legend.justification = c(1,1))
-
-   grid_plot
-}
-
 plot_selection_numeric <- function(data, target){
    col_types <- sapply(data, class)
    if (!all(col_types == 'numeric')) stop('Cannot plot, type not supported')
@@ -144,8 +122,6 @@ plot_selection_numeric <- function(data, target){
                            else 1
    scat_alpha_default   <- if (sum(target) > nrow(data) / 3) .5
                            else 1
-   bi_plot_type <- if (nrow(data) > 20) 'smooth'
-                   else 'points'
 
    # 1D data -> density plot
    if (ncol(data) == 2){
@@ -169,25 +145,50 @@ plot_selection_numeric <- function(data, target){
       to_plot_col   <- names(data)[to_plot_index]
       labels_col    <- names(data)[[ncol(data)]]
 
-      # Main plots
+
+      # Sets up plots to be shown in scatter-plot matrix
+      num_2d_view <- function(data, mapping, ...){
+         p <- ggplot2::ggplot(data=data, mapping=mapping) +
+            ggplot2::geom_point(size = scat_pt_size_default,
+                                alpha = scat_alpha_default, ...) +
+            ggplot2::theme(legend.text     = ggplot2::element_text(size = 12),
+                           legend.key.size = ggplot2::unit(1, "cm"),
+                           legend.title    = ggplot2::element_text(size = 0))
+
+         if (nrow(data) > 20) p <- p + ggplot2::geom_smooth(method=lm, se = F)
+
+         p
+      }
+
+      num_1d_view <- function(data, mapping, ...){
+         p <- ggplot2::ggplot(data=data, mapping=mapping) +
+            ggplot2::geom_density(..., alpha = 0.5) +
+            ggplot2::theme(legend.text     = ggplot2::element_text(size = 12),
+                           legend.key.size = ggplot2::unit(1, "cm"),
+                           legend.title    = ggplot2::element_text(size = 0))
+         p
+      }
+
+
+      # Puts them all in matrix
       pairs <- GGally::ggpairs(data,
                       mapping = ggplot2::aes_string(color = labels_col,
                                                     fill  = labels_col),
                       columns = to_plot_index,
-                      lower = list('continuous' = GGally::wrap(bi_plot_type,
-                                                    size = scat_pt_size_default,
-                                                    alpha = scat_alpha_default)
-                                                   ),
-                      diag  = list('continuous' = GGally::wrap('densityDiag',
-                                                               alpha = 0.5)),
+                      lower = list('continuous' = num_2d_view),
+                      diag  = list('continuous' = num_1d_view),
                       upper = list('continuous' = 'blank'),
-                      legends = TRUE,
-                      title   = "Density plots (diagonal) and 2D scatterplots (all the other charts)") +
-               ggplot2::theme(legend.text     = ggplot2::element_text(size = 12),
-                              legend.key.size = ggplot2::unit(1, "cm"),
-                              legend.title    = ggplot2::element_text(size = 0))
+                      legends = FALSE,
+                      title   = "Density plots (diagonal) and 2D scatterplots (all the other charts)")
 
-      pairs <- factorize_legend(pairs)
+      # Generates and inserts the legend
+      plot_legend_fn <- GGally::gglegend(num_1d_view)
+      legend <- plot_legend_fn(data, ggplot2::aes_string(x = labels_col[1],
+                                                         color = labels_col,
+                                                         fill  = labels_col))
+      pairs[1, length(to_plot_col)] <- legend
+
+
       pairs
 
    }
@@ -213,6 +214,23 @@ plot_selection <- function(view_id, view_type, ziggy_out, target, data){
 #-------------------#
 # Comments the view #
 #-------------------#
+rewrite_comment_text <- function(comment){
+   stopifnot(is.character(comment))
+
+   rw_rules <- list(
+      c(paste0("<li>the difference between the ([a-zA-Z]+) on ([a-zA-Z, ]+)</li>",
+               "\n<li>the difference between the ([a-zA-Z]+) on \\2"),
+        paste0("<li>the difference between the \\1 on \\2</li>",
+               "\n<li>the difference between the \\3 on the same columns"))
+   )
+
+   for (rule in rw_rules)
+      comment <- gsub(rule[[1]], rule[[2]], comment)
+
+   return(comment)
+
+}
+
 create_view_comments <- function(view_id, view_type, ziggy_out){
    stopifnot(is.integer(view_id))
    stopifnot(view_type %in% c('num', 'cat'))
@@ -237,14 +255,23 @@ create_view_comments <- function(view_id, view_type, ziggy_out){
       tip_lines_html <- tip_lines
 
    } else if (length(tip_lines) > 1) {
-      tip_html <- "You could check out the following differences:\n"
+      tip_html <- "Why are those rows special? Here is what I observe:\n"
       tip_lines_html <- sapply(tip_lines,
                                function(s) paste0('<li>',s,'</li>'))
       tip_lines_html <- paste0(tip_lines_html, collapse = "\n")
       tip_lines_html <- paste0('<ul>\n',tip_lines_html,'\n</ul>')
    }
 
-   html_block <- HTML(paste0(tip_html, tip_lines_html, collapse = ' '))
+   html_block <- paste0(tip_html, tip_lines_html, collapse = ' ')
+   if (nchar(html_block) > 0){
+      html_block <- rewrite_comment_text(html_block)
+      html_block <- paste0("<div><h4>Ziggy's comments</h4>",
+                           html_block,
+                           "</div>",
+                           collapse = '\n')
+   }
+
+   html_block <- HTML(html_block)
 
    return(html_block)
 }
@@ -263,41 +290,45 @@ shinyServer(function(input, output) {
 
    # Main panel maintenance
    # Reactive variables
-   view_id <- eventReactive(input$submitView, {
-      as.integer(input$currentView)
-   })
+   selected_view <- eventReactive(input$submitView, {
 
-   view_type <- eventReactive(input$submitView, {
+      # Gets the ID the requested view
+      view_id <- as.integer(input$currentView)
+
+      # Gets the type of the requested view
       if (!input$currentViewType %in% c('num', 'cat', ''))
          stop('Incorrect request to Ziggy server.')
-      input$currentViewType
+      view_type <- input$currentViewType
+
+      list(id = view_id, type = view_type)
    })
 
    # Output bindings
    output$viewTitle <- renderUI({
-      if (is.na(view_id()) | is.na(view_type()))
+      if (is.na(selected_view()$id) | is.na(selected_view()$type))
          return(NULL)
 
-      create_view_title(view_id(),
-                        view_type(),
+      create_view_title(selected_view()$id,
+                        selected_view()$type,
                         ziggy_out)
    })
 
    output$viewPlot <- renderPlot({
-      if (is.na(view_id()) | is.na(view_type()))
+      if (is.na(selected_view()$id) | is.na(selected_view()$type))
          return(NULL)
 
-      plot_selection(view_id(), view_type(),
+      plot_selection(selected_view()$id, selected_view()$type,
                      ziggy_out, ziggy_target, ziggy_data)
    })
 
    output$viewComment <- renderUI({
-      if (is.na(view_id()) | is.na(view_type()))
+      if (is.na(selected_view()$id) | is.na(selected_view()$type))
          return("")
 
-      create_view_comments(view_id(),
-                           view_type(),
+      create_view_comments(selected_view()$id,
+                           selected_view()$type,
                            ziggy_out)
+
    })
 
 })
