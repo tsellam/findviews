@@ -5,11 +5,12 @@ shinyUI(fluidPage(
    sidebarLayout(
 
       sidebarPanel(
-         dataTableOutput("viewsTable"),
+         tabsetPanel(id = "viewTab",
+            tabPanel("Continuous", dataTableOutput("numViewsTable"), value = "num"),
+            tabPanel("Categorical", dataTableOutput("catViewsTable"), value = "cat")
+         ),
          div(id="view-specs", class="hidden",
-            textInput("currentView", NULL),
-            textInput("currentViewType", NULL),
-            actionButton("submitView", "Go!")
+            textInput("currentView", NULL)
          )
       ),
 

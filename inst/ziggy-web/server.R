@@ -11,7 +11,7 @@ data_table_options <- list(
    "searching"    = FALSE,
    "columnDefs"   =  list(
       list('targets' = 0, 'visible' = FALSE),
-      list('targets' = 1, 'title' = 'Views')
+      list('targets' = 1, 'title' = NULL)
    ),
    "dom" = "tp"
 )
@@ -22,15 +22,9 @@ data_table_js <- "
             table.$('tr.selected').removeClass('selected');
             $(this).toggleClass('selected');
 
-            var viewType = 'num';
-            $('div#view-specs input#currentViewType').val(viewType);
-            $('div#view-specs input#currentViewType').trigger('change');
-
             var viewId = table.rows('.selected').data()[0][0];
             $('div#view-specs input#currentView').val(viewId);
             $('div#view-specs input#currentView').trigger('change');
-
-            $('div#view-specs button#submitView').click();
       });
    }"
 
@@ -103,7 +97,6 @@ create_view_title <- function(view_id, view_type, ziggy_out){
 plot_selection_numeric <- function(data, target){
    col_types <- sapply(data, class)
    if (!all(col_types == 'numeric')) stop('Cannot plot, type not supported')
-
 
    # Prepares the data frame to be visualized
    zig_in_target <- ifelse(target, 'In the selection', 'Outside the selection')
@@ -195,6 +188,38 @@ plot_selection_numeric <- function(data, target){
 
 }
 
+
+plot_selection_categorical <- function(data, target){
+   # Prepares the data frame to be visualized
+   zig_in_target <- ifelse(target, 'In the selection', 'Outside the selection')
+   data <- cbind(data, zig_in_target)
+
+   # Subsamples if necessary
+   if (nrow(data) > SCATTERPLOT_SAMPLE_SIZE){
+      warning('The dataframe contains more that',SCATTERPLOT_SAMPLE_SIZE,
+              ' rows, I am subsampling the data')
+      data <- data[sample(1:nrow(data), SCATTERPLOT_SAMPLE_SIZE, F)]
+   }
+
+   # Gets the column names
+   to_plot_index <- 1:(ncol(data)-1)
+   to_plot_col   <- names(data)[to_plot_index]
+   labels_col    <- names(data)[[ncol(data)]]
+
+   # Creates the series of plots
+   cat_1d_view <- function(col){
+      ggplot2::ggplot(data, ggplot2::aes_string(x     = col,
+                                                color = labels_col,
+                                                fill  = labels_col)) +
+         ggplot2::geom_bar(position = "dodge")
+   }
+
+   plot_series <- lapply(to_plot_col, cat_1d_view)
+
+   GGally::ggmatrix(plot_series, length(to_plot_col), 1)
+
+}
+
 plot_selection <- function(view_id, view_type, ziggy_out, target, data){
    stopifnot(is.integer(view_id))
    stopifnot(view_type %in% c('num', 'cat'))
@@ -282,53 +307,48 @@ create_view_comments <- function(view_id, view_type, ziggy_out){
 shinyServer(function(input, output) {
 
    # Side panel maintenance
-   output$viewsTable <- renderDataTable(
+   output$numViewsTable <- renderDataTable(
       create_view_table('num', ziggy_out),
+      options = data_table_options,
+      callback = data_table_js
+   )
+
+   output$catViewsTable <- renderDataTable(
+      create_view_table('cat', ziggy_out),
       options = data_table_options,
       callback = data_table_js
    )
 
    # Main panel maintenance
    # Reactive variables
-   selected_view <- eventReactive(input$submitView, {
-
-      # Gets the ID the requested view
-      view_id <- as.integer(input$currentView)
-
-      # Gets the type of the requested view
-      if (!input$currentViewType %in% c('num', 'cat', ''))
-         stop('Incorrect request to Ziggy server.')
-      view_type <- input$currentViewType
-
-      list(id = view_id, type = view_type)
+   selected_view_id <- reactive({
+      as.integer(input$currentView)
    })
 
    # Output bindings
    output$viewTitle <- renderUI({
-      if (is.na(selected_view()$id) | is.na(selected_view()$type))
-         return(NULL)
+      view_type <- input$viewTab
+      view_id   <- selected_view_id()
+      if(is.na(view_id)) return(NULL)
 
-      create_view_title(selected_view()$id,
-                        selected_view()$type,
-                        ziggy_out)
+      create_view_title(view_id, view_type, ziggy_out)
    })
 
    output$viewPlot <- renderPlot({
-      if (is.na(selected_view()$id) | is.na(selected_view()$type))
-         return(NULL)
+      view_type <- input$viewTab
+      view_id   <- selected_view_id()
+      if(is.na(view_id)) return(NULL)
 
-      plot_selection(selected_view()$id, selected_view()$type,
+      plot_selection(view_id, view_type,
                      ziggy_out, ziggy_target, ziggy_data)
    })
 
    output$viewComment <- renderUI({
-      if (is.na(selected_view()$id) | is.na(selected_view()$type))
-         return("")
+      view_type <- input$viewTab
+      view_id   <- selected_view_id()
+      if(is.na(view_id)) return(NULL)
 
-      create_view_comments(selected_view()$id,
-                           selected_view()$type,
-                           ziggy_out)
-
+      create_view_comments(view_id, view_type, ziggy_out)
    })
 
 })
