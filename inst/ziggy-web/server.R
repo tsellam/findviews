@@ -327,7 +327,7 @@ shinyServer(function(input, output) {
 
    # Output bindings
    output$viewTitle <- renderUI({
-      view_type <- input$viewTab
+      view_type <- isolate(input$viewTab)
       view_id   <- selected_view_id()
       if(is.na(view_id)) return(NULL)
 
@@ -335,7 +335,7 @@ shinyServer(function(input, output) {
    })
 
    output$viewPlot <- renderPlot({
-      view_type <- input$viewTab
+      view_type <- isolate(input$viewTab)
       view_id   <- selected_view_id()
       if(is.na(view_id)) return(NULL)
 
@@ -344,7 +344,7 @@ shinyServer(function(input, output) {
    })
 
    output$viewComment <- renderUI({
-      view_type <- input$viewTab
+      view_type <- isolate(input$viewTab)
       view_id   <- selected_view_id()
       if(is.na(view_id)) return(NULL)
 
