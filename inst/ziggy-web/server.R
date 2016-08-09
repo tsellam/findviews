@@ -194,30 +194,44 @@ plot_selection_categorical <- function(data, target){
    zig_in_target <- ifelse(target, 'In the selection', 'Outside the selection')
    data <- cbind(data, zig_in_target)
 
-   # Subsamples if necessary
-   if (nrow(data) > SCATTERPLOT_SAMPLE_SIZE){
-      warning('The dataframe contains more that',SCATTERPLOT_SAMPLE_SIZE,
-              ' rows, I am subsampling the data')
-      data <- data[sample(1:nrow(data), SCATTERPLOT_SAMPLE_SIZE, F)]
-   }
-
    # Gets the column names
    to_plot_index <- 1:(ncol(data)-1)
    to_plot_col   <- names(data)[to_plot_index]
    labels_col    <- names(data)[[ncol(data)]]
 
    # Creates the series of plots
-   cat_1d_view <- function(col){
-      ggplot2::ggplot(data, ggplot2::aes_string(x     = col,
-                                                color = labels_col,
-                                                fill  = labels_col)) +
-         ggplot2::geom_bar(position = "dodge")
+   cat_1d_view <- function(data, mapping, ...){
+         ggplot2::ggplot(data, mapping) +
+         ggplot2::geom_bar(position = "dodge", ...) +
+         ggplot2::scale_y_continuous(labels = scales::percent) +
+         ggplot2::theme(axis.text.x=ggplot2::element_text(angle=-25, hjust=0),
+                        legend.position = "left", legend.title = ggplot2::element_blank())
    }
+   plot_series <- lapply(to_plot_col, function(col){
+      cat_1d_view(data,
+                  mapping = ggplot2::aes_string(x = col,
+                                                color = labels_col,
+                                                fill  = labels_col),
+                  ggplot2::aes_string(y = '..prop..', group = labels_col))
+   })
 
-   plot_series <- lapply(to_plot_col, cat_1d_view)
+   # Generates the legend
+   plot_legend_fn <- GGally::gglegend(cat_1d_view)
+   legend <- plot_legend_fn(data, ggplot2::aes_string(x = labels_col[1],
+                                                      color = labels_col,
+                                                      fill  = labels_col))
 
-   GGally::ggmatrix(plot_series, length(to_plot_col), 1)
+   # Places everything in a plot matrix
+   plot_series <- c(plot_series, list(legend))
+   plot_matrix <- GGally::ggmatrix(plot_series,
+                                   showStrips = TRUE,
+                                   xAxisLabels = c(to_plot_col, ""),
+                                   yAxisLabels = 'Frequency (per group)',
+                                   showAxisPlotLabels = TRUE,
+                                   ncol=length(to_plot_col) +1,
+                                   nrow=1)
 
+   plot_matrix
 }
 
 plot_selection <- function(view_id, view_type, ziggy_out, target, data){
