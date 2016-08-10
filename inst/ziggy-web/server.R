@@ -91,9 +91,51 @@ create_view_title <- function(view_id, view_type, ziggy_out){
    return(html_block)
 }
 
+
 #----------#
 # Plotting #
 #----------#
+### Plotting functions
+num_1d_view <- function(data, mapping, ...){
+   p <- ggplot2::ggplot(data=data, mapping=mapping) +
+      ggplot2::geom_density(..., alpha = 0.5) +
+      ggplot2::theme(legend.text     = ggplot2::element_text(size = 12),
+                     legend.key.size = ggplot2::unit(1, "cm"),
+                     legend.title    = ggplot2::element_text(size = 0))
+   p
+}
+
+num_2d_view <- function(data, mapping, ...){
+
+   scat_pt_size <- if (nrow(data) > 1000) .5
+                   else if (nrow(data) > 500) .75
+                   else 1
+
+
+   p <- ggplot2::ggplot(data=data, mapping=mapping) +
+      ggplot2::geom_point(size = scat_pt_size, ...) +
+      ggplot2::theme(legend.text     = ggplot2::element_text(size = 12),
+                     legend.key.size = ggplot2::unit(1, "cm"),
+                     legend.title    = ggplot2::element_text(size = 0))
+
+   if (nrow(data) > 20) p <- p + ggplot2::geom_smooth(method=lm, se = F)
+
+   p
+}
+
+cat_1d_view <- function(data, mapping, ...){
+   ggplot2::ggplot(data, mapping) +
+      ggplot2::geom_bar(position = "dodge", ...) +
+      ggplot2::scale_y_continuous(labels = scales::percent) +
+      ggplot2::theme(axis.text.x=ggplot2::element_text(angle=-30, hjust=0),
+                     legend.position = "left",
+                     legend.title = ggplot2::element_blank())
+
+
+}
+
+
+#### Wrappers
 plot_selection_numeric <- function(data, target){
    col_types <- sapply(data, class)
    if (!all(col_types == 'numeric')) stop('Cannot plot, type not supported')
@@ -109,26 +151,16 @@ plot_selection_numeric <- function(data, target){
       data <- data[sample(1:nrow(data), SCATTERPLOT_SAMPLE_SIZE, F)]
    }
 
-   # Other settings
-   scat_pt_size_default <- if (nrow(data) > 1000) .5
-                           else if (nrow(data) > 500) .75
-                           else 1
-   scat_alpha_default   <- if (sum(target) > nrow(data) / 3) .5
-                           else 1
 
    # 1D data -> density plot
    if (ncol(data) == 2){
-      title <- paste0('Density plot for the variable ', names(data)[[1]])
 
-      ggplot2::ggplot(data,
-                      ggplot2::aes_string(x = names(data)[[1]],
-                                         color = names(data)[[2]],
-                                         fill  = names(data)[[2]])) +
-         ggplot2::geom_density(alpha = .5) +
-         ggplot2::ggtitle(title) +
-         ggplot2::theme(legend.text     = ggplot2::element_text(size = 12),
-                        legend.key.size = ggplot2::unit(1, "cm"),
-                        legend.title    = ggplot2::element_text(size = 0))
+      title <- paste0('Density plot for the variable ', names(data)[[1]])
+      num_1d_view(data,
+                  ggplot2::aes_string(x = names(data)[[1]],
+                                      color = names(data)[[2]],
+                                      fill  = names(data)[[2]])) +
+                  ggplot2::ggtitle(title)
 
 
    # 2d and more -> scatterplot matrix
@@ -138,41 +170,22 @@ plot_selection_numeric <- function(data, target){
       to_plot_col   <- names(data)[to_plot_index]
       labels_col    <- names(data)[[ncol(data)]]
 
-
-      # Sets up plots to be shown in scatter-plot matrix
-      num_2d_view <- function(data, mapping, ...){
-         p <- ggplot2::ggplot(data=data, mapping=mapping) +
-            ggplot2::geom_point(size = scat_pt_size_default,
-                                alpha = scat_alpha_default, ...) +
-            ggplot2::theme(legend.text     = ggplot2::element_text(size = 12),
-                           legend.key.size = ggplot2::unit(1, "cm"),
-                           legend.title    = ggplot2::element_text(size = 0))
-
-         if (nrow(data) > 20) p <- p + ggplot2::geom_smooth(method=lm, se = F)
-
-         p
-      }
-
-      num_1d_view <- function(data, mapping, ...){
-         p <- ggplot2::ggplot(data=data, mapping=mapping) +
-            ggplot2::geom_density(..., alpha = 0.5) +
-            ggplot2::theme(legend.text     = ggplot2::element_text(size = 12),
-                           legend.key.size = ggplot2::unit(1, "cm"),
-                           legend.title    = ggplot2::element_text(size = 0))
-         p
-      }
-
+      # Context-dependent graph parameters
+      alpha_default   <- if (sum(target) > nrow(data) / 3) .5
+                         else 1
+      title <- "Density plots (diagonal) and 2D scatterplots (all the other charts)"
 
       # Puts them all in matrix
       pairs <- GGally::ggpairs(data,
                       mapping = ggplot2::aes_string(color = labels_col,
                                                     fill  = labels_col),
                       columns = to_plot_index,
-                      lower = list('continuous' = num_2d_view),
+                      lower = list('continuous' = GGally::wrap(num_2d_view,
+                                                               alpha = alpha_default)),
                       diag  = list('continuous' = num_1d_view),
                       upper = list('continuous' = 'blank'),
                       legends = FALSE,
-                      title   = "Density plots (diagonal) and 2D scatterplots (all the other charts)")
+                      title   = title)
 
       # Generates and inserts the legend
       plot_legend_fn <- GGally::gglegend(num_1d_view)
@@ -181,15 +194,15 @@ plot_selection_numeric <- function(data, target){
                                                          fill  = labels_col))
       pairs[1, length(to_plot_col)] <- legend
 
-
+      # Done!
       pairs
 
    }
 
 }
 
-
 plot_selection_categorical <- function(data, target){
+
    # Prepares the data frame to be visualized
    zig_in_target <- ifelse(target, 'In the selection', 'Outside the selection')
    data <- cbind(data, zig_in_target)
@@ -199,20 +212,15 @@ plot_selection_categorical <- function(data, target){
    to_plot_col   <- names(data)[to_plot_index]
    labels_col    <- names(data)[[ncol(data)]]
 
+
    # Creates the series of plots
-   cat_1d_view <- function(data, mapping, ...){
-         ggplot2::ggplot(data, mapping) +
-         ggplot2::geom_bar(position = "dodge", ...) +
-         ggplot2::scale_y_continuous(labels = scales::percent) +
-         ggplot2::theme(axis.text.x=ggplot2::element_text(angle=-25, hjust=0),
-                        legend.position = "left", legend.title = ggplot2::element_blank())
-   }
    plot_series <- lapply(to_plot_col, function(col){
       cat_1d_view(data,
                   mapping = ggplot2::aes_string(x = col,
                                                 color = labels_col,
                                                 fill  = labels_col),
-                  ggplot2::aes_string(y = '..prop..', group = labels_col))
+                  ggplot2::aes_string(y = '..prop..',
+                                      group = labels_col))
    })
 
    # Generates the legend
@@ -221,17 +229,18 @@ plot_selection_categorical <- function(data, target){
                                                       color = labels_col,
                                                       fill  = labels_col))
 
-   # Places everything in a plot matrix
-   plot_series <- c(plot_series, list(legend))
-   plot_matrix <- GGally::ggmatrix(plot_series,
-                                   showStrips = TRUE,
-                                   xAxisLabels = c(to_plot_col, ""),
-                                   yAxisLabels = 'Frequency (per group)',
-                                   showAxisPlotLabels = TRUE,
-                                   ncol=length(to_plot_col) +1,
-                                   nrow=1)
 
-   plot_matrix
+   # Places everything in a plot matrix,
+   plot_series <- c(plot_series, list(legend))
+
+   GGally::ggmatrix(plot_series,
+                    showStrips         = TRUE,
+                    xAxisLabels        = c(to_plot_col, ""),
+                    yAxisLabels        = 'Frequency (per group)',
+                    showAxisPlotLabels = TRUE,
+                    ncol               = length(to_plot_col) + 1,
+                    nrow               = 1)
+
 }
 
 plot_selection <- function(view_id, view_type, ziggy_out, target, data){
@@ -244,8 +253,8 @@ plot_selection <- function(view_id, view_type, ziggy_out, target, data){
    # Retrieves the views to output
    view_cols <- retrieve_view(view_id, view_type, ziggy_out)
 
-   plot <- if (view_type == 'num') plot_selection_numeric(data[view_cols], target)
-   else plot_selection_categorical(data[view_cols], target)
+   plot <- if (view_type=='num') plot_selection_numeric(data[view_cols],target)
+           else plot_selection_categorical(data[view_cols], target)
 
    return(plot)
 }

@@ -38,8 +38,6 @@ cut_max_size <- function(den, max_size){
       clusters <- lapply(subtrees$lower, get_dend_attributes, 'label')
    }
 
-
-
    return(clusters)
 }
 
