@@ -54,8 +54,12 @@ create_view_table <- function(view_type, ziggy_out){
 # Plotting & View Details #
 ###########################
 retrieve_view <- function(view_id, view_type, ziggy_out){
+   stopifnot(is.integer(view_id))
+   stopifnot(view_type %in% c('num', 'cat'))
+   stopifnot(c('views_num', 'views_cat') %in% names(ziggy_out))
+
    to_output <- if (view_type == 'num') ziggy_out$views_num
-   else ziggy_out$views_cat
+                 else ziggy_out$views_cat
 
    if (!view_id >= 1 | !view_id <= length(to_output))
       stop("Incorrect view requested.")
@@ -64,13 +68,17 @@ retrieve_view <- function(view_id, view_type, ziggy_out){
 }
 
 retrieve_details <- function(view_id, view_type, ziggy_out){
+   stopifnot(is.integer(view_id))
+   stopifnot(view_type %in% c('num', 'cat'))
+   stopifnot(c('views_num', 'views_cat') %in% names(ziggy_out))
+
    to_output <- if (view_type == 'num') ziggy_out$details_num
-   else ziggy_out$details_cat
+                else ziggy_out$details_cat
 
    if (!view_id >= 1 | !view_id <= nrow(to_output))
       stop("Incorrect view requested.")
 
-   out <- unlist(to_output[view_id,], recursive = F)
+   out <- unlist(to_output[view_id,,drop=F], recursive = F)
    return(out)
 }
 
@@ -151,7 +159,6 @@ plot_selection_numeric <- function(data, target){
       data <- data[sample(1:nrow(data), SCATTERPLOT_SAMPLE_SIZE, F)]
    }
 
-
    # 1D data -> density plot
    if (ncol(data) == 2){
 
@@ -161,7 +168,6 @@ plot_selection_numeric <- function(data, target){
                                       color = names(data)[[2]],
                                       fill  = names(data)[[2]])) +
                   ggplot2::ggtitle(title)
-
 
    # 2d and more -> scatterplot matrix
    } else if (ncol(data) >= 3){
@@ -196,9 +202,7 @@ plot_selection_numeric <- function(data, target){
 
       # Done!
       pairs
-
    }
-
 }
 
 plot_selection_categorical <- function(data, target){
@@ -211,7 +215,6 @@ plot_selection_categorical <- function(data, target){
    to_plot_index <- 1:(ncol(data)-1)
    to_plot_col   <- names(data)[to_plot_index]
    labels_col    <- names(data)[[ncol(data)]]
-
 
    # Creates the series of plots
    plot_series <- lapply(to_plot_col, function(col){
@@ -228,7 +231,6 @@ plot_selection_categorical <- function(data, target){
    legend <- plot_legend_fn(data, ggplot2::aes_string(x = labels_col[1],
                                                       color = labels_col,
                                                       fill  = labels_col))
-
 
    # Places everything in a plot matrix,
    plot_series <- c(plot_series, list(legend))
@@ -276,7 +278,6 @@ rewrite_comment_text <- function(comment){
       comment <- gsub(rule[[1]], rule[[2]], comment)
 
    return(comment)
-
 }
 
 create_view_comments <- function(view_id, view_type, ziggy_out){
@@ -299,11 +300,11 @@ create_view_comments <- function(view_id, view_type, ziggy_out){
       tip_lines_html <- ""
 
    } else if (length(tip_lines) == 1) {
-      tip_html <- "You may be interested in "
+      tip_html <- "I chose this view because of "
       tip_lines_html <- tip_lines
 
    } else if (length(tip_lines) > 1) {
-      tip_html <- "Why are those rows special? Here is what I observe:\n"
+      tip_html <- "I chose this view because of:\n"
       tip_lines_html <- sapply(tip_lines,
                                function(s) paste0('<li>',s,'</li>'))
       tip_lines_html <- paste0(tip_lines_html, collapse = "\n")

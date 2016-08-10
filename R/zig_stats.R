@@ -343,6 +343,33 @@ wrap_chi_squared <- function(table_in, table_out){
 comment_chi_squared_analysis <- function(chisq_results, max_levels = 3){
    stopifnot(is.list(chisq_results))
 
+   # comments_per_variable <- sapply(names(chisq_results), function(col){
+   #    # Gets the results of Chi-Squared test
+   #    results <- chisq_results[[col]]
+   #    # Discards if non significant
+   #    if (!is.finite(results$pvalue)) return(NULL)
+   #    if (results$pvalue > P_VALUE_ZIG) return(NULL)
+   #
+   #    # Builds sentence 'colname (in particular values v1, v2 and v3)'
+   #    # Gets values associated with high Pearson residuals
+   #    is_exceptional <- results$residual_pvalues < P_VALUE_PEARSON_RESIDUALS
+   #    exceptional_levels <- names(results$residual_pvalues)[is_exceptional]
+   #    if (length(exceptional_levels) > max_levels)
+   #       exceptional_levels <- exceptional_levels[1:3]
+   #
+   #    # Concatenates
+   #    parenthesis <- if (length(exceptional_levels) > 0){
+   #       str <- enumerate_char(exceptional_levels)
+   #       str <- paste0(' (values ', str, ')')
+   #    } else {
+   #       ""
+   #    }
+   #
+   #    descr <- paste0(col, parenthesis)
+   #
+   #    return(descr)
+   # })
+
    comments_per_variable <- sapply(names(chisq_results), function(col){
       # Gets the results of Chi-Squared test
       results <- chisq_results[[col]]
@@ -350,31 +377,18 @@ comment_chi_squared_analysis <- function(chisq_results, max_levels = 3){
       if (!is.finite(results$pvalue)) return(NULL)
       if (results$pvalue > P_VALUE_ZIG) return(NULL)
 
-      # Builds sentence 'colname (in particular values v1, v2 and v3)'
-      # Gets values associated with high Pearson residuals
-      is_exceptional <- results$residual_pvalues < P_VALUE_PEARSON_RESIDUALS
-      exceptional_levels <- names(results$residual_pvalues)[is_exceptional]
-      if (length(exceptional_levels) > max_levels)
-         exceptional_levels <- exceptional_levels[1:3]
-
-      # Concatenates
-      parenthesis <- if (length(exceptional_levels) > 0){
-         str <- enumerate_char(exceptional_levels)
-         str <- paste0(' (values ', str, ')')
-      } else {
-         ""
-      }
-
-      descr <- paste0(col, parenthesis)
-
-      return(descr)
+      return(col)
    })
 
    is_null <- sapply(comments_per_variable, is.null)
    comments_per_variable <- comments_per_variable[!is_null]
    comments_per_variable <- as.character(comments_per_variable)
 
-   return(enumerate_char(comments_per_variable))
+   comment_trunk     <- 'the difference in distributions on the variables '
+   comment_variables <- enumerate_char(comments_per_variable)
+   full_comment      <- paste0(comment_trunk, comment_variables)
+
+   return(full_comment)
 }
 
 zig_histogram <- function(view, in_data, out_data) {
