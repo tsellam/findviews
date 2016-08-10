@@ -12,7 +12,8 @@ LazyData: TRUE
 Imports:
    shiny,
    ggplot2,
-   GGally
+   GGally,
+   grDevices
 Suggests:
     testthat
 RoxygenNote: 5.0.1

@@ -1,6 +1,9 @@
-##############################
+##############
+# View Table #
+##############
+#----------------------------#
 # Setup for DataTable Widget #
-##############################
+#----------------------------#
 data_table_options <- list(
    "scrollY" = "400px",
    "scrollCollapse" = TRUE,
@@ -11,13 +14,16 @@ data_table_options <- list(
    "searching"    = FALSE,
    "columnDefs"   =  list(
       list('targets' = 0, 'visible' = FALSE),
-      list('targets' = 1, 'title' = NULL)
+      list('targets' = 1, 'visible' = FALSE),
+      list('targets' = 2, 'title' = NULL),
+      list('targets' = 3, 'title' = NULL)
    ),
    "dom" = "tp"
 )
 
 data_table_js <- "
    function(table) {
+      // Clicking behavior
       table.on('click.dt', 'tr', function() {
             table.$('tr.selected').removeClass('selected');
             $(this).toggleClass('selected');
@@ -26,28 +32,57 @@ data_table_js <- "
             $('div#view-specs input#currentView').val(viewId);
             $('div#view-specs input#currentView').trigger('change');
       });
+
+      table.on('init', function() {
+            table.rows().eq(0).each(function(index){
+               var row = table.row( index );
+               var colLevel = row.data()[1];
+               table.$('tr').eq(index).children('td').eq(1)
+                  .css('background-color', colLevel);
+            })
+      })
+
    }"
 
-##############
-# View Table #
-##############
+
+map_to_colors <- function(data, start_col='#FFFFFF', end_col ='#333333'){
+   stopifnot(is.vector(data))
+
+   min <- min(data, na.rm = T)
+   max <- max(data, na.rm = T)
+   data <- (data - min)  / (max - min)
+
+   map_fn <- colorRamp(c(start_col, end_col))
+   colors <- map_fn(data)
+   html_colors <- rgb(colors, max = 255)
+   return(html_colors)
+}
+
 create_view_table <- function(view_type, ziggy_out){
    stopifnot(view_type %in% c('num', 'cat'))
-   stopifnot(c('views_num', 'views_cat') %in% names(ziggy_out))
+   stopifnot(c('views_num', 'views_cat',
+               'scores_num', 'scores_cat') %in%names(ziggy_out))
 
    # Retrieves the views to output
-   to_output <- if (view_type == 'num') ziggy_out$views_num
+   table_to_output <- if (view_type == 'num') ziggy_out$views_num
                 else ziggy_out$views_cat
+   scores <- if (view_type == 'num') ziggy_out$scores_num
+              else ziggy_out$scores_cat
 
    # Formats them
-   view_strings <- sapply(to_output, function(view_cols){
+   view_strings <- sapply(table_to_output, function(view_cols){
       paste0(view_cols, collapse = ', ')
    })
    view_strings <- as.character(view_strings)
 
+   # Genenerates the HTML color codes
+   html_colors <- map_to_colors(scores, '#e9edf1', '#23527C')
+
    # Done
    data.frame(viewId   = seq_along(view_strings),
-              viewName = view_strings)
+              colors   = html_colors,
+              viewName = view_strings,
+              viewScore= rep("", length(view_strings)))
 }
 
 ###########################
@@ -272,6 +307,9 @@ rewrite_comment_text <- function(comment){
                "\n<li>the difference between the ([a-zA-Z]+) on \\2"),
         paste0("<li>the difference between the \\1 on \\2</li>",
                "\n<li>the difference between the \\3 on the same columns"))
+       #c("<ul>\n<li>the difference between the ([a-zA-Z]+)",
+       #  paste0("<li>the difference between the \\1 ",
+       #         "of the tuples inside and outside the selection"))
    )
 
    for (rule in rw_rules)

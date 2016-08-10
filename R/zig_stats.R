@@ -384,7 +384,10 @@ comment_chi_squared_analysis <- function(chisq_results, max_levels = 3){
    comments_per_variable <- comments_per_variable[!is_null]
    comments_per_variable <- as.character(comments_per_variable)
 
-   comment_trunk     <- 'the differences in distribution on the variables '
+   comment_trunk     <- 'the differences in distribution on the '
+   comment_trunk <- paste0(comment_trunk,
+                           if (length(comments_per_variable) ==1) 'variable '
+                           else 'variables ')
    comment_variables <- enumerate_char(comments_per_variable)
    full_comment      <- paste0(comment_trunk, comment_variables)
 
