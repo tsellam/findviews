@@ -93,7 +93,7 @@ zig_means <- function(view, in_data, out_data) {
       pooled_var <- sqrt(agg_var / (in_count + out_count - 2))
       delta <- (in_mean - out_mean) / pooled_var
 
-      # Performs t.tesr
+      # Performs t.test
       t_test_out <- tryCatch(
          t.test(col_in, col_out)$p.value,
          error=function(e) return(NA)
