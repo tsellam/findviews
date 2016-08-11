@@ -48,7 +48,7 @@ data_table_js <- "
 map_to_colors <- function(data, start_col='#FFFFFF', end_col ='#333333'){
    stopifnot(is.vector(data))
 
-   min <- min(data, na.rm = T)
+   min <- 0 #min(data, na.rm = T)
    max <- max(data, na.rm = T)
    data <- (data - min)  / (max - min)
 
@@ -75,14 +75,15 @@ create_view_table <- function(view_type, ziggy_out){
    })
    view_strings <- as.character(view_strings)
 
-   # Genenerates the HTML color codes
+   # Genenerates the HTML color codes and dummy column to be colored
    html_colors <- map_to_colors(scores, '#e9edf1', '#23527C')
+   heatmap_col <- rep("", length(view_strings))
 
    # Done
-   data.frame(viewId   = seq_along(view_strings),
-              colors   = html_colors,
-              viewName = view_strings,
-              viewScore= rep("", length(view_strings)))
+   data.frame(viewId       = seq_along(view_strings),
+              colors       = html_colors,
+              viewName     = view_strings,
+              scoreHeatmap = heatmap_col)
 }
 
 ###########################
