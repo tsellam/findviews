@@ -1,9 +1,6 @@
 ##############
 # View Table #
 ##############
-#----------------------------#
-# Setup for DataTable Widget #
-#----------------------------#
 data_table_options <- list(
    "scrollY" = "400px",
    "scrollCollapse" = TRUE,
@@ -25,25 +22,23 @@ data_table_js <- "
    function(table) {
       // Clicking behavior
       table.on('click.dt', 'tr', function() {
-            table.$('tr.selected').removeClass('selected');
-            $(this).toggleClass('selected');
+         table.$('tr.selected').removeClass('selected');
+         $(this).toggleClass('selected');
 
-            var viewId = table.rows('.selected').data()[0][0];
-            $('div#view-specs input#currentView').val(viewId);
-            $('div#view-specs input#currentView').trigger('change');
+         var viewId = table.rows('.selected').data()[0][0];
+         $('div#view-specs input#currentView').val(viewId);
+         $('div#view-specs input#currentView').trigger('change');
       });
 
       table.on('init', function() {
-            table.rows().eq(0).each(function(index){
-               var row = table.row( index );
-               var colLevel = row.data()[1];
-               table.$('tr').eq(index).children('td').eq(1)
-                  .css('background-color', colLevel);
-            })
+         table.rows().eq(0).each(function(index){
+            var row = table.row( index );
+            var colLevel = row.data()[1];
+            table.$('tr').eq(index).children('td').eq(1)
+                 .css('background-color', colLevel);
       })
-
-   }"
-
+   })
+}"
 
 map_to_colors <- function(data, start_col='#FFFFFF', end_col ='#333333'){
    stopifnot(is.vector(data))
@@ -65,9 +60,9 @@ create_view_table <- function(view_type, ziggy_out){
 
    # Retrieves the views to output
    table_to_output <- if (view_type == 'num') ziggy_out$views_num
-                else ziggy_out$views_cat
+   else ziggy_out$views_cat
    scores <- if (view_type == 'num') ziggy_out$scores_num
-              else ziggy_out$scores_cat
+   else ziggy_out$scores_cat
 
    # Formats them
    view_strings <- sapply(table_to_output, function(view_cols){
@@ -95,7 +90,7 @@ retrieve_view <- function(view_id, view_type, ziggy_out){
    stopifnot(c('views_num', 'views_cat') %in% names(ziggy_out))
 
    to_output <- if (view_type == 'num') ziggy_out$views_num
-                 else ziggy_out$views_cat
+   else ziggy_out$views_cat
 
    if (!view_id >= 1 | !view_id <= length(to_output))
       stop("Incorrect view requested.")
@@ -109,7 +104,7 @@ retrieve_details <- function(view_id, view_type, ziggy_out){
    stopifnot(c('views_num', 'views_cat') %in% names(ziggy_out))
 
    to_output <- if (view_type == 'num') ziggy_out$details_num
-                else ziggy_out$details_cat
+   else ziggy_out$details_cat
 
    if (!view_id >= 1 | !view_id <= nrow(to_output))
       stop("Incorrect view requested.")
@@ -130,7 +125,7 @@ create_view_title <- function(view_id, view_type, ziggy_out){
    col_string  <- paste0(view_cols, collapse = ', ')
    full_string <- paste0("Plots for the view ", col_string)
 
-   html_block <- h4(full_string)
+   html_block <- shiny::h4(full_string)
 
    return(html_block)
 }
@@ -152,8 +147,8 @@ num_1d_view <- function(data, mapping, ...){
 num_2d_view <- function(data, mapping, ...){
 
    scat_pt_size <- if (nrow(data) > 1000) .5
-                   else if (nrow(data) > 500) .75
-                   else 1
+   else if (nrow(data) > 500) .75
+   else 1
 
 
    p <- ggplot2::ggplot(data=data, mapping=mapping) +
@@ -203,9 +198,9 @@ plot_selection_numeric <- function(data, target){
                   ggplot2::aes_string(x = names(data)[[1]],
                                       color = names(data)[[2]],
                                       fill  = names(data)[[2]])) +
-                  ggplot2::ggtitle(title)
+         ggplot2::ggtitle(title)
 
-   # 2d and more -> scatterplot matrix
+      # 2d and more -> scatterplot matrix
    } else if (ncol(data) >= 3){
 
       to_plot_index <- 1:(ncol(data)-1)
@@ -214,20 +209,20 @@ plot_selection_numeric <- function(data, target){
 
       # Context-dependent graph parameters
       alpha_default   <- if (sum(target) > nrow(data) / 3) .5
-                         else 1
+      else 1
       title <- "Density plots (diagonal) and 2D scatterplots (all the other charts)"
 
       # Puts them all in matrix
       pairs <- GGally::ggpairs(data,
-                      mapping = ggplot2::aes_string(color = labels_col,
-                                                    fill  = labels_col),
-                      columns = to_plot_index,
-                      lower = list('continuous' = GGally::wrap(num_2d_view,
-                                                               alpha = alpha_default)),
-                      diag  = list('continuous' = num_1d_view),
-                      upper = list('continuous' = 'blank'),
-                      legends = FALSE,
-                      title   = title)
+                               mapping = ggplot2::aes_string(color = labels_col,
+                                                             fill  = labels_col),
+                               columns = to_plot_index,
+                               lower = list('continuous' = GGally::wrap(num_2d_view,
+                                                                        alpha = alpha_default)),
+                               diag  = list('continuous' = num_1d_view),
+                               upper = list('continuous' = 'blank'),
+                               legends = FALSE,
+                               title   = title)
 
       # Generates and inserts the legend
       plot_legend_fn <- GGally::gglegend(num_1d_view)
@@ -292,7 +287,7 @@ plot_selection <- function(view_id, view_type, ziggy_out, target, data){
    view_cols <- retrieve_view(view_id, view_type, ziggy_out)
 
    plot <- if (view_type=='num') plot_selection_numeric(data[view_cols],target)
-           else plot_selection_categorical(data[view_cols], target)
+   else plot_selection_categorical(data[view_cols], target)
 
    return(plot)
 }
@@ -308,9 +303,9 @@ rewrite_comment_text <- function(comment){
                "\n<li>the difference between the ([a-zA-Z]+) on \\2"),
         paste0("<li>the difference between the \\1 on \\2</li>",
                "\n<li>the difference between the \\3 on the same columns"))
-       #c("<ul>\n<li>the difference between the ([a-zA-Z]+)",
-       #  paste0("<li>the difference between the \\1 ",
-       #         "of the tuples inside and outside the selection"))
+      #c("<ul>\n<li>the difference between the ([a-zA-Z]+)",
+      #  paste0("<li>the difference between the \\1 ",
+      #         "of the tuples inside and outside the selection"))
    )
 
    for (rule in rw_rules)
@@ -359,59 +354,7 @@ create_view_comments <- function(view_id, view_type, ziggy_out){
                            collapse = '\n')
    }
 
-   html_block <- HTML(html_block)
+   html_block <- shiny::HTML(html_block)
 
    return(html_block)
 }
-
-######################
-# Actual server code #
-######################
-shinyServer(function(input, output) {
-
-   # Side panel maintenance
-   output$numViewsTable <- renderDataTable(
-      create_view_table('num', ziggy_out),
-      options = data_table_options,
-      callback = data_table_js
-   )
-
-   output$catViewsTable <- renderDataTable(
-      create_view_table('cat', ziggy_out),
-      options = data_table_options,
-      callback = data_table_js
-   )
-
-   # Main panel maintenance
-   # Reactive variables
-   selected_view_id <- reactive({
-      as.integer(input$currentView)
-   })
-
-   # Output bindings
-   output$viewTitle <- renderUI({
-      view_type <- isolate(input$viewTab)
-      view_id   <- selected_view_id()
-      if(is.na(view_id)) return(NULL)
-
-      create_view_title(view_id, view_type, ziggy_out)
-   })
-
-   output$viewPlot <- renderPlot({
-      view_type <- isolate(input$viewTab)
-      view_id   <- selected_view_id()
-      if(is.na(view_id)) return(NULL)
-
-      plot_selection(view_id, view_type,
-                     ziggy_out, ziggy_target, ziggy_data)
-   })
-
-   output$viewComment <- renderUI({
-      view_type <- isolate(input$viewTab)
-      view_id   <- selected_view_id()
-      if(is.na(view_id)) return(NULL)
-
-      create_view_comments(view_id, view_type, ziggy_out)
-   })
-
-})

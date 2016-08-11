@@ -205,24 +205,8 @@ characteristic_views <- function(data, target, max_cols=NULL){
 }
 
 #' @export
-ziggy_web <- function(data, target, max_cols=NULL){
-
-   # Finds the Web app
-   appDir <- system.file("ziggy-web", package = "ziggy")
-   if (appDir == "")
-      stop("Could not find Ziggy Web sources - something is wrong with your installation.",
-           call. = FALSE)
-
-   # Runs Ziggy, makes the results accessible to Shiny
-   ziggy_out    <<- characteristic_views(data, target, max_cols)
-   ziggy_data   <<- data
-   ziggy_target <<- target
-   on.exit({
-      ziggy_out    <<- NULL
-      ziggy_data   <<- NULL
-      ziggy_target <<- NULL
-   }, add = TRUE)
-
-   # Launches the app
-   shiny::runApp(appDir, display.mode = "normal")
+ziggy_web <- function(data, target, max_cols=NULL, ...){
+   ziggy_out    <- characteristic_views(data, target, max_cols)
+   ziggy_app    <- create_ziggy_app(ziggy_out, data, target)
+   shiny::runApp(ziggy_app, display.mode = "normal", ...)
 }

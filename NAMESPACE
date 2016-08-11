@@ -2,3 +2,4 @@
 
 export(characteristic_views)
 export(ziggy_web)
+import(shiny)
