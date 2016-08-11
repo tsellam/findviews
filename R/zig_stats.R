@@ -151,7 +151,7 @@ zig_sds <- function(view, in_data, out_data) {
       # Computes difference between SDs
       s_in  <- sd(col_in)
       s_out <- sd(col_out)
-      sd_diss <- (s_in - s_out) / s_out
+      sd_diss <- (s_in - s_out) / max(s_in, s_out)
 
       # Performs F test
       pvalue <- tryCatch(var.test(col_in, col_out)$p.value,
