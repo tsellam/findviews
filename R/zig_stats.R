@@ -81,15 +81,19 @@ zig_means <- function(view, in_data, out_data) {
       col_out <- na.omit(out_data[[col]])
 
       # Gets basic stats
+      in_count <- length(col_in)
+      out_count<- length(col_out)
       in_mean  <- mean(col_in)
       out_mean <- mean(col_out)
-      in_sd  <- sd(col_in)
-      out_sd <- sd(col_out)
+      in_var   <- var(col_in)
+      out_var  <- var(col_out)
 
-      # Gets Glass Delta
-      delta <- (in_mean - out_mean) / out_sd
+      # Gets Cohen's d
+      agg_var    <- (in_count - 1) * in_var + (out_count - 1) * out_var
+      pooled_var <- sqrt(agg_var / (in_count + out_count - 2))
+      delta <- (in_mean - out_mean) / pooled_var
 
-      # Performs t.test
+      # Performs t.tesr
       t_test_out <- tryCatch(
          t.test(col_in, col_out)$p.value,
          error=function(e) return(NA)
