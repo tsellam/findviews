@@ -21,7 +21,7 @@ test_that("main function fails properly", {
 
 # Preprocessing
 test_that("preprocessor does its job", {
-   out_names <- c('data_cat', 'data_num', 'flat_cols_num', 'flat_cols_cat')
+   out_names <- c('data_cat', 'data_num', 'excluded')
 
    expect_is(preprocess(df_mix), 'list')
    expect_named(preprocess(df_mix), out_names, ignore.order=T)
@@ -33,7 +33,7 @@ test_that("preprocessor does its job", {
    expect_is(preprocess(df_cat)$data_num, 'data.frame')
    expect_named(preprocess(df_zerocol), out_names, ignore.order=T)
 
-   expect_true('x2' %in% preprocess(df_flat1)$flat_cols_num)
+   expect_true('x2' %in% preprocess(df_flat1)$excluded$flat_num)
 })
 
 # Function calls and output check
@@ -44,7 +44,7 @@ check_output <- function(df, to_describe, num, ...){
    # Structure checks
    expect_is(out, "list")
    expect_named(out, c('views_cat', 'views_num', 'scores_cat', 'scores_num',
-                       'details_cat', 'details_num'), ignore.order=T)
+                       'details_cat', 'details_num', 'excluded'), ignore.order=T)
 
    # Content check
    expect_is(out$views_num, "list")
@@ -70,7 +70,13 @@ check_output <- function(df, to_describe, num, ...){
       expect_is(out$scores_cat, 'numeric')
    }
 
-   expect_true(all(names(df) %in% unlist(c(out$views_num, out$views_cat))))
+   expect_is(out$excluded, "list")
+   expect_named(out$excluded, c('unknown_type', 'flat_num', 'flat_cat'),
+                ignore.order = T)
+
+   expect_true(all(names(df) %in% unlist(c(out$views_num,
+                                           out$views_cat,
+                                           out$excluded))))
 
 }
 

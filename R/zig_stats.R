@@ -88,16 +88,34 @@ zig_means <- function(view, in_data, out_data) {
       in_var   <- var(col_in)
       out_var  <- var(col_out)
 
-      # Gets Cohen's d
-      agg_var    <- (in_count - 1) * in_var + (out_count - 1) * out_var
-      pooled_var <- sqrt(agg_var / (in_count + out_count - 2))
-      delta <- abs((in_mean - out_mean) / pooled_var)
+      if (in_count == 0 | out_count == 0){
+         delta <- NA
+         t_test_out <- NA
 
-      # Performs t.test
-      t_test_out <- tryCatch(
-         t.test(col_in, col_out)$p.value,
-         error=function(e) return(NA)
-      )
+      } else if (in_count == 1 & out_count == 1){
+         delta <- abs((in_mean - out_mean))
+         t_test_out <- NA
+
+      } else if (in_count > 1 & out_count == 1){
+         delta <- abs((out_mean - in_mean) / in_var)
+         t_test_out <- NA
+
+      } else if (in_count == 1 & out_count > 1){
+         delta <- abs((in_mean - out_mean) / out_var)
+         t_test_out <- NA
+
+      } else if (in_count > 1 & out_count > 1){
+         # Gets Cohen's d
+         agg_var    <- (in_count - 1) * in_var + (out_count - 1) * out_var
+         pooled_var <- sqrt(agg_var / (in_count + out_count - 2))
+         delta <- abs((in_mean - out_mean) / pooled_var)
+
+         # Performs t.test
+         t_test_out <- tryCatch(
+            t.test(col_in, col_out)$p.value,
+            error=function(e) return(NA)
+         )
+      }
 
       # Returns
       c(size = delta, pvalue = t_test_out)
@@ -456,7 +474,7 @@ zig_aggregate <- function(table_score, weights){
                         byrow = FALSE)
    colnames(scores_mat) <- score_names
 
-   # Normalizes and replaces NULL values by average
+   # Normalizes and replaces missing values by column averages
    scores_mat <- scale(scores_mat, center = T, scale = T)
    scores_mat[is.na(scores_mat)] <- 0
 
@@ -465,17 +483,24 @@ zig_aggregate <- function(table_score, weights){
    agg_scores  <- as.numeric(scores_mat %*% weights_mat)
 
    # Re-normalizes to have scores between 0 (no difference) and 1 (largest diff)
-   old_means <- attr(scores_mat,"scaled:center")
-   old_sds   <- attr(scores_mat,"scaled:scale")
-   low_bounds <- - old_means / old_sds
-   lowest_score <- sum(weights[score_names] * low_bounds[score_names])
-   if (any(agg_scores < lowest_score))
-      stop("Something went wrong with the scoring!")
+   lowest_score  <- min(agg_scores, na.rm = T)
    highest_score <- max(agg_scores, na.rm = T)
 
-   final_scores <- (agg_scores - lowest_score) / (highest_score - lowest_score)
+   if (lowest_score == highest_score)
+      return(rep(1, length(agg_scores)))
 
-   return(final_scores)
+   old_means <- attr(scores_mat,"scaled:center")
+   old_sds   <- attr(scores_mat,"scaled:scale")
+   low_bounds <- ifelse(is.finite(old_sds), - old_means / old_sds, 0)
+   theory_lowest_score <- sum(weights[score_names] * low_bounds[score_names])
+
+   agg_scores <- (agg_scores - theory_lowest_score) /
+                  (highest_score - theory_lowest_score)
+
+   if (any(agg_scores < 0 | agg_scores > 1))
+      stop("Something went wrong with the scoring!")
+
+   return(agg_scores)
 }
 
 

@@ -74,7 +74,7 @@ test_that("zig_mean does the job", {
    dfin  <- data.frame(x=c(1), y=c(1))
    dfout <- data.frame(x=c(10), y=c(10))
    out <- check_zig_output(zig_means, c("x", "y"), dfin, dfout)
-   expect_equal(out$score, NA)
+   expect_equal(out$score, 9)
 })
 
 test_that("zig_sd does the job", {

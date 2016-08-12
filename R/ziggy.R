@@ -81,19 +81,6 @@ cluster_columns <- function(data, max_cols, dependency_name){
    return(clusters)
 }
 
-generate_views <- function(data, max_cols, flat_cols, dep_fun_name){
-   stopifnot(is.data.frame(data))
-   stopifnot(is.numeric(max_cols))
-   stopifnot(is.character(flat_cols))
-   stopifnot(is.character(dep_fun_name))
-
-   # Clusters non-flat colummns
-   to_clust <- !colnames(data) %in% flat_cols
-   col_clust <- cluster_columns(data[to_clust], max_cols, dep_fun_name)
-   views <- c(as.list(flat_cols), col_clust)
-
-   return(views)
-}
 
 #################
 # Preprocessing #
@@ -105,32 +92,30 @@ preprocess <- function(data){
    is_num_col <- sapply(data, function(col) is.numeric(col))
    is_num_col <- as.logical(is_num_col)
    is_cat_col <- sapply(data, function(col) is.factor(col) |
-                           is.character(col) |
-                           is.logical(col))
+                                            is.character(col) |
+                                            is.logical(col))
    is_cat_col <- as.logical(is_cat_col)
-
    no_type <- !(is_num_col | is_cat_col)
-   if (sum(no_type) > 0){
-      err_cols <- paste(names(data)[no_type])
-      stop("Data type unknown for column(s):", err_cols)
-   }
 
    # Separates columns of different types
    data_num <- data[,is_num_col,drop=F]
    data_cat <- data[,is_cat_col,drop=F]
+
 
    # Performs coercions if necessary
    to_cast <- sapply(data_cat, function(c) !is.factor(c))
    to_cast <- as.logical(to_cast)
    for (c in names(data_cat)[to_cast]) data_cat[[c]] <- as.factor(data_cat[[c]])
 
-   # Gets flat columns
+
+   # Removes flat columns
    is_flat_cat <- sapply(data_cat, function(col){
       n <- length(unique(col))
       return(n == nrow(data_cat) | n < 2)
    })
-   is_flat_cat <- as.logical(is_flat_cat)
+   is_flat_cat   <- as.logical(is_flat_cat)
    flat_cols_cat <- names(data_cat)[is_flat_cat]
+   data_cat      <- data_cat[, !is_flat_cat, drop=FALSE]
 
    is_flat_num <- sapply(data_num, function(col){
       n <- length(unique(col))
@@ -138,13 +123,19 @@ preprocess <- function(data){
    })
    is_flat_num <- as.logical(is_flat_num)
    flat_cols_num <- names(data_num)[is_flat_num]
+   data_num      <- data_num[, !is_flat_num, drop=FALSE]
 
+   # Gets rejected columns
+   unknown_type_cols <- names(data)[no_type]
 
    return(list(
       data_cat = data_cat,
       data_num = data_num,
-      flat_cols_cat = flat_cols_cat,
-      flat_cols_num = flat_cols_num
+      excluded = list(
+         unknown_type = unknown_type_cols,
+         flat_num     = flat_cols_num,
+         flat_cat     = flat_cols_cat
+      )
    ))
 }
 
@@ -174,13 +165,12 @@ characteristic_views <- function(data, target, max_cols=NULL){
    # Flat columns = pimary keys, or columns with only 1 distinct value
    preprocessed <- preprocess(data)
    data_num <- preprocessed$data_num
-   flat_cols_num <- preprocessed$flat_cols_num
    data_cat <- preprocessed$data_cat
-   flat_cols_cat <- preprocessed$flat_cols_cat
+   excluded <- preprocessed$excluded
 
    # Creates views
-   views_num <- generate_views(data_num, max_cols, flat_cols_num, DEP_FUNC_NUM)
-   views_cat <- generate_views(data_cat, max_cols, flat_cols_cat, DEP_FUNC_CAT)
+   views_num <- cluster_columns(data_num, max_cols, DEP_FUNC_NUM)
+   views_cat <- cluster_columns(data_cat, max_cols, DEP_FUNC_CAT)
 
    # Dissimilarity analysis of each view
    zig_components_num <- score_views(views_num, target, data_num, ZIG_COMPONENTS_NUM)
@@ -200,7 +190,8 @@ characteristic_views <- function(data, target, max_cols=NULL){
       details_cat = zig_components_cat[order_cat,,drop=FALSE],
       views_num   = views_num[order_num],
       scores_num  = zig_scores_num[order_num],
-      details_num = zig_components_num[order_num,,drop=FALSE]
+      details_num = zig_components_num[order_num,,drop=FALSE],
+      excluded    = excluded
    ))
 }
 
