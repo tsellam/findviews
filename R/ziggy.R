@@ -143,18 +143,18 @@ preprocess <- function(data){
 # Main function #
 #################
 #' @export
-characteristic_views <- function(data, target, max_cols=NULL){
+find_discriminative_views <- function(group1, group2, data, max_cols=NULL){
 
    # Input checks
    if (is.matrix(data)) data <- data.frame(data)
    else if (!is.data.frame(data)) stop("Input data is not a data frame")
    if (nrow(data) < 2) stop("Data set is too small for Ziggy")
 
-   stopifnot(is.logical(target))
-   if (nrow(data) != length(target))
-      stop("The target vector is not the same size as the data")
-   if (sum(target) == 0)
-      stop("The selection should contain between 1 and N-1 items")
+   stopifnot(is.logical(group1) & is.logical(group2))
+   if (nrow(data) != length(group1) | nrow(data) != length(group2))
+      stop("The size of the group description does not match the size of the data")
+   if (sum(group1) == 0 | sum(group2) == 0)
+      stop("The groups should contain at least 1 row")
 
    # Sets max_cols = log2(ncol(data)) if no value specified
    if (is.null(max_cols)) max_cols <- max(1, log2(ncol(data)))
@@ -163,21 +163,23 @@ characteristic_views <- function(data, target, max_cols=NULL){
 
    # Type detection and conversions
    # Flat columns = pimary keys, or columns with only 1 distinct value
-   cat('Processing the data.... ')
+   #cat('Processing the data.... ')
    preprocessed <- preprocess(data)
    data_num <- preprocessed$data_num
    data_cat <- preprocessed$data_cat
    excluded <- preprocessed$excluded
 
    # Creates views
-   cat('Creating the views.... ')
+   #cat('Creating the views.... ')
    views_num <- cluster_columns(data_num, max_cols, DEP_FUNC_NUM)
    views_cat <- cluster_columns(data_cat, max_cols, DEP_FUNC_CAT)
 
    # Dissimilarity analysis of each view
-   cat('Scoring the views.... ')
-   zig_components_num <- score_views(views_num, target, data_num, ZIG_COMPONENTS_NUM)
-   zig_components_cat <- score_views(views_cat, target, data_cat, ZIG_COMPONENTS_CAT)
+   #cat('Scoring the views.... ')
+   zig_components_num <- score_views(views_num, group1, group2,
+                                     data_num, ZIG_COMPONENTS_NUM)
+   zig_components_cat <- score_views(views_cat, group1, group2,
+                                     data_cat, ZIG_COMPONENTS_CAT)
 
    # Aggregates all the Zig-Components into one score
    zig_scores_num <- zig_aggregate(zig_components_num, WEIGHT_COMPONENTS_NUM)
@@ -187,7 +189,7 @@ characteristic_views <- function(data, target, max_cols=NULL){
    order_num <- order(zig_scores_num, decreasing = T)
    order_cat <- order(zig_scores_cat, decreasing = T)
 
-   cat('View creation done.\n')
+   #cat('View creation done.\n')
 
    return(list(
       views_cat   = views_cat[order_cat],
@@ -201,10 +203,10 @@ characteristic_views <- function(data, target, max_cols=NULL){
 }
 
 #' @export
-ziggy_web <- function(data, target, max_cols=NULL, ...){
-   ziggy_out    <- characteristic_views(data, target, max_cols)
+ziggy_web <- function(group1, group2, data, max_cols=NULL, ...){
+   ziggy_out    <- find_discriminative_views(group1, group2, data, max_cols)
 
-   cat('Starting server...\n')
-   ziggy_app    <- create_ziggy_app(ziggy_out, data, target)
+   #cat('Starting server...\n')
+   ziggy_app    <- create_ziggy_app(ziggy_out, group1, group2, data)
    shiny::runApp(ziggy_app, display.mode = "normal", ...)
 }

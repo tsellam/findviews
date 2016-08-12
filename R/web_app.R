@@ -33,7 +33,8 @@ create_ziggy_client <- function(){
 }
 
 #' @import shiny
-create_ziggy_server <- function(ziggy_out, ziggy_data, ziggy_target){
+create_ziggy_server <- function(ziggy_out,
+                                ziggy_group1, ziggy_group2, ziggy_data){
 
    shinyServer(function(input, output) {
 
@@ -74,8 +75,8 @@ create_ziggy_server <- function(ziggy_out, ziggy_data, ziggy_target){
          view_id   <- selected_view_id()
          if(is.na(view_id)) return(NULL)
 
-         plot_selection(view_id, view_type,
-                        ziggy_out, ziggy_target, ziggy_data)
+         plot_selection(view_id, view_type, ziggy_out,
+                        ziggy_group1, ziggy_group2, ziggy_data)
       })
 
       output$viewComment <- renderUI({
@@ -89,11 +90,12 @@ create_ziggy_server <- function(ziggy_out, ziggy_data, ziggy_target){
 }
 
 
-create_ziggy_app <- function(ziggy_out, ziggy_data, ziggy_target){
+create_ziggy_app <- function(ziggy_out, ziggy_group1, ziggy_group2, ziggy_data){
 
    ziggy_app <- shiny::shinyApp(
       ui     = create_ziggy_client(),
-      server = create_ziggy_server(ziggy_out, ziggy_data, ziggy_target)
+      server = create_ziggy_server(ziggy_out, ziggy_group1, ziggy_group2,
+                                   ziggy_data)
    )
 
    return(ziggy_app)

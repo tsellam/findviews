@@ -256,8 +256,7 @@ plot_selection_numeric <- function(data, target){
    if (!all(col_types == 'numeric')) stop('Cannot plot, type not supported')
 
    # Prepares the data frame to be visualized
-   zig_in_target <- ifelse(target, 'In the selection', 'Outside the selection')
-   data <- cbind(data, zig_in_target)
+   data <- cbind(data, target)
 
    # Subsamples if necessary
    if (nrow(data) > SCATTERPLOT_SAMPLE_SIZE){
@@ -284,8 +283,7 @@ plot_selection_numeric <- function(data, target){
       labels_col    <- names(data)[[ncol(data)]]
 
       # Context-dependent graph parameters
-      alpha_default   <- if (sum(target) > nrow(data) / 3) .5
-      else 1
+      alpha_default   <- .5
       title <- "Density plots (diagonal) and 2D scatterplots (all the other charts)"
 
       # Puts them all in matrix
@@ -315,8 +313,7 @@ plot_selection_numeric <- function(data, target){
 plot_selection_categorical <- function(data, target){
 
    # Prepares the data frame to be visualized
-   zig_in_target <- ifelse(target, 'In the selection', 'Outside the selection')
-   data <- cbind(data, zig_in_target)
+   data <- cbind(data, target)
 
    # Gets the column names
    to_plot_index <- 1:(ncol(data)-1)
@@ -352,18 +349,33 @@ plot_selection_categorical <- function(data, target){
 
 }
 
-plot_selection <- function(view_id, view_type, ziggy_out, target, data){
+plot_selection <- function(view_id, view_type, ziggy_out,
+                           ziggy_group1, ziggy_group2, data){
    stopifnot(is.integer(view_id))
    stopifnot(view_type %in% c('num', 'cat'))
    stopifnot(c('views_num', 'views_cat') %in% names(ziggy_out))
-   stopifnot(is.logical(target))
+   stopifnot(is.logical(ziggy_group1) & is.logical(ziggy_group2))
+   stopifnot(length(ziggy_group1) == nrow(data) &
+             length(ziggy_group2) == nrow(data))
    stopifnot(is.data.frame(data))
 
    # Retrieves the views to output
    view_cols <- retrieve_view(view_id, view_type, ziggy_out)
 
+   # Sets up the data to be plotted
+   # First, generates a target vector
+   target <- integer(nrow(data))
+   target[ziggy_group1] <- 1
+   target[ziggy_group2] <- 2
+   target <- factor(paste0("Group ", target))
+
+   # Then trims the data to the user's selection
+   row_selection <- ziggy_group1 | ziggy_group2
+   data   <- data[row_selection, view_cols, drop=F]
+   target <- target[row_selection]
+
    plot <- if (view_type=='num') plot_selection_numeric(data[view_cols],target)
-   else plot_selection_categorical(data[view_cols], target)
+           else plot_selection_categorical(data[view_cols], target)
 
    return(plot)
 }

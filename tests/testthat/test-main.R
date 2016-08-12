@@ -14,9 +14,9 @@ test_that("testing data is loaded", {
 
 # Error checking
 test_that("main function fails properly", {
-   expect_error(characteristic_views(df_empty, c()))
-   expect_error(characteristic_views(df_onerow, c()))
-   expect_error(characteristic_views(df_mix, c()))
+   expect_error(find_discriminative_views(c(), c(), df_empty))
+   expect_error(find_discriminative_views(c(), c(), df_onerow))
+   expect_error(find_discriminative_views(c(), c(), df_mix))
 })
 
 # Preprocessing
@@ -39,7 +39,7 @@ test_that("preprocessor does its job", {
 # Function calls and output check
 check_output <- function(df, to_describe, num, ...){
    # Runs Ziggy
-   out <- characteristic_views(df, to_describe, num, ...)
+   out <- find_discriminative_views(to_describe, !to_describe, df, num, ...)
 
    # Structure checks
    expect_is(out, "list")
@@ -101,5 +101,5 @@ test_that("main function can deal with NAs", {
 })
 
 test_that("default parameters work for main function", {
-   expect_is(characteristic_views(df_mix, to_describe), "list")
+   expect_is(find_discriminative_views(to_describe, !to_describe, df_mix), "list")
 })

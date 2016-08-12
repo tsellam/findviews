@@ -441,10 +441,11 @@ zig_aggregate <- function(table_score, weights){
 }
 
 
-score_views <- function(views, target, data, zig_components){
+score_views <- function(views, group1, group2, data, zig_components){
    stopifnot(is.list(views))
    stopifnot(is.data.frame(data), nrow(data) >= 2)
-   stopifnot(is.logical(target), length(target) == nrow(data), sum(target) > 0)
+   stopifnot(is.logical(group1), length(group1) == nrow(data), sum(group1) > 0)
+   stopifnot(is.logical(group2), length(group2) == nrow(data), sum(group2) > 0)
    stopifnot(is.character(zig_components))
 
    # Checks that all columns exist
@@ -460,8 +461,8 @@ score_views <- function(views, target, data, zig_components){
    })
 
    # Separates the two populations
-   in_sel  <- data[target,,drop=F]
-   out_sel <- data[!target,,drop=F]
+   in_sel  <- data[group1,,drop=F]
+   out_sel <- data[group2,,drop=F]
 
    # Does the heavy lifting
    zig_structure <- lapply(zig_components_fun, function(zig_fun){

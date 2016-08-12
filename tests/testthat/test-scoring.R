@@ -7,7 +7,7 @@ source('generate_df.R')
 # General Scoring Function #
 ############################
 test_score <- function(views, target, df, zig_components){
-   out <- score_views(views, target, df, zig_components)
+   out <- score_views(views, target, !target, df, zig_components)
 
    expect_is(out, "data.frame")
    expect_equal(nrow(out), length(views))
