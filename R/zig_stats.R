@@ -91,7 +91,7 @@ zig_means <- function(view, in_data, out_data) {
       # Gets Cohen's d
       agg_var    <- (in_count - 1) * in_var + (out_count - 1) * out_var
       pooled_var <- sqrt(agg_var / (in_count + out_count - 2))
-      delta <- (in_mean - out_mean) / pooled_var
+      delta <- abs((in_mean - out_mean) / pooled_var)
 
       # Performs t.test
       t_test_out <- tryCatch(
@@ -106,7 +106,7 @@ zig_means <- function(view, in_data, out_data) {
    colnames(diffs) <- view
 
    # Aggregates them
-   agg_diffs <- mean(abs(diffs['size',]), na.rm = T)
+   agg_diffs <- mean(diffs['size',], na.rm = T)
    if(!is.finite(agg_diffs)) agg_diffs <- NA
 
    # Generates description
@@ -151,7 +151,7 @@ zig_sds <- function(view, in_data, out_data) {
       # Computes difference between SDs
       s_in  <- sd(col_in)
       s_out <- sd(col_out)
-      sd_diss <- (s_in - s_out) / max(s_in, s_out)
+      sd_diss <- abs((s_in - s_out) / max(s_in, s_out))
 
       # Performs F test
       pvalue <- tryCatch(var.test(col_in, col_out)$p.value,
@@ -167,7 +167,7 @@ zig_sds <- function(view, in_data, out_data) {
    colnames(diffs) <- view
 
    # Aggregates them
-   agg_diffs <- mean(abs(diffs['sd_diss',]), na.rm = T)
+   agg_diffs <- mean(diffs['sd_diss',], na.rm = T)
    if(!is.finite(agg_diffs)) agg_diffs <- NA
 
    # Generates description
@@ -247,8 +247,8 @@ zig_corr <- function(view, in_data, out_data) {
    # Gets differences and aggregates into one score
    f_in  <- apply(cor_in, c(1,2), fisher_transform)
    f_out <- apply(cor_out, c(1,2), fisher_transform)
-   cor_diff <- f_in - f_out
-   score <- mean(abs(cor_diff), na.rm = TRUE)
+   cor_diff <- abs(f_in - f_out)
+   score <- mean(cor_diff, na.rm = TRUE)
    if (!is.finite(score)) score <- NA
 
    # Gets p-values
@@ -438,29 +438,44 @@ zig_aggregate <- function(table_score, weights){
    stopifnot(is.data.frame(table_score))
    stopifnot(is.numeric(weights))
 
-   if (!setequal(names(table_score), names(weights)))
+   score_names <- names(table_score)
+   if (!setequal(score_names, names(weights)))
       stop("Weights do not match Zig-Components")
 
    if (nrow(table_score) == 0) return(numeric(0))
+   if (nrow(table_score) == 1) return(c(1))
 
-   scores <- sapply(1:nrow(table_score), function(i){
-
-      # Extracts all the scores for view i
-      view_scores <- sapply(1:ncol(table_score), function(j){
-         table_score[[i,j]]$score
-      })
-      view_scores <- as.numeric(view_scores)
-      names(view_scores) <- names(table_score)
-
-      # Aggregates
-      weighted_zigs <- sapply(names(view_scores), function(z){
-         view_scores[z] * weights[z]
-      })
-      sum(weighted_zigs, na.rm = T)
-
+   # Extracts the scores and places them in a matrix
+   score_lists <- sapply(score_names, function(comp){
+      scores <- sapply(table_score[[comp]], function(view_comp) view_comp$score)
+      as.numeric(scores)
    })
+   scores_mat <- matrix(score_lists,
+                        nrow = nrow(table_score),
+                        ncol = ncol(table_score),
+                        byrow = FALSE)
+   colnames(scores_mat) <- score_names
 
-   return(scores)
+   # Normalizes and replaces NULL values by average
+   scores_mat <- scale(scores_mat, center = T, scale = T)
+   scores_mat[is.na(scores_mat)] <- 0
+
+   # Aggregates
+   weights_mat <- as.matrix(weights[score_names])
+   agg_scores  <- as.numeric(scores_mat %*% weights_mat)
+
+   # Re-normalizes to have scores between 0 (no difference) and 1 (largest diff)
+   old_means <- attr(scores_mat,"scaled:center")
+   old_sds   <- attr(scores_mat,"scaled:scale")
+   low_bounds <- - old_means / old_sds
+   lowest_score <- sum(weights[score_names] * low_bounds[score_names])
+   if (any(agg_scores < lowest_score))
+      stop("Something went wrong with the scoring!")
+   highest_score <- max(agg_scores, na.rm = T)
+
+   final_scores <- (agg_scores - lowest_score) / (highest_score - lowest_score)
+
+   return(final_scores)
 }
 
 
