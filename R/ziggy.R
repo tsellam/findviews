@@ -111,7 +111,7 @@ preprocess <- function(data){
    # Removes flat columns
    is_flat_cat <- sapply(data_cat, function(col){
       n <- length(unique(col))
-      return(n == nrow(data_cat) | n < 2)
+      return(n/nrow(data_cat) > .9 | n < 2)
    })
    is_flat_cat   <- as.logical(is_flat_cat)
    flat_cols_cat <- names(data_cat)[is_flat_cat]
@@ -156,23 +156,26 @@ characteristic_views <- function(data, target, max_cols=NULL){
    if (sum(target) == 0)
       stop("The selection should contain between 1 and N-1 items")
 
-   # Sets max_cols = log2(ncol(data)) is no value specified
+   # Sets max_cols = log2(ncol(data)) if no value specified
    if (is.null(max_cols)) max_cols <- max(1, log2(ncol(data)))
    stopifnot(is.numeric(max_cols), max_cols >= 1)
    max_cols <- as.integer(max_cols)
 
    # Type detection and conversions
    # Flat columns = pimary keys, or columns with only 1 distinct value
+   cat('Processing the data.... ')
    preprocessed <- preprocess(data)
    data_num <- preprocessed$data_num
    data_cat <- preprocessed$data_cat
    excluded <- preprocessed$excluded
 
    # Creates views
+   cat('Creating the views.... ')
    views_num <- cluster_columns(data_num, max_cols, DEP_FUNC_NUM)
    views_cat <- cluster_columns(data_cat, max_cols, DEP_FUNC_CAT)
 
    # Dissimilarity analysis of each view
+   cat('Scoring the views.... ')
    zig_components_num <- score_views(views_num, target, data_num, ZIG_COMPONENTS_NUM)
    zig_components_cat <- score_views(views_cat, target, data_cat, ZIG_COMPONENTS_CAT)
 
@@ -183,6 +186,8 @@ characteristic_views <- function(data, target, max_cols=NULL){
    # Ranks the views accordingly
    order_num <- order(zig_scores_num, decreasing = T)
    order_cat <- order(zig_scores_cat, decreasing = T)
+
+   cat('View creation done.\n')
 
    return(list(
       views_cat   = views_cat[order_cat],
@@ -198,6 +203,8 @@ characteristic_views <- function(data, target, max_cols=NULL){
 #' @export
 ziggy_web <- function(data, target, max_cols=NULL, ...){
    ziggy_out    <- characteristic_views(data, target, max_cols)
+
+   cat('Starting server...\n')
    ziggy_app    <- create_ziggy_app(ziggy_out, data, target)
    shiny::runApp(ziggy_app, display.mode = "normal", ...)
 }

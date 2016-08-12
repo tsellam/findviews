@@ -13,7 +13,10 @@ create_ziggy_client <- function(){
                                  value = "num"),
                         tabPanel("Categorical",
                                  dataTableOutput("catViewsTable"),
-                                 value = "cat")
+                                 value = "cat"),
+                        tabPanel("Excluded",
+                                 htmlOutput("exclusionComments"),
+                                 value = "exc")
             ),
             div(id="view-specs", class="hidden",
                 textInput("currentView", NULL)
@@ -46,6 +49,10 @@ create_ziggy_server <- function(ziggy_out, ziggy_data, ziggy_target){
          options = data_table_options,
          callback = data_table_js
       )
+
+      output$exclusionComments <- renderUI({
+         describeExclusions(ziggy_out)
+      })
 
       # Main panel maintenance
       # Reactive variables

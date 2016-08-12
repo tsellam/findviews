@@ -1,6 +1,9 @@
 ##############
 # View Table #
 ##############
+#-------------------------#
+# Table-related functions #
+#-------------------------#
 data_table_options <- list(
    "scrollY" = "400px",
    "scrollCollapse" = TRUE,
@@ -80,6 +83,79 @@ create_view_table <- function(view_type, ziggy_out){
               viewName     = view_strings,
               scoreHeatmap = heatmap_col)
 }
+#-------------------------------#
+# Columns exclusion description #
+#-------------------------------#
+this_or_these_column_s <- function(cols){
+   if (length(cols) == 1) "this column"
+   else "these columns"
+}
+
+describeExclusions <- function(ziggy_results){
+   stopifnot('excluded' %in% names(ziggy_results))
+   stopifnot(c('flat_num', 'flat_cat', 'unknown_type') %in%
+                names(ziggy_results$excluded))
+
+   comments <- character(length(ziggy_results$excluded))
+
+   # Text for the columns which type is not supported
+   cols_notype <- ziggy_results$excluded$unknown_type
+   comments[1] <- if (length(cols_notype) > 0){
+      s1 <- enumerate_char(cols_notype)
+      s2 <- " because I do not recognize of support the type of "
+      s3 <- this_or_these_column_s(cols_notype)
+      paste0(s1, s2, s3, ".")
+   } else {
+      NA
+   }
+
+   # Text for the flat num columns
+   cols_flat_num <- ziggy_results$excluded$flat_num
+   comments[2]  <- if (length(cols_flat_num) > 0){
+      s1 <- enumerate_char(cols_flat_num)
+      s2 <- " because "
+      s3 <- this_or_these_column_s(cols_flat_num)
+      s4 <- " have a constant value."
+      paste0(s1, s2, s3, s4)
+   } else {
+      NA
+   }
+
+   # Text for the flat num columns
+   cols_flat_cat <- ziggy_results$excluded$flat_cat
+   comments[3] <- if (length(cols_flat_cat) > 0){
+      s1 <- enumerate_char(cols_flat_cat)
+      s2 <- " because "
+      s3 <- this_or_these_column_s(cols_flat_cat)
+      s4 <- " have either only one or too many distinct values."
+      paste0(s1, s2, s3, s4)
+   } else {
+      NA
+   }
+
+   comments <- na.omit(comments)
+
+   html <- if (length(comments) == 0){
+      ""
+   } else if (length(comments) == 1){
+      s1 <- 'I excluded '
+      paste0(s1, comments[1])
+   } else if (length(comments) > 1) {
+      s1 <- 'I excluded the following columns:\n<ul>'
+      s2_elts <- sapply(comments, function(s)
+         paste0('<li>', s, '</li>')
+      )
+      s2 <- paste0(s2_elts, collapse = '\n')
+      s3 <- '</ul>'
+      paste0(s1, s2, s3)
+   }
+
+   html <- paste0("<div class='shiny-text-output'><span>", html,
+                  '</span></div>')
+
+   return(shiny::HTML(html))
+}
+
 
 ###########################
 # Plotting & View Details #
@@ -338,7 +414,7 @@ create_view_comments <- function(view_id, view_type, ziggy_out){
       tip_lines_html <- tip_lines
 
    } else if (length(tip_lines) > 1) {
-      tip_html <- "I chose this view because of:\n"
+      tip_html <- "I chose this view because of\n"
       tip_lines_html <- sapply(tip_lines,
                                function(s) paste0('<li>',s,'</li>'))
       tip_lines_html <- paste0(tip_lines_html, collapse = "\n")
