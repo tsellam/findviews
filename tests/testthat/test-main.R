@@ -53,7 +53,7 @@ check_output <- function(df, to_describe, num, ...){
       expect_true(all(sapply(out$views_num, function(v) length(v) <= num)))
       expect_true(all(sapply(out$views_num, function(v) length(v) > 0)))
 
-      expect_named(out$details_num, names(ZIG_COMPONENTS_NUM), ignore.order=T)
+      expect_named(out$details_num, names(DIFF_COMPONENTS_NUM), ignore.order=T)
       expect_equal(nrow(out$details_num), length(out$views_num))
 
       expect_is(out$scores_num, 'numeric')
@@ -64,7 +64,7 @@ check_output <- function(df, to_describe, num, ...){
       expect_true(all(sapply(out$views_cat, is.character)))
       expect_true(all(sapply(out$views_cat, function(v) length(v) > 0)))
 
-      expect_named(out$details_cat, names(ZIG_COMPONENTS_CAT), ignore.order=T)
+      expect_named(out$details_cat, names(DIFF_COMPONENTS_CAT), ignore.order=T)
       expect_equal(nrow(out$details_cat), length(out$views_cat))
 
       expect_is(out$scores_cat, 'numeric')

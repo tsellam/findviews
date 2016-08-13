@@ -1,3 +1,6 @@
+################################
+# Shiny code to create the app #
+################################
 #' @import shiny
 create_ziggy_client <- function(){
    shinyUI(fluidPage(
@@ -99,4 +102,18 @@ create_ziggy_app <- function(ziggy_out, ziggy_group1, ziggy_group2, ziggy_data){
    )
 
    return(ziggy_app)
+}
+
+
+#####################################
+# Wrappers for viewsearch functions #
+#####################################
+
+#' @export
+ziggy_web <- function(group1, group2, data, max_cols=NULL, ...){
+   ziggy_out    <- findviews_to_compare(group1, group2, data, max_cols)
+
+   #cat('Starting server...\n')
+   ziggy_app    <- create_ziggy_app(ziggy_out, group1, group2, data)
+   shiny::runApp(ziggy_app, display.mode = "normal", ...)
 }

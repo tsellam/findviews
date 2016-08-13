@@ -3,10 +3,10 @@ DEP_FUNC_NUM <- 'cor_matrix'
 DEP_FUNC_CAT <- 'cramerV_matrix'
 
 # Zig-Components for each type of column
-ZIG_COMPONENTS_NUM <- c(mean_diff = 'zig_means',
-                        sd_diff   = 'zig_sds',
-                        corr_dif  = 'zig_corr')
-ZIG_COMPONENTS_CAT <- c(hist_diff = 'zig_histogram')
+DIFF_COMPONENTS_NUM <- c(mean_diff = 'diff_means',
+                        sd_diff   = 'diff_sds',
+                        corr_dif  = 'diff_corr')
+DIFF_COMPONENTS_CAT <- c(hist_diff = 'diff_histogram')
 
 # Coefficients for each component
 WEIGHT_COMPONENTS_NUM <- c(mean_diff = 1,
@@ -15,7 +15,7 @@ WEIGHT_COMPONENTS_NUM <- c(mean_diff = 1,
 WEIGHT_COMPONENTS_CAT <- c(hist_diff = 1)
 
 # Significance thresholds
-P_VALUE_ZIG <- 0.05
+P_VALUE_DIFF <- 0.05
 P_VALUE_PEARSON_RESIDUALS <- 0.01
 
 

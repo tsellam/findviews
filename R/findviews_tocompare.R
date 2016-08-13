@@ -1,12 +1,12 @@
-######################################
-# Zig-Dissimilarity for numeric data #
-######################################
+####################################
+# Dissimilarities for numeric data #
+####################################
 #---------------------------------------------#
 # Difference between the means with Cohen's D #
 #---------------------------------------------#
-zig_means <- function(view, in_data, out_data) {
-   stopifnot(is.data.frame(in_data))
-   stopifnot(is.data.frame(out_data))
+diff_means <- function(view, g1_data, g2_data) {
+   stopifnot(is.data.frame(g1_data))
+   stopifnot(is.data.frame(g2_data))
    stopifnot(is.character(view))
    stopifnot(length(view)>0)
 
@@ -14,48 +14,48 @@ zig_means <- function(view, in_data, out_data) {
    diffs <- sapply(view, function(col){
 
       # Scrubs missing values
-      col_in <- na.omit(in_data[[col]])
-      col_out <- na.omit(out_data[[col]])
+      col_g1 <- na.omit(g1_data[[col]])
+      col_g2 <- na.omit(g2_data[[col]])
 
       # Gets basic stats
-      in_count <- length(col_in)
-      out_count<- length(col_out)
-      in_mean  <- mean(col_in)
-      out_mean <- mean(col_out)
-      in_var   <- var(col_in)
-      out_var  <- var(col_out)
+      g1_count <- length(col_g1)
+      g2_count<- length(col_g2)
+      g1_mean  <- mean(col_g1)
+      g2_mean <- mean(col_g2)
+      g1_var   <- var(col_g1)
+      g2_var  <- var(col_g2)
 
-      if (in_count == 0 | out_count == 0){
+      if (g1_count == 0 | g2_count == 0){
          delta <- NA
-         t_test_out <- NA
+         t_test_g2 <- NA
 
-      } else if (in_count == 1 & out_count == 1){
-         delta <- abs((in_mean - out_mean))
-         t_test_out <- NA
+      } else if (g1_count == 1 & g2_count == 1){
+         delta <- abs((g1_mean - g2_mean))
+         t_test_g2 <- NA
 
-      } else if (in_count > 1 & out_count == 1){
-         delta <- abs((out_mean - in_mean) / in_var)
-         t_test_out <- NA
+      } else if (g1_count > 1 & g2_count == 1){
+         delta <- abs((g2_mean - g1_mean) / g1_var)
+         t_test_g2 <- NA
 
-      } else if (in_count == 1 & out_count > 1){
-         delta <- abs((in_mean - out_mean) / out_var)
-         t_test_out <- NA
+      } else if (g1_count == 1 & g2_count > 1){
+         delta <- abs((g1_mean - g2_mean) / g2_var)
+         t_test_g2 <- NA
 
-      } else if (in_count > 1 & out_count > 1){
+      } else if (g1_count > 1 & g2_count > 1){
          # Gets Cohen's d
-         agg_var    <- (in_count - 1) * in_var + (out_count - 1) * out_var
-         pooled_var <- sqrt(agg_var / (in_count + out_count - 2))
-         delta <- abs((in_mean - out_mean) / pooled_var)
+         agg_var    <- (g1_count - 1) * g1_var + (g2_count - 1) * g2_var
+         pooled_var <- sqrt(agg_var / (g1_count + g2_count - 2))
+         delta <- abs((g1_mean - g2_mean) / pooled_var)
 
          # Performs t.test
-         t_test_out <- tryCatch(
-            t.test(col_in, col_out)$p.value,
+         t_test_g2 <- tryCatch(
+            t.test(col_g1, col_g2)$p.value,
             error=function(e) return(NA)
          )
       }
 
       # Returns
-      c(size = delta, pvalue = t_test_out)
+      c(size = delta, pvalue = t_test_g2)
    })
    diffs <- as.matrix(diffs)
    colnames(diffs) <- view
@@ -65,7 +65,7 @@ zig_means <- function(view, in_data, out_data) {
    if(!is.finite(agg_diffs)) agg_diffs <- NA
 
    # Generates description
-   is_significant <- (diffs['pvalue',] < P_VALUE_ZIG)
+   is_significant <- (diffs['pvalue',] < P_VALUE_DIFF)
    large_effects  <- colnames(diffs[,is_significant,drop=F])
    tip <- if (length(large_effects) == 0){
       ""
@@ -90,9 +90,9 @@ zig_means <- function(view, in_data, out_data) {
 #-------------------------------------------------------------------#
 # Difference between the variances, with the ratio of the variances #
 #-------------------------------------------------------------------#
-zig_sds <- function(view, in_data, out_data) {
-   stopifnot(is.data.frame(in_data))
-   stopifnot(is.data.frame(out_data))
+diff_sds <- function(view, g1_data, g2_data) {
+   stopifnot(is.data.frame(g1_data))
+   stopifnot(is.data.frame(g2_data))
    stopifnot(is.character(view))
    stopifnot(length(view)>0)
 
@@ -100,16 +100,16 @@ zig_sds <- function(view, in_data, out_data) {
    diffs <- sapply(view, function(col){
 
       # Scrubs missing values
-      col_in <- na.omit(in_data[[col]])
-      col_out <- na.omit(out_data[[col]])
+      col_g1 <- na.omit(g1_data[[col]])
+      col_g2 <- na.omit(g2_data[[col]])
 
       # Computes difference between SDs
-      s_in  <- sd(col_in)
-      s_out <- sd(col_out)
-      sd_diss <- abs((s_in - s_out) / max(s_in, s_out))
+      s_g1  <- sd(col_g1)
+      s_g2 <- sd(col_g2)
+      sd_diss <- abs((s_g1 - s_g2) / max(s_g1, s_g2))
 
       # Performs F test
-      pvalue <- tryCatch(var.test(col_in, col_out)$p.value,
+      pvalue <- tryCatch(var.test(col_g1, col_g2)$p.value,
                          error=function(e) return(NA))
 
       c(
@@ -126,7 +126,7 @@ zig_sds <- function(view, in_data, out_data) {
    if(!is.finite(agg_diffs)) agg_diffs <- NA
 
    # Generates description
-   is_significant <- (diffs['pvalue',] < P_VALUE_ZIG)
+   is_significant <- (diffs['pvalue',] < P_VALUE_DIFF)
    large_effects  <- colnames(diffs[,is_significant,drop=F])
    tip <- if (length(large_effects) == 0){
       ""
@@ -174,21 +174,20 @@ corr_diff_test <- function(r1, r2, n1, n2){
    return(p_value)
 }
 
-# Main function for the Zig-Component
-zig_corr <- function(view, in_data, out_data) {
-   stopifnot(is.data.frame(in_data))
-   stopifnot(is.data.frame(out_data))
+diff_corr <- function(view, g1_data, g2_data) {
+   stopifnot(is.data.frame(g1_data))
+   stopifnot(is.data.frame(g2_data))
    stopifnot(is.character(view))
 
    # Eliminates missing values
-   view_in <- na.omit(in_data[,view, drop=F])
-   view_out <- na.omit(out_data[,view, drop=F])
+   view_g1 <- na.omit(g1_data[,view, drop=F])
+   view_g2 <- na.omit(g2_data[,view, drop=F])
 
-   if (length(attr(view_in, 'na.action')) > 0.3 * nrow(in_data) |
-       length(attr(view_out, 'na.action')) > 0.3 * nrow(out_data))
+   if (length(attr(view_g1, 'na.action')) > 0.3 * nrow(g1_data) |
+       length(attr(view_g2, 'na.action')) > 0.3 * nrow(g2_data))
       warning('Lots of rows with NAs removed in view', view)
 
-   if (nrow(view_in) == 0 | nrow(view_out) == 0)
+   if (nrow(view_g1) == 0 | nrow(view_g2) == 0)
       return(list(
          score  = NA,
          detail = list(),
@@ -196,22 +195,22 @@ zig_corr <- function(view, in_data, out_data) {
       ))
 
    # Computes correlation matrices
-   cor_in  <- suppressWarnings(cor(view_in))
-   cor_out <- suppressWarnings(cor(view_out))
+   cor_g1  <- suppressWarnings(cor(view_g1))
+   cor_g2 <- suppressWarnings(cor(view_g2))
 
    # Gets differences and aggregates into one score
-   f_in  <- apply(cor_in, c(1,2), fisher_transform)
-   f_out <- apply(cor_out, c(1,2), fisher_transform)
-   cor_diff <- abs(f_in - f_out)
+   f_g1  <- apply(cor_g1, c(1,2), fisher_transform)
+   f_g2 <- apply(cor_g2, c(1,2), fisher_transform)
+   cor_diff <- abs(f_g1 - f_g2)
    score <- mean(cor_diff, na.rm = TRUE)
    if (!is.finite(score)) score <- NA
 
    # Gets p-values
-   pvalues <- apply_2_matrices(cor_in, cor_out, corr_diff_test,
-                               nrow(in_data), nrow(out_data))
+   pvalues <- apply_2_matrices(cor_g1, cor_g2, corr_diff_test,
+                               nrow(g1_data), nrow(g2_data))
 
    # Generates comments
-   is_significant <- ( pvalues < P_VALUE_ZIG)
+   is_significant <- ( pvalues < P_VALUE_DIFF)
    tip <- if (!any(is_significant, na.rm = T)) {
       ""
    } else {
@@ -224,76 +223,76 @@ zig_corr <- function(view, in_data, out_data) {
 
    list(
       score  = score,
-      detail = list(cor_in  = cor_in,
-                    cor_out = cor_out,
+      detail = list(cor_g1  = cor_g1,
+                    cor_g2 = cor_g2,
                     pvalues = pvalues),
       tip = tip
    )
 }
 
 
-######################################
-# Zig-Dissimilarity for nominal data #
-######################################
-
-hist_diss_score <- function(table_in, table_out){
+#----------------------------------#
+# Dissimilarities for nominal data #
+#----------------------------------#
+hist_diss_score <- function(table_g1, table_g2){
    # First, aligns tables
-   in_minus_out <- setdiff(names(table_in), names(table_out))
-   table_out[in_minus_out] <- 0
+   g1_minus_g2 <- setdiff(names(table_g1), names(table_g2))
+   table_g2[g1_minus_g2] <- 0
 
-   out_minus_in <- setdiff(names(table_out), names(table_in))
-   table_in[out_minus_in] <- 0
+   g2_minus_g1 <- setdiff(names(table_g2), names(table_g1))
+   table_g1[g2_minus_g1] <- 0
 
-   table_out <- table_out[sort(names(table_out))]
-   table_in  <- table_in[sort(names(table_in))]
+   table_g2 <- table_g2[sort(names(table_g2))]
+   table_g1 <- table_g1[sort(names(table_g1))]
 
-   stopifnot(names(table_in) == names(table_out))
+   stopifnot(names(table_g1) == names(table_g2))
 
    # Then, computes the Euclidean distance between the two histograms
-   hist_in  <- table_in / sum(table_in)
-   hist_out <- table_out/ sum(table_out)
+   hist_g1 <- table_g1 / sum(table_g1)
+   hist_g2 <- table_g2/ sum(table_g2)
 
-   diss_score <- sqrt(sum((hist_out - hist_in)^2))
+   diss_score <- sqrt(sum((hist_g2 - hist_g1)^2))
 
    return(diss_score)
 }
 
 # Performs Chi-2 test
-# WARNING! Ignores all the levels in table_in which are not in table_out
-wrap_chi_squared <- function(table_in, table_out){
+# WARNING! this test is not symetric
+# because it ignores all the levels in table_g1 which are not in table_g2
+wrap_chi_squared <- function(table_g1, table_g2){
 
    # Detects what type of test to use
-   small_sample <- (any(table_out < 5) | any(table_in < 5))
+   small_sample <- (any(table_g2 < 5) | any(table_g1 < 5))
 
    # Aligns the tables
-   out_minus_in <- setdiff(names(table_out), names(table_in))
-   table_in[out_minus_in] <- 0
+   g2_minus_g1 <- setdiff(names(table_g2), names(table_g1))
+   table_g1[g2_minus_g1] <- 0
 
-   in_minus_out <- setdiff(names(table_in), names(table_out))
-   table_in <- table_in[!names(table_in) %in% in_minus_out]
+   g1_minus_g2 <- setdiff(names(table_g1), names(table_g2))
+   table_g1 <- table_g1[!names(table_g1) %in% g1_minus_g2]
 
-   table_out <- table_out[sort(names(table_out))]
-   table_in  <- table_in[sort(names(table_in))]
+   table_g2 <- table_g2[sort(names(table_g2))]
+   table_g1  <- table_g1[sort(names(table_g1))]
 
-   stopifnot(names(table_in) == names(table_out))
+   stopifnot(names(table_g1) == names(table_g2))
 
    # Runs the test
-   chisq_out <- if (small_sample){
-      chisq.test(x=table_in, p=table_out,
+   chisq_g2 <- if (small_sample){
+      chisq.test(x=table_g1, p=table_g2,
                  simulate.p.value = TRUE, rescale.p = TRUE, B = 100)
    } else {
-      chisq.test(x=table_in, p=table_out, rescale.p = TRUE)
+      chisq.test(x=table_g1, p=table_g2, rescale.p = TRUE)
    }
-   if (!grepl("given probabilities", chisq_out$method))
+   if (!grepl("given probabilities", chisq_g2$method))
        stop("Something went wrong with Chi-Squared calculations")
 
    # Extracts residuals
-   residual_pvalues <- 2*pnorm(-abs(chisq_out$stdres))
-   names(residual_pvalues) <- names(table_in)
+   residual_pvalues <- 2*pnorm(-abs(chisq_g2$stdres))
+   names(residual_pvalues) <- names(table_g1)
 
    return(list(
-      chi2             = as.numeric(chisq_out$statistic),
-      pvalue           = chisq_out$p.value,
+      chi2             = as.numeric(chisq_g2$statistic),
+      pvalue           = chisq_g2$p.value,
       residual_pvalues = residual_pvalues
    ))
 
@@ -302,39 +301,12 @@ wrap_chi_squared <- function(table_in, table_out){
 comment_chi_squared_analysis <- function(chisq_results, max_levels = 3){
    stopifnot(is.list(chisq_results))
 
-   # comments_per_variable <- sapply(names(chisq_results), function(col){
-   #    # Gets the results of Chi-Squared test
-   #    results <- chisq_results[[col]]
-   #    # Discards if non significant
-   #    if (!is.finite(results$pvalue)) return(NULL)
-   #    if (results$pvalue > P_VALUE_ZIG) return(NULL)
-   #
-   #    # Builds sentence 'colname (in particular values v1, v2 and v3)'
-   #    # Gets values associated with high Pearson residuals
-   #    is_exceptional <- results$residual_pvalues < P_VALUE_PEARSON_RESIDUALS
-   #    exceptional_levels <- names(results$residual_pvalues)[is_exceptional]
-   #    if (length(exceptional_levels) > max_levels)
-   #       exceptional_levels <- exceptional_levels[1:3]
-   #
-   #    # Concatenates
-   #    parenthesis <- if (length(exceptional_levels) > 0){
-   #       str <- enumerate_char(exceptional_levels)
-   #       str <- paste0(' (values ', str, ')')
-   #    } else {
-   #       ""
-   #    }
-   #
-   #    descr <- paste0(col, parenthesis)
-   #
-   #    return(descr)
-   # })
-
    comments_per_variable <- sapply(names(chisq_results), function(col){
       # Gets the results of Chi-Squared test
       results <- chisq_results[[col]]
       # Discards if non significant
       if (!is.finite(results$pvalue)) return(NULL)
-      if (results$pvalue > P_VALUE_ZIG) return(NULL)
+      if (results$pvalue > P_VALUE_DIFF) return(NULL)
 
       return(col)
    })
@@ -353,19 +325,29 @@ comment_chi_squared_analysis <- function(chisq_results, max_levels = 3){
    return(full_comment)
 }
 
-zig_histogram <- function(view, in_data, out_data) {
-   stopifnot(is.data.frame(in_data))
-   stopifnot(is.data.frame(out_data))
+diff_histogram <- function(view, g1_data, g2_data) {
+   stopifnot(is.data.frame(g1_data))
+   stopifnot(is.data.frame(g2_data))
    stopifnot(is.character(view))
    stopifnot(length(view)>0)
 
    # Computes and compares the histograms
    chisq_analysis <- lapply(view, function(v){
-      hist_in  <- table(in_data[[v]],  useNA = "no")
-      hist_out <- table(out_data[[v]], useNA = "no")
+      hist_g1  <- table(g1_data[[v]],  useNA = "no")
+      hist_g2 <- table(g2_data[[v]], useNA = "no")
 
-      diss_score  <- hist_diss_score(hist_in, hist_out)
-      chi_squared <- wrap_chi_squared(hist_in, hist_out)
+      diss_score  <- hist_diss_score(hist_g1, hist_g2)
+
+      # Caution: the chi-squared test is not symmetric
+      # Runs the test both direction and keeps the worst p-value
+      chi_squared_1to2 <- wrap_chi_squared(hist_g1, hist_g2)
+      chi_squared_2to1 <- wrap_chi_squared(hist_g2, hist_g1)
+      test_results <- list(chi_squared_1to2, chi_squared_2to1)
+
+      pvalues <- sapply(test_results, function(r) r$pvalue)
+      to_keep <- max(which.max(pvalues), 1, na.rm = T)
+      chi_squared <- test_results[[to_keep]]
+
       c(diss_score=diss_score, chi_squared)
    })
    names(chisq_analysis) <- view
@@ -389,13 +371,13 @@ zig_histogram <- function(view, in_data, out_data) {
 ##################################
 # Generic View Analysis Function #
 ##################################
-zig_aggregate <- function(table_score, weights){
+aggregate_differences <- function(table_score, weights){
    stopifnot(is.data.frame(table_score))
    stopifnot(is.numeric(weights))
 
    score_names <- names(table_score)
    if (!setequal(score_names, names(weights)))
-      stop("Weights do not match Zig-Components")
+      stop("Weights do not match Diff-Components")
 
    if (nrow(table_score) == 0) return(numeric(0))
    if (nrow(table_score) == 1) return(c(1))
@@ -441,40 +423,40 @@ zig_aggregate <- function(table_score, weights){
 }
 
 
-score_views <- function(views, group1, group2, data, zig_components){
+score_views <- function(views, group1, group2, data, diff_components){
    stopifnot(is.list(views))
    stopifnot(is.data.frame(data), nrow(data) >= 2)
    stopifnot(is.logical(group1), length(group1) == nrow(data), sum(group1) > 0)
    stopifnot(is.logical(group2), length(group2) == nrow(data), sum(group2) > 0)
-   stopifnot(is.character(zig_components))
+   stopifnot(is.character(diff_components))
 
    # Checks that all columns exist
    col_exists <- unlist(views) %in% names(data)
    if (!all(col_exists)) stop('Column missing in dataset')
 
-   # Checks and retrieves the zig_components
-   zig_components_fun <- lapply(zig_components, function(zig_name){
-      if (!exists(zig_name)) stop('Zig-Component ', zig_name,' not found')
-      fun <- get(zig_name)
-      if (!is.function(fun)) stop(zig_name, ' is not a function')
+   # Checks and retrieves the diff_components
+   diff_components_fun <- lapply(diff_components, function(diff_name){
+      if (!exists(diff_name)) stop('Diff-Component ', diff_name,' not found')
+      fun <- get(diff_name)
+      if (!is.function(fun)) stop(diff_name, ' is not a function')
       return(fun)
    })
 
    # Separates the two populations
-   in_sel  <- data[group1,,drop=F]
-   out_sel <- data[group2,,drop=F]
+   g1_sel  <- data[group1,,drop=F]
+   g2_sel <- data[group2,,drop=F]
 
    # Does the heavy lifting
-   zig_structure <- lapply(zig_components_fun, function(zig_fun){
-       lapply(views, zig_fun, in_sel, out_sel)
+   diff_structure <- lapply(diff_components_fun, function(diff_fun){
+       lapply(views, diff_fun, g1_sel, g2_sel)
    })
 
    # Converts into a data frame
-   names(zig_structure) <- names(zig_components)
-   zig_structure_I <- lapply(zig_structure, I)
-   zig_scores <- do.call(data.frame, zig_structure_I)
+   names(diff_structure) <- names(diff_components)
+   diff_structure_I <- lapply(diff_structure, I)
+   diff_scores <- do.call(data.frame, diff_structure_I)
 
-   return(zig_scores)
+   return(diff_scores)
 }
 
 #################
@@ -486,13 +468,16 @@ findviews_to_compare <- function(group1, group2, data, max_cols=NULL){
    # Input checks
    if (is.matrix(data)) data <- data.frame(data)
    else if (!is.data.frame(data)) stop("Input data is not a data frame")
-   if (nrow(data) < 2) stop("Data set is too small for Ziggy")
+   if (nrow(data) < 2) stop("The data set is too small.")
 
-   stopifnot(is.logical(group1) & is.logical(group2))
+   if (!(is.logical(group1) & is.logical(group2)))
+      stop('The input variables group1 and group2 must be vectors of booleans')
    if (nrow(data) != length(group1) | nrow(data) != length(group2))
       stop("The size of the group description does not match the size of the data")
    if (sum(group1) == 0 | sum(group2) == 0)
       stop("The groups should contain at least 1 row")
+   if (all(group1 == group2))
+      stop("The groups to be compared are strictly identical.")
 
    # Sets max_cols = log2(ncol(data)) if no value specified
    if (is.null(max_cols)) max_cols <- max(1, log2(ncol(data)))
@@ -514,37 +499,29 @@ findviews_to_compare <- function(group1, group2, data, max_cols=NULL){
 
    # Dissimilarity analysis of each view
    #cat('Scoring the views.... ')
-   zig_components_num <- score_views(views_num, group1, group2,
-                                     data_num, ZIG_COMPONENTS_NUM)
-   zig_components_cat <- score_views(views_cat, group1, group2,
-                                     data_cat, ZIG_COMPONENTS_CAT)
+   diff_components_num <- score_views(views_num, group1, group2,
+                                     data_num, DIFF_COMPONENTS_NUM)
+   diff_components_cat <- score_views(views_cat, group1, group2,
+                                     data_cat, DIFF_COMPONENTS_CAT)
 
-   # Aggregates all the Zig-Components into one score
-   zig_scores_num <- zig_aggregate(zig_components_num, WEIGHT_COMPONENTS_NUM)
-   zig_scores_cat <- zig_aggregate(zig_components_cat, WEIGHT_COMPONENTS_CAT)
+   # Aggregates all the Diff-Components into one score
+   diff_scores_num <- aggregate_differences(diff_components_num,
+                                           WEIGHT_COMPONENTS_NUM)
+   diff_scores_cat <- aggregate_differences(diff_components_cat,
+                                           WEIGHT_COMPONENTS_CAT)
 
    # Ranks the views accordingly
-   order_num <- order(zig_scores_num, decreasing = T)
-   order_cat <- order(zig_scores_cat, decreasing = T)
-
-   #cat('View creation done.\n')
+   order_num <- order(diff_scores_num, decreasing = T)
+   order_cat <- order(diff_scores_cat, decreasing = T)
 
    return(list(
       views_cat   = views_cat[order_cat],
-      scores_cat  = zig_scores_cat[order_cat],
-      details_cat = zig_components_cat[order_cat,,drop=FALSE],
+      scores_cat  = diff_scores_cat[order_cat],
+      details_cat = diff_components_cat[order_cat,,drop=FALSE],
       views_num   = views_num[order_num],
-      scores_num  = zig_scores_num[order_num],
-      details_num = zig_components_num[order_num,,drop=FALSE],
+      scores_num  = diff_scores_num[order_num],
+      details_num = diff_components_num[order_num,,drop=FALSE],
       excluded    = excluded
    ))
 }
 
-#' @export
-ziggy_web <- function(group1, group2, data, max_cols=NULL, ...){
-   ziggy_out    <- findviews_to_compare(group1, group2, data, max_cols)
-
-   #cat('Starting server...\n')
-   ziggy_app    <- create_ziggy_app(ziggy_out, group1, group2, data)
-   shiny::runApp(ziggy_app, display.mode = "normal", ...)
-}
