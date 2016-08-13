@@ -2,10 +2,10 @@
 # Shiny code to create the app #
 ################################
 #' @import shiny
-create_ziggy_client <- function(){
+create_fdviews_client <- function(){
    shinyUI(fluidPage(
 
-      titlePanel("Let's Look at those Tuples", windowTitle = "Ziggy"),
+      titlePanel("Let's Look at those Tuples", windowTitle = "findviews"),
 
       sidebarLayout(
 
@@ -36,26 +36,26 @@ create_ziggy_client <- function(){
 }
 
 #' @import shiny
-create_ziggy_server <- function(ziggy_out,
-                                ziggy_group1, ziggy_group2, ziggy_data){
+create_fdviews_server <- function(fdviews_out,
+                                fdviews_group1, fdviews_group2, fdviews_data){
 
    shinyServer(function(input, output) {
 
       # Side panel maintenance
       output$numViewsTable <- renderDataTable(
-         create_view_table('num', ziggy_out),
+         create_view_table('num', fdviews_out),
          options = data_table_options,
          callback = data_table_js
       )
 
       output$catViewsTable <- renderDataTable(
-         create_view_table('cat', ziggy_out),
+         create_view_table('cat', fdviews_out),
          options = data_table_options,
          callback = data_table_js
       )
 
       output$exclusionComments <- renderUI({
-         describeExclusions(ziggy_out)
+         describeExclusions(fdviews_out)
       })
 
       # Main panel maintenance
@@ -70,7 +70,7 @@ create_ziggy_server <- function(ziggy_out,
          view_id   <- selected_view_id()
          if(is.na(view_id)) return(NULL)
 
-         create_view_title(view_id, view_type, ziggy_out)
+         create_view_title(view_id, view_type, fdviews_out)
       })
 
       output$viewPlot <- renderPlot({
@@ -78,8 +78,8 @@ create_ziggy_server <- function(ziggy_out,
          view_id   <- selected_view_id()
          if(is.na(view_id)) return(NULL)
 
-         plot_selection(view_id, view_type, ziggy_out,
-                        ziggy_group1, ziggy_group2, ziggy_data)
+         plot_selection(view_id, view_type, fdviews_out,
+                        fdviews_group1, fdviews_group2, fdviews_data)
       })
 
       output$viewComment <- renderUI({
@@ -87,21 +87,21 @@ create_ziggy_server <- function(ziggy_out,
          view_id   <- selected_view_id()
          if(is.na(view_id)) return(NULL)
 
-         create_view_comments(view_id, view_type, ziggy_out)
+         create_view_comments(view_id, view_type, fdviews_out)
       })
    })
 }
 
 
-create_ziggy_app <- function(ziggy_out, ziggy_group1, ziggy_group2, ziggy_data){
+create_fdviews_app <- function(fdviews_out, fdviews_group1, fdviews_group2, fdviews_data){
 
-   ziggy_app <- shiny::shinyApp(
-      ui     = create_ziggy_client(),
-      server = create_ziggy_server(ziggy_out, ziggy_group1, ziggy_group2,
-                                   ziggy_data)
+   fdviews_app <- shiny::shinyApp(
+      ui     = create_fdviews_client(),
+      server = create_fdviews_server(fdviews_out, fdviews_group1, fdviews_group2,
+                                   fdviews_data)
    )
 
-   return(ziggy_app)
+   return(fdviews_app)
 }
 
 
@@ -110,10 +110,10 @@ create_ziggy_app <- function(ziggy_out, ziggy_group1, ziggy_group2, ziggy_data){
 #####################################
 
 #' @export
-ziggy_web <- function(group1, group2, data, max_cols=NULL, ...){
-   ziggy_out    <- findviews_to_compare(group1, group2, data, max_cols)
+findviews_to_compare <- function(group1, group2, data, max_cols=NULL, ...){
+   fdviews_out    <- findviews_to_compare_core(group1, group2, data, max_cols)
 
    #cat('Starting server...\n')
-   ziggy_app    <- create_ziggy_app(ziggy_out, group1, group2, data)
-   shiny::runApp(ziggy_app, display.mode = "normal", ...)
+   fdviews_app <- create_fdviews_app(fdviews_out, group1, group2, data)
+   shiny::runApp(fdviews_app, display.mode = "normal", ...)
 }

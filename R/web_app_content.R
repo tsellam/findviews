@@ -56,16 +56,16 @@ map_to_colors <- function(data, start_col='#FFFFFF', end_col ='#333333'){
    return(html_colors)
 }
 
-create_view_table <- function(view_type, ziggy_out){
+create_view_table <- function(view_type, fdviews_out){
    stopifnot(view_type %in% c('num', 'cat'))
    stopifnot(c('views_num', 'views_cat',
-               'scores_num', 'scores_cat') %in%names(ziggy_out))
+               'scores_num', 'scores_cat') %in%names(fdviews_out))
 
    # Retrieves the views to output
-   table_to_output <- if (view_type == 'num') ziggy_out$views_num
-   else ziggy_out$views_cat
-   scores <- if (view_type == 'num') ziggy_out$scores_num
-   else ziggy_out$scores_cat
+   table_to_output <- if (view_type == 'num') fdviews_out$views_num
+   else fdviews_out$views_cat
+   scores <- if (view_type == 'num') fdviews_out$scores_num
+   else fdviews_out$scores_cat
 
    # Formats them
    view_strings <- sapply(table_to_output, function(view_cols){
@@ -91,15 +91,15 @@ this_or_these_column_s <- function(cols){
    else "these columns"
 }
 
-describeExclusions <- function(ziggy_results){
-   stopifnot('excluded' %in% names(ziggy_results))
+describeExclusions <- function(fdviews_out){
+   stopifnot('excluded' %in% names(fdviews_out))
    stopifnot(c('flat_num', 'flat_cat', 'unknown_type') %in%
-                names(ziggy_results$excluded))
+                names(fdviews_out$excluded))
 
-   comments <- character(length(ziggy_results$excluded))
+   comments <- character(length(fdviews_out$excluded))
 
    # Text for the columns which type is not supported
-   cols_notype <- ziggy_results$excluded$unknown_type
+   cols_notype <- fdviews_out$excluded$unknown_type
    comments[1] <- if (length(cols_notype) > 0){
       s1 <- enumerate_char(cols_notype)
       s2 <- " because I do not recognize of support the type of "
@@ -110,7 +110,7 @@ describeExclusions <- function(ziggy_results){
    }
 
    # Text for the flat num columns
-   cols_flat_num <- ziggy_results$excluded$flat_num
+   cols_flat_num <- fdviews_out$excluded$flat_num
    comments[2]  <- if (length(cols_flat_num) > 0){
       s1 <- enumerate_char(cols_flat_num)
       s2 <- " because "
@@ -122,7 +122,7 @@ describeExclusions <- function(ziggy_results){
    }
 
    # Text for the flat num columns
-   cols_flat_cat <- ziggy_results$excluded$flat_cat
+   cols_flat_cat <- fdviews_out$excluded$flat_cat
    comments[3] <- if (length(cols_flat_cat) > 0){
       s1 <- enumerate_char(cols_flat_cat)
       s2 <- " because "
@@ -160,13 +160,13 @@ describeExclusions <- function(ziggy_results){
 ###########################
 # Plotting & View Details #
 ###########################
-retrieve_view <- function(view_id, view_type, ziggy_out){
+retrieve_view <- function(view_id, view_type, fdviews_out){
    stopifnot(is.integer(view_id))
    stopifnot(view_type %in% c('num', 'cat'))
-   stopifnot(c('views_num', 'views_cat') %in% names(ziggy_out))
+   stopifnot(c('views_num', 'views_cat') %in% names(fdviews_out))
 
-   to_output <- if (view_type == 'num') ziggy_out$views_num
-   else ziggy_out$views_cat
+   to_output <- if (view_type == 'num') fdviews_out$views_num
+   else fdviews_out$views_cat
 
    if (!view_id >= 1 | !view_id <= length(to_output))
       stop("Incorrect view requested.")
@@ -174,13 +174,13 @@ retrieve_view <- function(view_id, view_type, ziggy_out){
    return(to_output[[view_id]])
 }
 
-retrieve_details <- function(view_id, view_type, ziggy_out){
+retrieve_details <- function(view_id, view_type, fdviews_out){
    stopifnot(is.integer(view_id))
    stopifnot(view_type %in% c('num', 'cat'))
-   stopifnot(c('views_num', 'views_cat') %in% names(ziggy_out))
+   stopifnot(c('views_num', 'views_cat') %in% names(fdviews_out))
 
-   to_output <- if (view_type == 'num') ziggy_out$details_num
-   else ziggy_out$details_cat
+   to_output <- if (view_type == 'num') fdviews_out$details_num
+   else fdviews_out$details_cat
 
    if (!view_id >= 1 | !view_id <= nrow(to_output))
       stop("Incorrect view requested.")
@@ -192,12 +192,12 @@ retrieve_details <- function(view_id, view_type, ziggy_out){
 #-------#
 # Title #
 #-------#
-create_view_title <- function(view_id, view_type, ziggy_out){
+create_view_title <- function(view_id, view_type, fdviews_out){
    stopifnot(is.integer(view_id))
    stopifnot(view_type %in% c('num', 'cat'))
-   stopifnot(c('views_num', 'views_cat') %in% names(ziggy_out))
+   stopifnot(c('views_num', 'views_cat') %in% names(fdviews_out))
 
-   view_cols <- retrieve_view(view_id, view_type, ziggy_out)
+   view_cols <- retrieve_view(view_id, view_type, fdviews_out)
    col_string  <- paste0(view_cols, collapse = ', ')
    full_string <- paste0("Plots for the view ", col_string)
 
@@ -349,28 +349,28 @@ plot_selection_categorical <- function(data, target){
 
 }
 
-plot_selection <- function(view_id, view_type, ziggy_out,
-                           ziggy_group1, ziggy_group2, data){
+plot_selection <- function(view_id, view_type, fdviews_out,
+                           group1, group2, data){
    stopifnot(is.integer(view_id))
    stopifnot(view_type %in% c('num', 'cat'))
-   stopifnot(c('views_num', 'views_cat') %in% names(ziggy_out))
-   stopifnot(is.logical(ziggy_group1) & is.logical(ziggy_group2))
-   stopifnot(length(ziggy_group1) == nrow(data) &
-             length(ziggy_group2) == nrow(data))
+   stopifnot(c('views_num', 'views_cat') %in% names(fdviews_out))
+   stopifnot(is.logical(group1) & is.logical(group2))
+   stopifnot(length(group1) == nrow(data) &
+             length(group2) == nrow(data))
    stopifnot(is.data.frame(data))
 
    # Retrieves the views to output
-   view_cols <- retrieve_view(view_id, view_type, ziggy_out)
+   view_cols <- retrieve_view(view_id, view_type, fdviews_out)
 
    # Sets up the data to be plotted
    # First, generates a target vector
    target <- integer(nrow(data))
-   target[ziggy_group1] <- 1
-   target[ziggy_group2] <- 2
+   target[group1] <- 1
+   target[group2] <- 2
    target <- factor(paste0("Group ", target))
 
    # Then trims the data to the user's selection
-   row_selection <- ziggy_group1 | ziggy_group2
+   row_selection <- group1 | group2
    data   <- data[row_selection, view_cols, drop=F]
    target <- target[row_selection]
 
@@ -402,12 +402,12 @@ rewrite_comment_text <- function(comment){
    return(comment)
 }
 
-create_view_comments <- function(view_id, view_type, ziggy_out){
+create_view_comments <- function(view_id, view_type, fdviews_out){
    stopifnot(is.integer(view_id))
    stopifnot(view_type %in% c('num', 'cat'))
-   stopifnot(c('details_num', 'details_cat') %in% names(ziggy_out))
+   stopifnot(c('details_num', 'details_cat') %in% names(fdviews_out))
 
-   components <- retrieve_details(view_id, view_type, ziggy_out)
+   components <- retrieve_details(view_id, view_type, fdviews_out)
 
    tip_lines <- sapply(components, function(component){
       if ('tip' %in% names(component)) component$tip
@@ -436,7 +436,7 @@ create_view_comments <- function(view_id, view_type, ziggy_out){
    html_block <- paste0(tip_html, tip_lines_html, collapse = ' ')
    if (nchar(html_block) > 0){
       html_block <- rewrite_comment_text(html_block)
-      html_block <- paste0("<div><h4>Ziggy's comments</h4>",
+      html_block <- paste0("<div><h4>Comments</h4>",
                            html_block,
                            "</div>",
                            collapse = '\n')

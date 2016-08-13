@@ -14,9 +14,9 @@ test_that("testing data is loaded", {
 
 # Error checking
 test_that("main function fails properly", {
-   expect_error(findviews_to_compare(c(), c(), df_empty))
-   expect_error(findviews_to_compare(c(), c(), df_onerow))
-   expect_error(findviews_to_compare(c(), c(), df_mix))
+   expect_error(findviews_to_compare_core(c(), c(), df_empty))
+   expect_error(findviews_to_compare_core(c(), c(), df_onerow))
+   expect_error(findviews_to_compare_core(c(), c(), df_mix))
 })
 
 # Preprocessing
@@ -39,7 +39,7 @@ test_that("preprocessor does its job", {
 # Function calls and output check
 check_output <- function(df, to_describe, num, ...){
    # Runs Ziggy
-   out <- findviews_to_compare(to_describe, !to_describe, df, num, ...)
+   out <- findviews_to_compare_core(to_describe, !to_describe, df, num, ...)
 
    # Structure checks
    expect_is(out, "list")
@@ -101,5 +101,5 @@ test_that("main function can deal with NAs", {
 })
 
 test_that("default parameters work for main function", {
-   expect_is(findviews_to_compare(to_describe, !to_describe, df_mix), "list")
+   expect_is(findviews_to_compare_core(to_describe, !to_describe, df_mix), "list")
 })

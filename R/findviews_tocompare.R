@@ -463,7 +463,7 @@ score_views <- function(views, group1, group2, data, diff_components){
 # Main function #
 #################
 #' @export
-findviews_to_compare <- function(group1, group2, data, max_cols=NULL){
+findviews_to_compare_core <- function(group1, group2, data, max_cols=NULL){
 
    # Input checks
    if (is.matrix(data)) data <- data.frame(data)
