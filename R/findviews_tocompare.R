@@ -476,3 +476,75 @@ score_views <- function(views, group1, group2, data, zig_components){
 
    return(zig_scores)
 }
+
+#################
+# Main function #
+#################
+#' @export
+findviews_to_compare <- function(group1, group2, data, max_cols=NULL){
+
+   # Input checks
+   if (is.matrix(data)) data <- data.frame(data)
+   else if (!is.data.frame(data)) stop("Input data is not a data frame")
+   if (nrow(data) < 2) stop("Data set is too small for Ziggy")
+
+   stopifnot(is.logical(group1) & is.logical(group2))
+   if (nrow(data) != length(group1) | nrow(data) != length(group2))
+      stop("The size of the group description does not match the size of the data")
+   if (sum(group1) == 0 | sum(group2) == 0)
+      stop("The groups should contain at least 1 row")
+
+   # Sets max_cols = log2(ncol(data)) if no value specified
+   if (is.null(max_cols)) max_cols <- max(1, log2(ncol(data)))
+   stopifnot(is.numeric(max_cols), max_cols >= 1)
+   max_cols <- as.integer(max_cols)
+
+   # Type detection and conversions
+   # Flat columns = pimary keys, or columns with only 1 distinct value
+   #cat('Processing the data.... ')
+   preprocessed <- preprocess(data)
+   data_num <- preprocessed$data_num
+   data_cat <- preprocessed$data_cat
+   excluded <- preprocessed$excluded
+
+   # Creates views
+   #cat('Creating the views.... ')
+   views_num <- cluster_columns(data_num, max_cols, DEP_FUNC_NUM)
+   views_cat <- cluster_columns(data_cat, max_cols, DEP_FUNC_CAT)
+
+   # Dissimilarity analysis of each view
+   #cat('Scoring the views.... ')
+   zig_components_num <- score_views(views_num, group1, group2,
+                                     data_num, ZIG_COMPONENTS_NUM)
+   zig_components_cat <- score_views(views_cat, group1, group2,
+                                     data_cat, ZIG_COMPONENTS_CAT)
+
+   # Aggregates all the Zig-Components into one score
+   zig_scores_num <- zig_aggregate(zig_components_num, WEIGHT_COMPONENTS_NUM)
+   zig_scores_cat <- zig_aggregate(zig_components_cat, WEIGHT_COMPONENTS_CAT)
+
+   # Ranks the views accordingly
+   order_num <- order(zig_scores_num, decreasing = T)
+   order_cat <- order(zig_scores_cat, decreasing = T)
+
+   #cat('View creation done.\n')
+
+   return(list(
+      views_cat   = views_cat[order_cat],
+      scores_cat  = zig_scores_cat[order_cat],
+      details_cat = zig_components_cat[order_cat,,drop=FALSE],
+      views_num   = views_num[order_num],
+      scores_num  = zig_scores_num[order_num],
+      details_num = zig_components_num[order_num,,drop=FALSE],
+      excluded    = excluded
+   ))
+}
+
+#' @export
+ziggy_web <- function(group1, group2, data, max_cols=NULL, ...){
+   ziggy_out    <- findviews_to_compare(group1, group2, data, max_cols)
+
+   #cat('Starting server...\n')
+   ziggy_app    <- create_ziggy_app(ziggy_out, group1, group2, data)
+   shiny::runApp(ziggy_app, display.mode = "normal", ...)
+}
