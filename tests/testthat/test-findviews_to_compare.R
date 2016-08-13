@@ -1,40 +1,7 @@
-context("Calls to main Ziggy functions")
+context("Calls to findviews_to_compare")
 
 source('generate_df.R')
 
-test_that("testing data is loaded", {
-   expect_is(df_num, 'data.frame')
-   expect_is(df_cat, 'data.frame')
-   expect_is(df_mix, 'data.frame')
-   expect_is(df_empty, 'data.frame')
-   expect_is(df_onerow, 'data.frame')
-   expect_is(df_onecol, 'data.frame')
-   expect_is(df_zerocol, 'data.frame')
-})
-
-# Error checking
-test_that("main function fails properly", {
-   expect_error(findviews_to_compare_core(c(), c(), df_empty))
-   expect_error(findviews_to_compare_core(c(), c(), df_onerow))
-   expect_error(findviews_to_compare_core(c(), c(), df_mix))
-})
-
-# Preprocessing
-test_that("preprocessor does its job", {
-   out_names <- c('data_cat', 'data_num', 'excluded')
-
-   expect_is(preprocess(df_mix), 'list')
-   expect_named(preprocess(df_mix), out_names, ignore.order=T)
-   expect_named(preprocess(df_cat), out_names, ignore.order=T)
-   expect_named(preprocess(df_num), out_names, ignore.order=T)
-   expect_is(preprocess(df_num)$data_cat, 'data.frame')
-   expect_is(preprocess(df_num)$data_num, 'data.frame')
-   expect_is(preprocess(df_cat)$data_cat, 'data.frame')
-   expect_is(preprocess(df_cat)$data_num, 'data.frame')
-   expect_named(preprocess(df_zerocol), out_names, ignore.order=T)
-
-   expect_true('x2' %in% preprocess(df_flat1)$excluded$flat_num)
-})
 
 # Function calls and output check
 check_output <- function(df, to_describe, num, ...){
@@ -102,4 +69,11 @@ test_that("main function can deal with NAs", {
 
 test_that("default parameters work for main function", {
    expect_is(findviews_to_compare_core(to_describe, !to_describe, df_mix), "list")
+})
+
+# Error checking
+test_that("main function fails properly", {
+   expect_error(findviews_to_compare_core(c(), c(), df_empty))
+   expect_error(findviews_to_compare_core(c(), c(), df_onerow))
+   expect_error(findviews_to_compare_core(c(), c(), df_mix))
 })
