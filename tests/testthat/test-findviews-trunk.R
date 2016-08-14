@@ -75,9 +75,9 @@ context("Trunk functions - column clustering")
 
 test_that("dendrogram cutting function does its job", {
 
-   cormat <- abs(cor(df_num))
-   clust  <- hclust(as.dist(cormat))
-   dend   <- as.dendrogram(clust)
+   dmat  <- 1 - dependency_matrix(df_num, DEP_FUNC_NUM)
+   clust <- hclust(as.dist(dmat))
+   dend  <- as.dendrogram(clust)
 
    check_size <- function(li, MAX){
       max(sapply(li, length)) <= MAX
@@ -97,29 +97,45 @@ test_that("dendrogram cutting function does its job", {
 
 
 test_that("column clustering function works properly with num data", {
-   clu <- cluster_columns(df_num, 2, "cor_matrix")
+   dmat  <- dependency_matrix(df_num, DEP_FUNC_NUM)
+   clu <- cluster_columns(dmat, 2)
    expect_is(clu, "list")
    expect_true(length(clu) > 0)
    expect_true(length(clu) <= ncol(df_num))
-   expect_is(cluster_columns(df_num, 2, "cor_matrix")[[1]], "character")
-
-   expect_is(cluster_columns(df_zerocol, 2, "cor_matrix"), "list")
-   expect_length(cluster_columns(df_zerocol, 2, "cor_matrix"), 0)
-   expect_is(cluster_columns(df_onecol, 2, "cor_matrix"), "list")
-   expect_length(cluster_columns(df_onecol, 2, "cor_matrix"), 1)
+   expect_true(all(is.character(unlist(clu))))
 })
 
 test_that("column clustering function works properly with cat data", {
-   clu <- cluster_columns(df_cat, 2, "cramerV_matrix")
+   dmat  <- dependency_matrix(df_cat, DEP_FUNC_CAT)
+   clu <- cluster_columns(dmat, 2)
    expect_is(clu, "list")
    expect_true(length(clu) > 0)
    expect_true(length(clu) <= ncol(df_cat))
-   expect_is(cluster_columns(df_cat, 2, "cramerV_matrix")[[1]], "character")
+   expect_true(all(is.character(unlist(clu))))
+})
 
-   expect_is(cluster_columns(df_zerocol, 2, "cramerV_matrix"), "list")
-   expect_length(cluster_columns(df_zerocol, 2, "cramerV_matrix"), 0)
-   expect_is(cluster_columns(df_onecol_cat, 2, "cramerV_matrix"), "list")
-   expect_length(cluster_columns(df_onecol_cat, 2, "cramerV_matrix"), 1)
+test_that("column clustering function works properly with 0 col data", {
+   dmat0 <- dependency_matrix(df_zerocol, DEP_FUNC_NUM)
+   clu0  <- cluster_columns(dmat0, 2)
+   expect_is(clu0, "list")
+   expect_length(clu0, 0)
+
+   dmat0 <- dependency_matrix(df_zerocol, DEP_FUNC_CAT)
+   clu0  <- cluster_columns(dmat0, 2)
+   expect_is(clu0, "list")
+   expect_length(clu0, 0)
+})
+
+test_that("column clustering function works properly with 1 col data", {
+   dmat1 <- dependency_matrix(df_onecol, DEP_FUNC_NUM)
+   clu1  <- cluster_columns(dmat1, 2)
+   expect_is(clu1, "list")
+   expect_length(clu1, 1)
+
+   dmat1 <- dependency_matrix(df_onecol_cat, DEP_FUNC_CAT)
+   clu1  <- cluster_columns(dmat1, 2)
+   expect_is(clu1, "list")
+   expect_length(clu1, 1)
 })
 
 test_that("column clustering fails with NAs", {
@@ -128,7 +144,10 @@ test_that("column clustering fails with NAs", {
       x1 = c(1,2,3,4),
       x2 = c(1,1,1,1)
    )
-   expect_error( suppressWarnings(cluster_columns(df_hell, 4, cor_matrix)))
+
+   dmat <- suppressWarnings(dependency_matrix(df_hell, DEP_FUNC_NUM))
+   stopifnot(is.matrix(dmat))
+   expect_error(cluster_columns(dmat, 4))
 })
 
 
@@ -149,7 +168,9 @@ check_output <- function(df, num, ...){
                        'views_num',
                        'data_cat',
                        'data_num',
-                       'excluded'), ignore.order=T)
+                       'excluded',
+                       'dependency_mat_num',
+                       'dependency_mat_cat'), ignore.order=T)
 
    # Content checks
    expect_is(out$data_cat, "data.frame")
@@ -180,6 +201,13 @@ check_output <- function(df, num, ...){
 
    expect_named(out$excluded, c('unknown_type', 'flat_num', 'flat_cat'),
                 ignore.order = T)
+
+   expect_is(out$dependency_mat_num, "matrix")
+   expect_is(out$dependency_mat_cat, "matrix")
+   expect_equal(nrow(out$dependency_mat_num), ncol(out$data_num))
+   expect_equal(ncol(out$dependency_mat_num), ncol(out$data_num))
+   expect_equal(nrow(out$dependency_mat_cat), ncol(out$data_cat))
+   expect_equal(ncol(out$dependency_mat_cat), ncol(out$data_cat))
 
 
 }

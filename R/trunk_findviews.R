@@ -108,7 +108,7 @@ cramerV_matrix <- function(data){
    if (nrow(data) < 2)
       stop('Computing Cramer V matrix with less than two rows!')
    if (!all(sapply(data, is.factor)))
-      stop('Attempting to compute correlation on non factor data')
+      stop('Attempting to compute Cramer V on non factor data')
 
    # Trivial cases
    if (ncol(data) == 0) return(matrix(nrow=0, ncol=0))
@@ -136,6 +136,31 @@ cramerV_matrix <- function(data){
    rownames(M) <- colnames(data)
 
    return(M)
+}
+
+#################################
+# Dependency Matrix computation #
+#################################
+dependency_matrix <- function(data, dependency_name){
+   stopifnot(is.data.frame(data), nrow(data) >= 2)
+   stopifnot(is.character(dependency_name))
+
+   # Checks and retrieves dependency function
+   if (!exists(dependency_name))
+      stop("Dependency function not found!")
+   dependency_fun <- get(dependency_name)
+   if (!is.function(dependency_fun))
+      stop('Dependency function is not a function!')
+
+   # Computes pairwise statistical dependencies
+   dependency_mat <- dependency_fun(data)
+
+   # Checks output
+   if (!is.matrix(dependency_mat) &
+       !nrow(dependency_mat) == ncol(data) & !ncol(dependency_mat) == ncol(data))
+      stop("Error during dependency matrix computations: wrong output")
+
+   dependency_mat
 }
 
 ###############################
@@ -181,33 +206,19 @@ cut_max_size <- function(den, max_size){
    return(clusters)
 }
 
-cluster_columns <- function(data, view_size_max, dependency_name){
-   stopifnot(is.data.frame(data), nrow(data) >= 2)
+cluster_columns <- function(dependency_mat, view_size_max){
+   stopifnot(is.matrix(dependency_mat))
    stopifnot(is.numeric(view_size_max))
-   if (view_size_max < 1) stop('view_size_max must be at least one')
-   stopifnot(is.character(dependency_name))
+   stopifnot(view_size_max >= 1)
 
-   # Checks and retrieves dependency function
-   if (!exists(dependency_name))
-      stop("Dependency function not found!")
-   dependency_fun <- get(dependency_name)
-   if (!is.function(dependency_fun))
-      stop('Dependency function is not a function!')
-
-   # Trivial case: 0 or 1 column
-   if (ncol(data) == 0) return(list())
-   if (ncol(data) == 1) return(list(names(data)))
-
-   # Computes pairwise statistical dependencies
-   dependency_mat <- dependency_fun(data)
-   if (!is.matrix(dependency_mat) &
-       !nrow(dependency_mat) == ncol(data) &
-       !ncol(dependency_mat) == ncol(data))
-      stop("Error during dependency matrix computations: wrong output")
    if (any(is.na(dependency_mat)))
       stop('NAs detected in dependency matrix')
    if (any(dependency_mat > 1 | dependency_mat < 0))
       stop('Dependency must vary between 0 and 1')
+
+   # Trivial case: 0 or 1 column
+   if (ncol(dependency_mat) == 0) return(list())
+   if (ncol(dependency_mat) == 1) return(list(colnames(dependency_mat)))
 
    # Runs complete link clustering on the remainder
    inv_dependency <- 1 - dependency_mat
@@ -239,23 +250,26 @@ findviews_trunk <- function(data,  view_size_max=NULL){
 
    # Type detection and conversions
    # Flat columns = pimary keys, or columns with only 1 distinct value
-   #cat('Processing the data.... ')
    preprocessed <- preprocess(data)
    data_num <- preprocessed$data_num
    data_cat <- preprocessed$data_cat
    excluded <- preprocessed$excluded
 
+   # Computes the dependency matrices
+   dep_mat_num <- dependency_matrix(data_num, DEP_FUNC_NUM)
+   dep_mat_cat <- dependency_matrix(data_cat, DEP_FUNC_CAT)
+
    # Creates views
-   #cat('Creating the views.... ')
-   views_num <- cluster_columns(data_num, view_size_max, DEP_FUNC_NUM)
-   views_cat <- cluster_columns(data_cat, view_size_max, DEP_FUNC_CAT)
+   views_num <- cluster_columns(dep_mat_num, view_size_max)
+   views_cat <- cluster_columns(dep_mat_cat, view_size_max)
 
    return(list(
-      data_num  = data_num,
-      views_num = views_num,
-      data_cat  = data_cat,
-      views_cat = views_cat,
-      excluded  = excluded
+      data_num           = data_num,
+      dependency_mat_num = dep_mat_num,
+      views_num          = views_num,
+      data_cat           = data_cat,
+      dependency_mat_cat = dep_mat_cat,
+      views_cat          = views_cat,
+      excluded           = excluded
    ))
 }
-
