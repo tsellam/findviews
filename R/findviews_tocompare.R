@@ -494,8 +494,8 @@ findviews_to_compare_core <- function(group1, group2, data, view_size_max=NULL){
                                            WEIGHT_COMPONENTS_CAT)
 
    # Ranks the views accordingly
-   order_num <- order(diff_scores_num, decreasing = T)
-   order_cat <- order(diff_scores_cat, decreasing = T)
+   order_num <- order(diff_scores_num, decreasing = T, na.last = T)
+   order_cat <- order(diff_scores_cat, decreasing = T, na.last = T)
 
    return(list(
       views_cat   = views_cat[order_cat],

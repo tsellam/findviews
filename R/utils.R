@@ -56,3 +56,27 @@ which_true_elements <- function(M, deduplicate = T) {
    return(positions)
 }
 
+# Maps numeric data to a color gradient
+map_to_colors <- function(data, start_col, end_col, missing_col = '#CCCCCC'){
+   stopifnot(is.vector(data))
+
+   NAs <- is.na(data)
+   clean_data <- data[!NAs]
+
+   min <- 0
+   max <- max(clean_data)
+   if (max <=  min) return(rep(missing_col, length(data)))
+   clean_data <- (clean_data - min)  / (max - min)
+
+   map_fn <- colorRamp(c(start_col, end_col))
+   colors <- map_fn(clean_data)
+   html_colors <- rgb(colors, max = 255)
+
+   out <- character(length(data))
+   out[NAs]  <- missing_col
+   out[!NAs] <- html_colors
+
+   return(out)
+}
+
+

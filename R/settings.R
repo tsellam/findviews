@@ -19,6 +19,8 @@ P_VALUE_DIFF <- 0.05
 P_VALUE_PEARSON_RESIDUALS <- 0.01
 
 
+# Web app parameters
+APP_TYPES <- c('findviews', 'findviews_to_compare')
 
 # Graphing parameters
 SCATTERPLOT_SAMPLE_SIZE <- 2500

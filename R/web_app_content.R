@@ -4,76 +4,109 @@
 #-------------------------#
 # Table-related functions #
 #-------------------------#
-data_table_options <- list(
-   "scrollY" = "400px",
-   "scrollCollapse" = TRUE,
-   "paging"= FALSE,
-   "ordering" = FALSE,
-   "info"     = FALSE,
-   "lengthChange" = FALSE,
-   "searching"    = FALSE,
-   "columnDefs"   =  list(
-      list('targets' = 0, 'visible' = FALSE),
-      list('targets' = 1, 'visible' = FALSE),
-      list('targets' = 2, 'title' = NULL),
-      list('targets' = 3, 'title' = NULL)
-   ),
-   "dom" = "tp"
-)
+data_table_options <- function(app_type){
+   stopifnot(app_type %in% APP_TYPES)
 
-data_table_js <- "
-   function(table) {
-      // Clicking behavior
-      table.on('click.dt', 'tr', function() {
-         table.$('tr.selected').removeClass('selected');
-         $(this).toggleClass('selected');
+   # Basic parameters, common for all app types
+   params <- list(
+      "scrollY" = "400px",
+      "scrollCollapse" = TRUE,
+      "paging"= FALSE,
+      "ordering" = FALSE,
+      "info"     = FALSE,
+      "lengthChange" = FALSE,
+      "searching"    = FALSE,
+      "dom" = "tp"
+   )
 
-         var viewId = table.rows('.selected').data()[0][0];
-         $('div#view-specs input#currentView').val(viewId);
-         $('div#view-specs input#currentView').trigger('change');
-      });
+   # App specific parameters
+   params[["columnDefs"]] <- if (app_type == 'findviews')
+      list(
+         list('targets' = 0, 'visible' = FALSE),
+         list('targets' = 1, 'title' = NULL)
+      )
+   else
+      list(
+         list('targets' = 0, 'visible' = FALSE),
+         list('targets' = 1, 'visible' = FALSE),
+         list('targets' = 2, 'title' = NULL),
+         list('targets' = 3, 'title' = NULL)
+      )
 
-      table.on('init', function() {
-         table.rows().eq(0).each(function(index){
-            var row = table.row( index );
-            var colLevel = row.data()[1];
-            table.$('tr').eq(index).children('td').eq(1)
-                 .css('background-color', colLevel);
-      })
-   })
-}"
-
-map_to_colors <- function(data, start_col='#FFFFFF', end_col ='#333333'){
-   stopifnot(is.vector(data))
-
-   min <- 0 #min(data, na.rm = T)
-   max <- max(data, na.rm = T)
-   data <- (data - min)  / (max - min)
-
-   map_fn <- colorRamp(c(start_col, end_col))
-   colors <- map_fn(data)
-   html_colors <- rgb(colors, max = 255)
-   return(html_colors)
+   return(params)
 }
 
-create_view_table <- function(view_type, fdviews_out){
+data_table_js <- function(app_type){
+   stopifnot(app_type %in% APP_TYPES)
+
+   if (app_type == 'findviews')
+      # Table with no support for heatmaps
+      return("
+          function(table) {
+               // Clicking behavior
+               table.on('click.dt', 'tr', function() {
+                  table.$('tr.selected').removeClass('selected');
+                  $(this).toggleClass('selected');
+
+                  var viewId = table.rows('.selected').data()[0][0];
+                  $('div#view-specs input#currentView').val(viewId);
+                  $('div#view-specs input#currentView').trigger('change');
+               });
+          }
+    ")
+
+   # For other app types, we need the heatmaps to show the scores
+   return("
+       function(table) {
+          // Clicking behavior
+          table.on('click.dt', 'tr', function() {
+             table.$('tr.selected').removeClass('selected');
+             $(this).toggleClass('selected');
+
+             var viewId = table.rows('.selected').data()[0][0];
+             $('div#view-specs input#currentView').val(viewId);
+             $('div#view-specs input#currentView').trigger('change');
+          });
+
+          table.on('init', function() {
+             table.rows().eq(0).each(function(index){
+                var row = table.row( index );
+                var colLevel = row.data()[1];
+                table.$('tr').eq(index).children('td').eq(1)
+                .css('background-color', colLevel);
+            })
+          })
+         }
+   ")
+}
+
+
+create_view_table <- function(view_type, app_type, fdviews_out){
    stopifnot(view_type %in% c('num', 'cat'))
-   stopifnot(c('views_num', 'views_cat',
-               'scores_num', 'scores_cat') %in%names(fdviews_out))
+   stopifnot(app_type %in% APP_TYPES)
+   stopifnot(c('views_num', 'views_cat', 'scores_num', 'scores_cat') %in%
+                names(fdviews_out))
 
-   # Retrieves the views to output
+   # Retrieves and formats the views to output
    table_to_output <- if (view_type == 'num') fdviews_out$views_num
-   else fdviews_out$views_cat
-   scores <- if (view_type == 'num') fdviews_out$scores_num
-   else fdviews_out$scores_cat
+                      else fdviews_out$views_cat
 
-   # Formats them
    view_strings <- sapply(table_to_output, function(view_cols){
       paste0(view_cols, collapse = ', ')
    })
    view_strings <- as.character(view_strings)
 
-   # Genenerates the HTML color codes and dummy column to be colored
+   # If type = findiviews, that's all we neeed
+   if (app_type == 'findviews')
+      return(data.frame(
+         viewId       = seq_along(view_strings),
+         viewName     = view_strings
+      ))
+
+   # Get scores, and genenerates the necessary heatmap data
+   scores <- if (view_type == 'num') fdviews_out$scores_num
+             else fdviews_out$scores_cat
+
    html_colors <- map_to_colors(scores, '#e9edf1', '#23527C')
    heatmap_col <- rep("", length(view_strings))
 
@@ -83,6 +116,8 @@ create_view_table <- function(view_type, fdviews_out){
               viewName     = view_strings,
               scoreHeatmap = heatmap_col)
 }
+
+
 #-------------------------------#
 # Columns exclusion description #
 #-------------------------------#
@@ -213,7 +248,7 @@ create_view_title <- function(view_id, view_type, fdviews_out){
 ### Plotting functions
 num_1d_view <- function(data, mapping, ...){
    p <- ggplot2::ggplot(data=data, mapping=mapping) +
-      ggplot2::geom_density(..., alpha = 0.5) +
+      ggplot2::geom_density(...) +
       ggplot2::theme(legend.text     = ggplot2::element_text(size = 12),
                      legend.key.size = ggplot2::unit(1, "cm"),
                      legend.title    = ggplot2::element_text(size = 0))
@@ -251,12 +286,15 @@ cat_1d_view <- function(data, mapping, ...){
 
 
 #### Wrappers
-plot_selection_numeric <- function(data, target){
+plot_selection_numeric <- function(data, target, app_type){
    col_types <- sapply(data, class)
    if (!all(col_types == 'numeric')) stop('Cannot plot, type not supported')
 
    # Prepares the data frame to be visualized
    data <- cbind(data, target)
+   to_plot_index <- 1:(ncol(data)-1)
+   to_plot_col   <- names(data)[to_plot_index]
+   labels_col    <- names(data)[[ncol(data)]]
 
    # Subsamples if necessary
    if (nrow(data) > SCATTERPLOT_SAMPLE_SIZE){
@@ -265,52 +303,71 @@ plot_selection_numeric <- function(data, target){
       data <- data[sample(1:nrow(data), SCATTERPLOT_SAMPLE_SIZE, F)]
    }
 
+   # Sets plotting parameters, depending on app type
+   if (app_type == 'findviews'){
+      def_color    <- NULL
+      def_fills    <- NULL
+      def_cst_fill <- "grey"
+      def_alpha   <- 1
+      show_legend <- F
+
+   } else if (app_type == 'findviews_to_compare'){
+      def_color   <- labels_col
+      def_fills   <- labels_col
+      def_cst_fill <- NULL
+      def_alpha   <- .5
+      show_legend <- T
+   }
+
    # 1D data -> density plot
    if (ncol(data) == 2){
-
       title <- paste0('Density plot for the variable ', names(data)[[1]])
-      num_1d_view(data,
-                  ggplot2::aes_string(x = names(data)[[1]],
-                                      color = names(data)[[2]],
-                                      fill  = names(data)[[2]])) +
-         ggplot2::ggtitle(title)
+      plot_args <- list(data    = data,
+                        mapping = ggplot2::aes_string(x = to_plot_col,
+                                            color = def_color,
+                                            fill  = def_fills),
+                        alpha = def_alpha)
+      if (!is.null(def_cst_fill)) plot_args[['fill']] <- def_cst_fill
 
-      # 2d and more -> scatterplot matrix
+      do.call(num_1d_view, plot_args) + ggplot2::ggtitle(title)
+
+   # 2d and more -> scatterplot matrix
    } else if (ncol(data) >= 3){
-
-      to_plot_index <- 1:(ncol(data)-1)
-      to_plot_col   <- names(data)[to_plot_index]
-      labels_col    <- names(data)[[ncol(data)]]
-
       # Context-dependent graph parameters
       alpha_default   <- .5
       title <- "Density plots (diagonal) and 2D scatterplots (all the other charts)"
 
+      lower_plots <- GGally::wrap(num_2d_view, alpha = def_alpha)
+      diag_plots  <- if (!is.null(def_cst_fill))
+                        GGally::wrap(num_1d_view, fill = def_cst_fill)
+                      else num_1d_view
+
       # Puts them all in matrix
       pairs <- GGally::ggpairs(data,
-                               mapping = ggplot2::aes_string(color = labels_col,
-                                                             fill  = labels_col),
+                               mapping = ggplot2::aes_string(color = def_color,
+                                                             fill  = def_fills),
                                columns = to_plot_index,
-                               lower = list('continuous' = GGally::wrap(num_2d_view,
-                                                                        alpha = alpha_default)),
-                               diag  = list('continuous' = num_1d_view),
+                               lower = list('continuous' = lower_plots),
+                               diag  = list('continuous' = diag_plots),
                                upper = list('continuous' = 'blank'),
                                legends = FALSE,
                                title   = title)
 
-      # Generates and inserts the legend
-      plot_legend_fn <- GGally::gglegend(num_1d_view)
-      legend <- plot_legend_fn(data, ggplot2::aes_string(x = labels_col[1],
-                                                         color = labels_col,
-                                                         fill  = labels_col))
-      pairs[1, length(to_plot_col)] <- legend
+      # If necessary, generates and inserts the legend
+      if (show_legend){
+         plot_legend_fn <- GGally::gglegend(num_1d_view)
+         legend <- plot_legend_fn(data, ggplot2::aes_string(x = labels_col[1],
+                                                            color = labels_col,
+                                                            fill  = labels_col))
+         pairs[1, length(to_plot_col)] <- legend
+      }
 
       # Done!
       pairs
    }
 }
 
-plot_selection_categorical <- function(data, target){
+plot_selection_categorical <- function(data, target, app_type){
 
    # Prepares the data frame to be visualized
    data <- cbind(data, target)
@@ -320,65 +377,94 @@ plot_selection_categorical <- function(data, target){
    to_plot_col   <- names(data)[to_plot_index]
    labels_col    <- names(data)[[ncol(data)]]
 
+   # Sets plotting parameters, depending on app type
+   if (app_type == 'findviews'){
+      def_color   <- NULL
+      def_fills   <- NULL
+      show_legend <- F
+      nplots      <- length(to_plot_col)
+      yLabel      <- "Frequency"
+
+   } else if (app_type == 'findviews_to_compare'){
+      def_color   <- labels_col
+      def_fills   <- labels_col
+      show_legend <- T
+      nplots      <- length(to_plot_col) + 1
+      yLabel      <- "Frequency (per group)"
+   }
+
    # Creates the series of plots
    plot_series <- lapply(to_plot_col, function(col){
       cat_1d_view(data,
                   mapping = ggplot2::aes_string(x = col,
-                                                color = labels_col,
-                                                fill  = labels_col),
+                                                color = def_color,
+                                                fill  = def_fills),
                   ggplot2::aes_string(y = '..prop..',
                                       group = labels_col))
    })
 
-   # Generates the legend
-   plot_legend_fn <- GGally::gglegend(cat_1d_view)
-   legend <- plot_legend_fn(data, ggplot2::aes_string(x = labels_col[1],
-                                                      color = labels_col,
-                                                      fill  = labels_col))
-
-   # Places everything in a plot matrix,
-   plot_series <- c(plot_series, list(legend))
+   # Generates the legend, if necessary
+   if (show_legend){
+      plot_legend_fn <- GGally::gglegend(cat_1d_view)
+      legend <- plot_legend_fn(data, ggplot2::aes_string(x = labels_col[1],
+                                                         color = def_color,
+                                                         fill  = def_fills))
+      # Places everything in a plot matrix,
+      plot_series <- c(plot_series, list(legend))
+   }
 
    GGally::ggmatrix(plot_series,
                     showStrips         = TRUE,
                     xAxisLabels        = c(to_plot_col, ""),
-                    yAxisLabels        = 'Frequency (per group)',
+                    yAxisLabels        = yLabel,
                     showAxisPlotLabels = TRUE,
-                    ncol               = length(to_plot_col) + 1,
+                    ncol               = nplots,
                     nrow               = 1)
 
 }
 
-plot_selection <- function(view_id, view_type, fdviews_out,
-                           group1, group2, data){
+plot_selection <- function(view_id, view_type, app_type,
+                           fdviews_out, data,
+                           group1=NULL, group2=NULL){
+
    stopifnot(is.integer(view_id))
    stopifnot(view_type %in% c('num', 'cat'))
+   stopifnot(app_type %in% APP_TYPES)
    stopifnot(c('views_num', 'views_cat') %in% names(fdviews_out))
-   stopifnot(is.logical(group1) & is.logical(group2))
-   stopifnot(length(group1) == nrow(data) &
-             length(group2) == nrow(data))
    stopifnot(is.data.frame(data))
 
    # Retrieves the views to output
    view_cols <- retrieve_view(view_id, view_type, fdviews_out)
 
-   # Sets up the data to be plotted
-   # First, generates a target vector
-   target <- integer(nrow(data))
-   target[group1] <- 1
-   target[group2] <- 2
-   target <- factor(paste0("Group ", target))
+   # Generates a target vector, used later to color the plots
+   if (app_type == 'findviews'){
+      target <- rep(NA, nrow(data))
 
-   # Then trims the data to the user's selection
-   row_selection <- group1 | group2
-   data   <- data[row_selection, view_cols, drop=F]
-   target <- target[row_selection]
+   } else if (app_type == 'findviews_to_compare'){
+      # Generates a target vector
+      target <- integer(nrow(data))
+      target[group1] <- 1
+      target[group2] <- 2
+      target <- factor(paste0("Group ", target))
 
-   plot <- if (view_type=='num') plot_selection_numeric(data[view_cols],target)
-           else plot_selection_categorical(data[view_cols], target)
+      # Trims the data to the user's selection
+      row_selection <- group1 | group2
+      data   <- data[row_selection, view_cols, drop=F]
+      target <- target[row_selection]
+   }
+
+   plot <- if (view_type=='num') plot_selection_numeric(data[view_cols],
+                                                        target,
+                                                        app_type)
+           else plot_selection_categorical(data[view_cols],
+                                           target,
+                                           app_type)
 
    return(plot)
 }
+
+
+
 
 #-------------------#
 # Comments the view #
@@ -402,11 +488,16 @@ rewrite_comment_text <- function(comment){
    return(comment)
 }
 
-create_view_comments <- function(view_id, view_type, fdviews_out){
+create_view_comments <- function(view_id, view_type, app_type, fdviews_out){
    stopifnot(is.integer(view_id))
    stopifnot(view_type %in% c('num', 'cat'))
-   stopifnot(c('details_num', 'details_cat') %in% names(fdviews_out))
+   stopifnot(app_type %in% APP_TYPES)
 
+   # For most app types, we can already stop here
+   if (app_type %in% c("findviews")) return(shiny::HTML(""))
+
+   # For other types, we continue
+   stopifnot(c('details_num', 'details_cat') %in% names(fdviews_out))
    components <- retrieve_details(view_id, view_type, fdviews_out)
 
    tip_lines <- sapply(components, function(component){

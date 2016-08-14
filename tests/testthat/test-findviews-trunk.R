@@ -3,7 +3,7 @@ source('generate_df.R')
 #################
 # Preprocessing #
 #################
-context("Trunk functions - preprocessing")
+context("trunk functions - preprocessing")
 test_that("preprocessor does its job", {
    out_names <- c('data_cat', 'data_num', 'excluded')
 
@@ -24,7 +24,7 @@ test_that("preprocessor does its job", {
 ###########################
 # Depepdency computations #
 ###########################
-context("Trunk functions - dependency calculations")
+context("trunk functions - dependency calculations")
 
 test_that("CramerV computations work", {
    expect_true(is.na(cramerV(c(1), c(2))))
@@ -71,7 +71,7 @@ test_that("Cramer V function gives correct output", {
 #####################
 # Column clustering #
 #####################
-context("Trunk functions - column clustering")
+context("trunk functions - column clustering")
 
 test_that("dendrogram cutting function does its job", {
 
@@ -154,7 +154,7 @@ test_that("column clustering fails with NAs", {
 ##################
 # Trunk function #
 ##################
-context("Trunk functions - main function")
+context("trunk functions - main function")
 
 source('generate_df.R')
 
@@ -208,8 +208,6 @@ check_output <- function(df, num, ...){
    expect_equal(ncol(out$dependency_mat_num), ncol(out$data_num))
    expect_equal(nrow(out$dependency_mat_cat), ncol(out$data_cat))
    expect_equal(ncol(out$dependency_mat_cat), ncol(out$data_cat))
-
-
 }
 
 test_that("findviews_trunk returns properly", {
