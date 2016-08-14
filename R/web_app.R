@@ -110,8 +110,8 @@ create_fdviews_app <- function(fdviews_out, fdviews_group1, fdviews_group2, fdvi
 #####################################
 
 #' @export
-findviews_to_compare <- function(group1, group2, data, max_cols=NULL, ...){
-   fdviews_out    <- findviews_to_compare_core(group1, group2, data, max_cols)
+findviews_to_compare <- function(group1, group2, data, view_size_max=NULL, ...){
+   fdviews_out    <- findviews_to_compare_core(group1, group2, data, view_size_max)
 
    #cat('Starting server...\n')
    fdviews_app <- create_fdviews_app(fdviews_out, group1, group2, data)

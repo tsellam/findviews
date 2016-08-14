@@ -1,6 +1,6 @@
-####################################
-# Dissimilarities for numeric data #
-####################################
+###############################
+# Dissimilarity calculations  #
+###############################
 #---------------------------------------------#
 # Difference between the means with Cohen's D #
 #---------------------------------------------#
@@ -368,9 +368,9 @@ diff_histogram <- function(view, g1_data, g2_data) {
 
 }
 
-##################################
-# Generic View Analysis Function #
-##################################
+##################
+# Main functions #
+##################
 aggregate_differences <- function(table_score, weights){
    stopifnot(is.data.frame(table_score))
    stopifnot(is.numeric(weights))
@@ -459,16 +459,9 @@ score_views <- function(views, group1, group2, data, diff_components){
    return(diff_scores)
 }
 
-#################
-# Main function #
-#################
-#' @export
-findviews_to_compare_core <- function(group1, group2, data, max_cols=NULL){
 
-   # Input checks
-   if (is.matrix(data)) data <- data.frame(data)
-   else if (!is.data.frame(data)) stop("Input data is not a data frame")
-   if (nrow(data) < 2) stop("The data set is too small.")
+#' @export
+findviews_to_compare_core <- function(group1, group2, data, view_size_max=NULL){
 
    if (!(is.logical(group1) & is.logical(group2)))
       stop('The input variables group1 and group2 must be vectors of booleans')
@@ -479,23 +472,13 @@ findviews_to_compare_core <- function(group1, group2, data, max_cols=NULL){
    if (all(group1 == group2))
       stop("The groups to be compared are strictly identical.")
 
-   # Sets max_cols = log2(ncol(data)) if no value specified
-   if (is.null(max_cols)) max_cols <- max(1, log2(ncol(data)))
-   stopifnot(is.numeric(max_cols), max_cols >= 1)
-   max_cols <- as.integer(max_cols)
-
-   # Type detection and conversions
-   # Flat columns = pimary keys, or columns with only 1 distinct value
-   #cat('Processing the data.... ')
-   preprocessed <- preprocess(data)
-   data_num <- preprocessed$data_num
-   data_cat <- preprocessed$data_cat
-   excluded <- preprocessed$excluded
-
-   # Creates views
-   #cat('Creating the views.... ')
-   views_num <- cluster_columns(data_num, max_cols, DEP_FUNC_NUM)
-   views_cat <- cluster_columns(data_cat, max_cols, DEP_FUNC_CAT)
+   # Checks all the other parameters and creates the views
+   data_and_views <- findviews_trunk(data, view_size_max)
+   data_num  <- data_and_views$data_num
+   views_num <- data_and_views$views_num
+   data_cat  <- data_and_views$data_cat
+   views_cat <- data_and_views$views_cat
+   excluded  <- data_and_views$excluded
 
    # Dissimilarity analysis of each view
    #cat('Scoring the views.... ')

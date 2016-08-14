@@ -181,10 +181,10 @@ cut_max_size <- function(den, max_size){
    return(clusters)
 }
 
-cluster_columns <- function(data, max_cols, dependency_name){
+cluster_columns <- function(data, view_size_max, dependency_name){
    stopifnot(is.data.frame(data), nrow(data) >= 2)
-   stopifnot(is.numeric(max_cols))
-   if (max_cols < 1) stop('max_cols must be at least one')
+   stopifnot(is.numeric(view_size_max))
+   if (view_size_max < 1) stop('view_size_max must be at least one')
    stopifnot(is.character(dependency_name))
 
    # Checks and retrieves dependency function
@@ -216,8 +216,46 @@ cluster_columns <- function(data, max_cols, dependency_name){
    dendrogram <- as.dendrogram(clust_out)
 
    # Cuts the dendrogram
-   clusters <- cut_max_size(dendrogram, max_cols)
+   clusters <- cut_max_size(dendrogram, view_size_max)
 
    return(clusters)
+}
+
+
+#####################################
+# Trunk for all findview functions  #
+#####################################
+findviews_trunk <- function(data,  view_size_max=NULL){
+
+   # Input checks
+   if (is.matrix(data)) data <- data.frame(data)
+   else if (!is.data.frame(data)) stop("Input data is not a data frame")
+   if (nrow(data) < 2) stop("The data set is too small.")
+
+   # Sets view_size_max = log2(ncol(data)) if no value specified
+   if (is.null(view_size_max)) view_size_max <- max(1, log2(ncol(data)))
+   stopifnot(is.numeric(view_size_max), view_size_max >= 1)
+   view_size_max <- as.integer(view_size_max)
+
+   # Type detection and conversions
+   # Flat columns = pimary keys, or columns with only 1 distinct value
+   #cat('Processing the data.... ')
+   preprocessed <- preprocess(data)
+   data_num <- preprocessed$data_num
+   data_cat <- preprocessed$data_cat
+   excluded <- preprocessed$excluded
+
+   # Creates views
+   #cat('Creating the views.... ')
+   views_num <- cluster_columns(data_num, view_size_max, DEP_FUNC_NUM)
+   views_cat <- cluster_columns(data_cat, view_size_max, DEP_FUNC_CAT)
+
+   return(list(
+      data_num  = data_num,
+      views_num = views_num,
+      data_cat  = data_cat,
+      views_cat = views_cat,
+      excluded  = excluded
+   ))
 }
 
