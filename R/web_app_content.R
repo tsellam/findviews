@@ -263,9 +263,14 @@ clean_target_for_plot <- function(data, target){
 num_1d_view <- function(data, mapping, ...){
    p <- ggplot2::ggplot(data=data, mapping=mapping) +
       ggplot2::geom_density(...) +
+      ggplot2::theme_bw() +
       ggplot2::theme(legend.text     = ggplot2::element_text(size = 12),
-                     legend.key.size = ggplot2::unit(1, "cm"),
-                     legend.title    = ggplot2::element_text(size = 0))
+                     legend.key.size = ggplot2::unit(1, "cm"))
+
+   if (is.ordered(data[[ncol(data)]]))
+      p <- p + ggplot2::scale_colour_brewer() +
+               ggplot2::scale_fill_brewer()
+
    p
 }
 
@@ -277,22 +282,31 @@ num_2d_view <- function(data, mapping, ...){
 
    p <- ggplot2::ggplot(data=data, mapping=mapping) +
       ggplot2::geom_point(size = scat_pt_size, ...) +
+      ggplot2::theme_bw() +
       ggplot2::theme(legend.text     = ggplot2::element_text(size = 12),
-                     legend.key.size = ggplot2::unit(1, "cm"),
-                     legend.title    = ggplot2::element_text(size = 0))
+                     legend.key.size = ggplot2::unit(1, "cm"))
 
    if (nrow(data) > 20) p <- p + ggplot2::geom_smooth(method=lm, se = F)
+   if (is.ordered(data[[ncol(data)]]))
+      p <- p + ggplot2::scale_colour_brewer() +
+             ggplot2::scale_fill_brewer()
 
    p
 }
 
 cat_1d_view <- function(data, mapping, ...){
-   ggplot2::ggplot(data, mapping) +
+  p <- ggplot2::ggplot(data, mapping) +
       ggplot2::geom_bar(position = "dodge", ...) +
       ggplot2::scale_y_continuous(labels = scales::percent) +
-      ggplot2::theme(axis.text.x=ggplot2::element_text(angle=-30, hjust=0),
-                     legend.position = "left",
-                     legend.title = ggplot2::element_blank())
+      ggplot2::theme_bw() +
+      ggplot2::theme(axis.text.x=ggplot2::element_text(angle=-35, hjust=0),
+                     legend.position = "left")
+
+   if (is.ordered(data[[ncol(data)]]))
+      p <- p + ggplot2::scale_colour_brewer() +
+               ggplot2::scale_fill_brewer()
+
+   p
 }
 
 
