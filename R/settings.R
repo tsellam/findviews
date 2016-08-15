@@ -31,7 +31,7 @@ DISTINCT_VALS_THRES <- 25
 # Web and GUI #
 ###############
 # Web app parameters
-APP_TYPES <- c('findviews', 'findviews_to_compare')
+APP_TYPES <- c('findviews', 'findviews_to_compare', 'findviews_to_predict')
 
 # Graphing parameters
 SCATTERPLOT_SAMPLE_SIZE <- 2500

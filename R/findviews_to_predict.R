@@ -147,7 +147,7 @@ preprocess_target <- function(target_col, nbins=8){
 }
 
 #' @export
-findviews_to_predict_core <- function(target, data, nbins=8, view_size_max=NULL){
+findviews_to_predict_core <- function(target, data, view_size_max=NULL, nbins = 8){
 
    if (!is.character(target))
       stop("The target must be a column name.")

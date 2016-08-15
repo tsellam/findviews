@@ -25,7 +25,7 @@ data_table_options <- function(app_type){
          list('targets' = 0, 'visible' = FALSE),
          list('targets' = 1, 'title' = NULL)
       )
-   else
+   else if (app_type %in% c('findviews_to_compare', 'findviews_to_predict'))
       list(
          list('targets' = 0, 'visible' = FALSE),
          list('targets' = 1, 'visible' = FALSE),
@@ -245,6 +245,20 @@ create_view_title <- function(view_id, view_type, fdviews_out){
 #----------#
 # Plotting #
 #----------#
+### Preprocessing
+clean_target_for_plot <- function(data, target){
+   stopifnot(target %in% names(data))
+
+   s <- data[[target]]
+
+   if (is.logical(s) | is.character(s) | is.factor(s))
+      return(factor(s))
+
+   if (is.numeric(s)) return(bin_equiwidth(s, 3))
+
+   stop('Findview\'s plotting functions do not support the data type of the target')
+}
+
 ### Plotting functions
 num_1d_view <- function(data, mapping, ...){
    p <- ggplot2::ggplot(data=data, mapping=mapping) +
@@ -258,9 +272,8 @@ num_1d_view <- function(data, mapping, ...){
 num_2d_view <- function(data, mapping, ...){
 
    scat_pt_size <- if (nrow(data) > 1000) .5
-   else if (nrow(data) > 500) .75
-   else 1
-
+                   else if (nrow(data) > 500) .75
+                   else 1
 
    p <- ggplot2::ggplot(data=data, mapping=mapping) +
       ggplot2::geom_point(size = scat_pt_size, ...) +
@@ -280,8 +293,6 @@ cat_1d_view <- function(data, mapping, ...){
       ggplot2::theme(axis.text.x=ggplot2::element_text(angle=-30, hjust=0),
                      legend.position = "left",
                      legend.title = ggplot2::element_blank())
-
-
 }
 
 
@@ -317,6 +328,13 @@ plot_selection_numeric <- function(data, target, app_type){
       def_cst_fill <- NULL
       def_alpha   <- .5
       show_legend <- T
+
+   } else if (app_type == 'findviews_to_predict'){
+      def_color    <- labels_col
+      def_fills    <- labels_col
+      def_cst_fill <- NULL
+      def_alpha    <- .5
+      show_legend  <- T
    }
 
    # 1D data -> density plot
@@ -340,7 +358,7 @@ plot_selection_numeric <- function(data, target, app_type){
       lower_plots <- GGally::wrap(num_2d_view, alpha = def_alpha)
       diag_plots  <- if (!is.null(def_cst_fill))
                         GGally::wrap(num_1d_view, fill = def_cst_fill)
-                      else num_1d_view
+                      else GGally::wrap(num_1d_view, alpha = def_alpha)
 
       # Puts them all in matrix
       pairs <- GGally::ggpairs(data,
@@ -391,6 +409,13 @@ plot_selection_categorical <- function(data, target, app_type){
       show_legend <- T
       nplots      <- length(to_plot_col) + 1
       yLabel      <- "Frequency (per group)"
+
+   } else if (app_type == 'findviews_to_predict'){
+      def_color   <- labels_col
+      def_fills   <- labels_col
+      show_legend <- T
+      nplots      <- length(to_plot_col) + 1
+      yLabel      <- "Frequency (per group)"
    }
 
    # Creates the series of plots
@@ -425,7 +450,7 @@ plot_selection_categorical <- function(data, target, app_type){
 
 plot_selection <- function(view_id, view_type, app_type,
                            fdviews_out, data,
-                           group1=NULL, group2=NULL){
+                           group1=NULL, group2=NULL, target_col=NULL){
 
    stopifnot(is.integer(view_id))
    stopifnot(view_type %in% c('num', 'cat'))
@@ -451,6 +476,10 @@ plot_selection <- function(view_id, view_type, app_type,
       row_selection <- group1 | group2
       data   <- data[row_selection, view_cols, drop=F]
       target <- target[row_selection]
+
+   } else if (app_type == 'findviews_to_predict'){
+      target <- clean_target_for_plot(data, target_col)
+
    }
 
    plot <- if (view_type=='num') plot_selection_numeric(data[view_cols],
@@ -494,7 +523,8 @@ create_view_comments <- function(view_id, view_type, app_type, fdviews_out){
    stopifnot(app_type %in% APP_TYPES)
 
    # For most app types, we can already stop here
-   if (app_type %in% c("findviews")) return(shiny::HTML(""))
+   if (app_type %in% c("findviews", "findviews_to_predict"))
+      return(shiny::HTML(""))
 
    # For other types, we continue
    stopifnot(c('details_num', 'details_cat') %in% names(fdviews_out))

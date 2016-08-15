@@ -11,7 +11,9 @@ create_fdviews_client <- function(app_type){
       if (app_type == 'findviews')
          titlePanel("Views", windowTitle = app_type)
       else if (app_type == 'findviews_to_compare')
-         titlePanel("Views to Compare", windowTitle = app_type),
+         titlePanel("Views to Compare", windowTitle = app_type)
+      else if (app_type == 'findviews_to_predict')
+         titlePanel("Views to Predict", windowTitle = app_type),
 
       sidebarLayout(
 
@@ -43,7 +45,8 @@ create_fdviews_client <- function(app_type){
 
 #' @import shiny
 create_fdviews_server <- function(fdviews_out, app_type, data,
-                                  fdviews_group1 = NULL, fdviews_group2 = NULL){
+                                  fdviews_group1 = NULL, fdviews_group2 = NULL,
+                                  target = NULL){
    stopifnot(is.character(app_type))
    stopifnot(app_type %in% APP_TYPES)
 
@@ -88,7 +91,7 @@ create_fdviews_server <- function(fdviews_out, app_type, data,
 
          plot_selection(view_id, view_type, app_type,
                         fdviews_out, data,
-                        fdviews_group1, fdviews_group2)
+                        fdviews_group1, fdviews_group2, target)
       })
 
       output$viewComment <- renderUI({
@@ -103,7 +106,8 @@ create_fdviews_server <- function(fdviews_out, app_type, data,
 
 
 create_fdviews_app <- function(fdviews_out, app_type, data,
-                               fdviews_group1=NULL, fdviews_group2=NULL){
+                               fdviews_group1=NULL, fdviews_group2=NULL,
+                               target=NULL){
 
    stopifnot(is.character(app_type))
    stopifnot(app_type %in% APP_TYPES)
@@ -112,7 +116,8 @@ create_fdviews_app <- function(fdviews_out, app_type, data,
    fdviews_app <- shiny::shinyApp(
       ui     = create_fdviews_client(app_type),
       server = create_fdviews_server(fdviews_out, app_type, data,
-                                     fdviews_group1, fdviews_group2)
+                                     fdviews_group1, fdviews_group2,
+                                     target)
    )
 
    return(fdviews_app)
@@ -134,7 +139,15 @@ findviews <- function(data, view_size_max=NULL, ...){
 findviews_to_compare <- function(group1, group2, data, view_size_max=NULL, ...){
    fdviews_out <- findviews_to_compare_core(group1, group2, data, view_size_max)
    fdviews_app <- create_fdviews_app(fdviews_out, "findviews_to_compare", data,
-                                     group1, group2)
+                                     fdviews_group1=group1, fdviews_group2=group2)
    shiny::runApp(fdviews_app, display.mode = "normal", ...)
 }
 
+#' @export
+findviews_to_predict <- function(target, data, view_size_max=NULL, nbins = 8,...){
+   cat("The visual support for findviews_to_predict is still very rudimentary - stay tuned for updates!\n")
+   fdviews_out <- findviews_to_predict_core(target, data, view_size_max, nbins)
+   fdviews_app <- create_fdviews_app(fdviews_out, "findviews_to_predict",
+                                     data, target = target)
+   shiny::runApp(fdviews_app, display.mode = "normal", ...)
+}
