@@ -423,7 +423,7 @@ aggregate_differences <- function(table_score, weights){
 }
 
 
-score_views <- function(views, group1, group2, data, diff_components){
+score_difference <- function(views, group1, group2, data, diff_components){
    stopifnot(is.list(views))
    stopifnot(is.data.frame(data), nrow(data) >= 2)
    stopifnot(is.logical(group1), length(group1) == nrow(data), sum(group1) > 0)
@@ -482,9 +482,9 @@ findviews_to_compare_core <- function(group1, group2, data, view_size_max=NULL){
 
    # Dissimilarity analysis of each view
    #cat('Scoring the views.... ')
-   diff_components_num <- score_views(views_num, group1, group2,
+   diff_components_num <- score_difference(views_num, group1, group2,
                                      data_num, DIFF_COMPONENTS_NUM)
-   diff_components_cat <- score_views(views_cat, group1, group2,
+   diff_components_cat <- score_difference(views_cat, group1, group2,
                                      data_cat, DIFF_COMPONENTS_CAT)
 
    # Aggregates all the Diff-Components into one score

@@ -1,3 +1,4 @@
+# Pretty prints a list of names
 enumerate_char <- function(v){
    stopifnot(is.character(v))
    if (length(v) == 0) {
@@ -62,6 +63,7 @@ map_to_colors <- function(data, start_col, end_col, missing_col = '#CCCCCC'){
 
    NAs <- is.na(data)
    clean_data <- data[!NAs]
+   if (length(clean_data) == 0) return(rep(missing_col, length(data)))
 
    min <- 0
    max <- max(clean_data)
@@ -80,3 +82,30 @@ map_to_colors <- function(data, start_col, end_col, missing_col = '#CCCCCC'){
 }
 
 
+# Merges several factors of the same size
+merge_factors <- function(df){
+   stopifnot(is.data.frame(df))
+
+   if (nrow(df) == 0) return(factor())
+   if (ncol(df) == 0) return(factor(rep(NA, nrow(df))))
+
+   stopifnot(sapply(df, is.factor))
+   interaction(df, drop = T)
+}
+
+# Bins a vector of numerics
+bin_equiwidth <- function(s, nbins){
+   stopifnot(is.numeric(s))
+   stopifnot(is.numeric(nbins))
+
+   if (nbins < 2) stop("The number of bins must be at least 2")
+
+   if (length(s) == 0) return(factor())
+   if (all(is.na(s)))  return(factor(rep(NA), length(s)))
+   if (min(s, na.rm = T) == max(s, na.rm = T)) return(factor(s))
+
+   if (is.integer(s) & length(unique(s)) <= nbins)
+      return(factor(s))
+
+   cut(s, nbins, ordered_result = T)
+}

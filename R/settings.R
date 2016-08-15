@@ -1,3 +1,6 @@
+#######################
+# findcols_to_compare #
+#######################
 # Dependency calculation functions for each type of column
 DEP_FUNC_NUM <- 'cor_matrix'
 DEP_FUNC_CAT <- 'cramerV_matrix'
@@ -19,6 +22,14 @@ P_VALUE_DIFF <- 0.05
 P_VALUE_PEARSON_RESIDUALS <- 0.01
 
 
+#######################
+# findcols_to_predict #
+#######################
+DISTINCT_VALS_THRES <- 25
+
+###############
+# Web and GUI #
+###############
 # Web app parameters
 APP_TYPES <- c('findviews', 'findviews_to_compare')
 

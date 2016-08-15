@@ -107,7 +107,7 @@ test_that("diff_histogram does the job", {
 context("findviews_to_compare - scoring functions")
 
 test_score <- function(views, target, df, diff_components){
-   out <- score_views(views, target, !target, df, diff_components)
+   out <- score_difference(views, target, !target, df, diff_components)
 
    expect_is(out, "data.frame")
    expect_equal(nrow(out), length(views))
