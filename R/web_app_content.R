@@ -352,7 +352,6 @@ plot_selection_numeric <- function(data, target, app_type){
    # 2d and more -> scatterplot matrix
    } else if (ncol(data) >= 3){
       # Context-dependent graph parameters
-      alpha_default   <- .5
       title <- "Density plots (diagonal) and 2D scatterplots (all the other charts)"
 
       lower_plots <- GGally::wrap(num_2d_view, alpha = def_alpha)
@@ -408,14 +407,14 @@ plot_selection_categorical <- function(data, target, app_type){
       def_fills   <- labels_col
       show_legend <- T
       nplots      <- length(to_plot_col) + 1
-      yLabel      <- "Frequency (per group)"
+      yLabel      <- "Frequency in target group"
 
    } else if (app_type == 'findviews_to_predict'){
       def_color   <- labels_col
       def_fills   <- labels_col
       show_legend <- T
       nplots      <- length(to_plot_col) + 1
-      yLabel      <- "Frequency (per group)"
+      yLabel      <- "Frequency in target group"
    }
 
    # Creates the series of plots

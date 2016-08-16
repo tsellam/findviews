@@ -145,7 +145,6 @@ findviews_to_compare <- function(group1, group2, data, view_size_max=NULL, ...){
 
 #' @export
 findviews_to_predict <- function(target, data, view_size_max=NULL, nbins = 4,...){
-   cat("The visual support for findviews_to_predict is still very rudimentary - stay tuned for updates!\n")
    fdviews_out <- findviews_to_predict_core(target, data, view_size_max, nbins)
    fdviews_app <- create_fdviews_app(fdviews_out, "findviews_to_predict", data, target=target)
    shiny::runApp(fdviews_app, display.mode = "normal", ...)
