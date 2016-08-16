@@ -25,7 +25,8 @@ P_VALUE_PEARSON_RESIDUALS <- 0.01
 #######################
 # findcols_to_predict #
 #######################
-DISTINCT_VALS_THRES <- 25
+DISTINCT_VALS_THRES  <- 25
+NBINS_CONT_VARIABLES <- 8
 
 ###############
 # Web and GUI #

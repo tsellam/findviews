@@ -107,7 +107,8 @@ check_output <- function(df, num, ...){
                        'scores_num',
                        'details_num',
                        'details_cat',
-                       'excluded'), ignore.order=T)
+                       'excluded',
+                       'target_data'), ignore.order=T)
 
    # Content checks
    expect_is(out$views_num, "list")

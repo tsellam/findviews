@@ -245,20 +245,6 @@ create_view_title <- function(view_id, view_type, fdviews_out){
 #----------#
 # Plotting #
 #----------#
-### Preprocessing
-clean_target_for_plot <- function(data, target){
-   stopifnot(target %in% names(data))
-
-   s <- data[[target]]
-
-   if (is.logical(s) | is.character(s) | is.factor(s))
-      return(factor(s))
-
-   if (is.numeric(s)) return(bin_equiwidth(s, 3))
-
-   stop('Findview\'s plotting functions do not support the data type of the target')
-}
-
 ### Plotting functions
 num_1d_view <- function(data, mapping, ...){
    p <- ggplot2::ggplot(data=data, mapping=mapping) +
@@ -464,7 +450,7 @@ plot_selection_categorical <- function(data, target, app_type){
 
 plot_selection <- function(view_id, view_type, app_type,
                            fdviews_out, data,
-                           group1=NULL, group2=NULL, target_col=NULL){
+                           group1=NULL, group2=NULL, target=NULL){
 
    stopifnot(is.integer(view_id))
    stopifnot(view_type %in% c('num', 'cat'))
@@ -481,26 +467,28 @@ plot_selection <- function(view_id, view_type, app_type,
 
    } else if (app_type == 'findviews_to_compare'){
       # Generates a target vector
-      target <- integer(nrow(data))
-      target[group1] <- 1
-      target[group2] <- 2
-      target <- factor(paste0("Group ", target))
+      target_data <- integer(nrow(data))
+      target_data[group1] <- 1
+      target_data[group2] <- 2
+      target_data <- factor(paste0("Group ", target_data))
 
       # Trims the data to the user's selection
       row_selection <- group1 | group2
       data   <- data[row_selection, view_cols, drop=F]
-      target <- target[row_selection]
+      target_data <- target_data[row_selection]
 
    } else if (app_type == 'findviews_to_predict'){
-      target <- clean_target_for_plot(data, target_col)
+      stopifnot("target_data" %in% names(fdviews_out))
+      target_data <- fdviews_out$target_data
+      stopifnot(is.factor(target_data))
 
    }
 
    plot <- if (view_type=='num') plot_selection_numeric(data[view_cols],
-                                                        target,
+                                                        target_data,
                                                         app_type)
            else plot_selection_categorical(data[view_cols],
-                                           target,
+                                           target_data,
                                            app_type)
 
    return(plot)

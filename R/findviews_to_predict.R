@@ -86,7 +86,7 @@ score_predictive_cat <- function(views, data, target){
    scores
 }
 
-score_predictive_num <- function(views, data, target, nbins=8){
+score_predictive_num <- function(views, data, target){
    stopifnot(is.list(views))
    stopifnot(is.data.frame(data))
    stopifnot(all(unlist(views) %in% names(data)))
@@ -98,7 +98,7 @@ score_predictive_num <- function(views, data, target, nbins=8){
    # Discretizes the columns of data frame
    view_cols <- unique(unlist(views))
    discretized_data <- lapply(view_cols, function(colname){
-      bin_equiwidth(data[[colname]], nbins)
+      bin_equiwidth(data[[colname]], NBINS_CONT_VARIABLES)
    })
    discretized_data <- as.data.frame(discretized_data, col.names = view_cols)
 
@@ -113,41 +113,41 @@ score_predictive_num <- function(views, data, target, nbins=8){
 #################
 # Main Function #
 #################
-preprocess_target <- function(target_col, nbins=8){
+preprocess_target <- function(target_data, nbins=4){
 
    # Case empty - who knows, this could be useful
-   if (length(target_col) == 0) return(factor())
+   if (length(target_data) == 0) return(factor())
 
    # Case factor
-   if (is.factor(target_col)){
-      if (length(unique(target_col)) > DISTINCT_VALS_THRES)
+   if (is.factor(target_data)){
+      if (length(unique(target_data)) > DISTINCT_VALS_THRES)
          warning(paste0("The target vector contains many distinct values,",
                         " the computations will be slow!"))
-      return(target_col)
+      return(target_data)
    }
 
    # Case string
-   if (is.character(target_col)){
-      if (length(unique(target_col)) > DISTINCT_VALS_THRES)
+   if (is.character(target_data)){
+      if (length(unique(target_data)) > DISTINCT_VALS_THRES)
          warning(paste0("The target vector contains many distinct values,",
                         " the computations will be slow!"))
-      return(factor(target_col))
+      return(factor(target_data))
    }
 
    # Case boolean
-   if (is.logical(target_col)) return(factor(target_col))
+   if (is.logical(target_data)) return(factor(target_data))
 
    # Case numeric
-   if (is.numeric(target_col)){
+   if (is.numeric(target_data)){
       #cat("Numeric target detected, I am discretizing it\n")
-      return(bin_equiwidth(target_col, nbins))
+      return(bin_equiwidth(target_data, nbins))
    }
 
    stop("Unknown data type for target column!")
 }
 
 #' @export
-findviews_to_predict_core <- function(target, data, view_size_max=NULL, nbins = 8){
+findviews_to_predict_core <- function(target, data, view_size_max=NULL, nbins = 4){
 
    if (!is.character(target))
       stop("The target must be a column name.")
@@ -159,18 +159,18 @@ findviews_to_predict_core <- function(target, data, view_size_max=NULL, nbins = 
       stop("I could not find the target column in the data")
 
    # Separates the target from the rest of the data
-   target_col <- data[[target]]
+   target_data <- data[[target]]
    data <- data[!names(data) %in% target]
    if (nrow(data) < 1) stop("The input data is empty")
 
    # Removes the missing values
-   target_NAs <- is.na(target_col)
+   target_NAs <- is.na(target_data)
    if (all(target_NAs)) stop("The target column contains only NAs!")
-   target_col <- target_col[!target_NAs]
+   target_data <- target_data[!target_NAs]
    data <- data[!target_NAs,,drop=F]
 
    # If necessary, discretizes the target column
-   target_col <- preprocess_target(target_col, nbins)
+   target_data <- preprocess_target(target_data, nbins)
 
    # Creates the views
    data_and_views <- findviews_trunk(data, view_size_max)
@@ -181,8 +181,8 @@ findviews_to_predict_core <- function(target, data, view_size_max=NULL, nbins = 
    excluded  <- data_and_views$excluded
 
    # Aggregates all the Diff-Components into one score
-   prediction_scores_num <- score_predictive_num(views_num, data_num, target_col)
-   prediction_scores_cat <- score_predictive_cat(views_cat, data_cat, target_col)
+   prediction_scores_num <- score_predictive_num(views_num, data_num, target_data)
+   prediction_scores_cat <- score_predictive_cat(views_cat, data_cat, target_data)
 
    # Ranks the views accordingly
    order_num <- order(prediction_scores_num, decreasing = T, na.last = T)
@@ -195,7 +195,7 @@ findviews_to_predict_core <- function(target, data, view_size_max=NULL, nbins = 
       views_cat   = views_cat[order_cat],
       scores_cat  = prediction_scores_cat[order_cat],
       details_cat = NA,
-      excluded    = excluded
+      excluded    = excluded,
+      target_data = target_data
    ))
 }
-
