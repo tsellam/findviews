@@ -138,17 +138,17 @@ test_that("column clustering function works properly with 1 col data", {
    expect_length(clu1, 1)
 })
 
-test_that("column clustering fails with NAs", {
-   df_hell <- data.frame(
-      x0 = c(4,3,2,1),
-      x1 = c(1,2,3,4),
-      x2 = c(1,1,1,1)
-   )
-
-   dmat <- suppressWarnings(dependency_matrix(df_hell, DEP_FUNC_NUM))
-   stopifnot(is.matrix(dmat))
-   expect_error(cluster_columns(dmat, 4))
-})
+# test_that("column clustering fails with NAs", {
+#    df_hell <- data.frame(
+#       x0 = c(4,3,2,1),
+#       x1 = c(1,2,3,4),
+#       x2 = c(1,1,1,1)
+#    )
+#
+#    dmat <- suppressWarnings(dependency_matrix(df_hell, DEP_FUNC_NUM))
+#    stopifnot(is.matrix(dmat))
+#    expect_error(cluster_columns(dmat, 4))
+# })
 
 
 ##################

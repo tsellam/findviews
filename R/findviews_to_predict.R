@@ -147,7 +147,9 @@ preprocess_target <- function(target_data, nbins=4){
 }
 
 #' @export
-findviews_to_predict_core <- function(target, data, view_size_max=NULL, nbins = 4){
+findviews_to_predict_core <- function(target, data,
+                                      view_size_max=NULL, clust_method="single",
+                                      nbins = 4){
 
    if (!is.character(target))
       stop("The target must be a column name.")
@@ -173,7 +175,7 @@ findviews_to_predict_core <- function(target, data, view_size_max=NULL, nbins = 
    target_data <- preprocess_target(target_data, nbins)
 
    # Creates the views
-   data_and_views <- findviews_trunk(data, view_size_max)
+   data_and_views <- findviews_trunk(data, view_size_max, clust_method)
    data_num  <- data_and_views$data_num
    views_num <- data_and_views$views_num
    data_cat  <- data_and_views$data_cat

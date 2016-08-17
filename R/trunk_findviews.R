@@ -206,19 +206,21 @@ cut_max_size <- function(den, max_size){
    return(clusters)
 }
 
-cluster_columns <- function(dependency_mat, view_size_max){
+cluster_columns <- function(dependency_mat, view_size_max,
+                            clust_method = "complete"){
    stopifnot(is.matrix(dependency_mat))
    stopifnot(is.numeric(view_size_max))
    stopifnot(view_size_max >= 1)
 
    if (any(dependency_mat > 1 | dependency_mat < 0, na.rm = T))
       stop('Dependency must vary between 0 and 1')
-   if (all(is.na(dependency_mat)))
-      stop("Could not compute a valid dependency matrix")
 
    # Trivial case: 0 or 1 column
    if (ncol(dependency_mat) == 0) return(list())
    if (ncol(dependency_mat) == 1) return(list(colnames(dependency_mat)))
+
+   if (all(is.na(dependency_mat)))
+      stop("Could not compute a valid dependency matrix")
 
    # Runs complete link clustering on the remainder
    # Preprocesses the dependency matrix
@@ -228,7 +230,7 @@ cluster_columns <- function(dependency_mat, view_size_max){
 
    # Clusters it
    dist_obj <-  as.dist(inv_dependency)
-   clust_out <- hclust(dist_obj, method = "complete")
+   clust_out <- hclust(dist_obj, method = clust_method)
    dendrogram <- as.dendrogram(clust_out)
 
    # Cuts the dendrogram
@@ -241,9 +243,13 @@ cluster_columns <- function(dependency_mat, view_size_max){
 #####################################
 # Trunk for all findview functions  #
 #####################################
-findviews_trunk <- function(data,  view_size_max=NULL){
+findviews_trunk <- function(data,  view_size_max=NULL, clust_method="single"){
 
    # Input checks
+   if (!is.character(clust_method))
+      stop(paste0("clust_method must be a string describing a ",
+                  "clustering method (e.g. 'single' or 'complete')"))
+
    if (is.matrix(data)) data <- data.frame(data)
    else if (!is.data.frame(data)) stop("Input data is not a data frame")
    if (nrow(data) < 2) stop("The data set is too small.")
@@ -265,8 +271,8 @@ findviews_trunk <- function(data,  view_size_max=NULL){
    dep_mat_cat <- dependency_matrix(data_cat, DEP_FUNC_CAT)
 
    # Creates views
-   views_num <- cluster_columns(dep_mat_num, view_size_max)
-   views_cat <- cluster_columns(dep_mat_cat, view_size_max)
+   views_num <- cluster_columns(dep_mat_num, view_size_max, clust_method)
+   views_cat <- cluster_columns(dep_mat_cat, view_size_max, clust_method)
 
    return(list(
       data_num           = data_num,

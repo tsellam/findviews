@@ -128,14 +128,15 @@ create_fdviews_app <- function(fdviews_out, app_type, data,
 #####################################
 
 #' @export
-findviews <- function(data, view_size_max=NULL, ...){
+findviews <- function(data, view_size_max=NULL, clust_method="single", ...){
    fdviews_out <- findviews_core(data, view_size_max)
    fdviews_app <- create_fdviews_app(fdviews_out, "findviews", data)
    shiny::runApp(fdviews_app, display.mode = "normal", ...)
 }
 
 #' @export
-findviews_to_compare <- function(group1, group2, data, view_size_max=NULL, ...){
+findviews_to_compare <- function(group1, group2, data,
+                                 view_size_max=NULL, clust_method="single", ...){
    fdviews_out <- findviews_to_compare_core(group1, group2, data, view_size_max)
    fdviews_app <- create_fdviews_app(fdviews_out, "findviews_to_compare", data,
                                      fdviews_group1=group1, fdviews_group2=group2)
@@ -143,7 +144,9 @@ findviews_to_compare <- function(group1, group2, data, view_size_max=NULL, ...){
 }
 
 #' @export
-findviews_to_predict <- function(target, data, view_size_max=NULL, nbins = 4,...){
+findviews_to_predict <- function(target, data,
+                                 view_size_max=NULL, clust_method="single",
+                                 nbins=4,...){
    fdviews_out <- findviews_to_predict_core(target, data, view_size_max, nbins)
    fdviews_app <- create_fdviews_app(fdviews_out, "findviews_to_predict", data, target=target)
    shiny::runApp(fdviews_app, display.mode = "normal", ...)

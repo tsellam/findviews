@@ -154,9 +154,9 @@ test_that("scoring works for categorical data", {
 ##########################
 context("findviews_to_compare - main function")
 
-check_output <- function(df, to_describe, num, ...){
+check_output <- function(df, to_describe, num){
    # Runs Ziggy
-   out <- findviews_to_compare_core(to_describe, !to_describe, df, num, ...)
+   out <- findviews_to_compare_core(to_describe, !to_describe, df, num)
 
    # Structure checks
    expect_is(out, "list")

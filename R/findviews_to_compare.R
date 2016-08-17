@@ -395,7 +395,7 @@ aggregate_differences <- function(table_score, weights){
 
    # Normalizes and replaces missing values by column averages
    scores_mat <- scale(scores_mat, center = T, scale = T)
-   scores_mat[is.na(scores_mat)] <- 0
+   scores_mat[!is.finite(scores_mat)] <- 0
 
    # Aggregates
    weights_mat <- as.matrix(weights[score_names])
@@ -410,7 +410,8 @@ aggregate_differences <- function(table_score, weights){
 
    old_means <- attr(scores_mat,"scaled:center")
    old_sds   <- attr(scores_mat,"scaled:scale")
-   low_bounds <- ifelse(is.finite(old_sds), - old_means / old_sds, 0)
+   low_bounds <- -old_means / old_sds
+   low_bounds[!is.finite(low_bounds)] <- 0
    theory_lowest_score <- sum(weights[score_names] * low_bounds[score_names])
 
    agg_scores <- (agg_scores - theory_lowest_score) /
@@ -461,7 +462,8 @@ score_difference <- function(views, group1, group2, data, diff_components){
 
 
 #' @export
-findviews_to_compare_core <- function(group1, group2, data, view_size_max=NULL){
+findviews_to_compare_core <- function(group1, group2, data,
+                                      view_size_max=NULL, clust_method="single"){
 
    if (!(is.logical(group1) & is.logical(group2)))
       stop('The input variables group1 and group2 must be vectors of booleans')
@@ -473,7 +475,7 @@ findviews_to_compare_core <- function(group1, group2, data, view_size_max=NULL){
       stop("The groups to be compared are strictly identical.")
 
    # Checks all the other parameters and creates the views
-   data_and_views <- findviews_trunk(data, view_size_max)
+   data_and_views <- findviews_trunk(data, view_size_max, clust_method)
    data_num  <- data_and_views$data_num
    views_num <- data_and_views$views_num
    data_cat  <- data_and_views$data_cat
