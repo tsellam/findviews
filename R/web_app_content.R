@@ -72,7 +72,7 @@ data_table_js <- function(app_type){
              table.rows().eq(0).each(function(index){
                 var row = table.row( index );
                 var colLevel = row.data()[1];
-                table.$('tr').eq(index).children('td').eq(1)
+                table.$('tr').eq(index).children('td').eq(0)
                 .css('background-color', colLevel);
             })
           })
@@ -113,8 +113,8 @@ create_view_table <- function(view_type, app_type, fdviews_out){
    # Done
    data.frame(viewId       = seq_along(view_strings),
               colors       = html_colors,
-              viewName     = view_strings,
-              scoreHeatmap = heatmap_col)
+              scoreHeatmap = heatmap_col,
+              viewName     = view_strings)
 }
 
 
