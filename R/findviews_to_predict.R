@@ -148,7 +148,7 @@ preprocess_target <- function(target_data, nbins=4){
 
 #' @export
 findviews_to_predict_core <- function(target, data,
-                                      view_size_max=NULL, clust_method="single",
+                                      view_size_max=NULL, clust_method="complete",
                                       nbins = 4){
 
    if (!is.character(target))

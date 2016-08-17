@@ -463,7 +463,7 @@ score_difference <- function(views, group1, group2, data, diff_components){
 
 #' @export
 findviews_to_compare_core <- function(group1, group2, data,
-                                      view_size_max=NULL, clust_method="single"){
+                                      view_size_max=NULL, clust_method="complete"){
 
    if (!(is.logical(group1) & is.logical(group2)))
       stop('The input variables group1 and group2 must be vectors of booleans')

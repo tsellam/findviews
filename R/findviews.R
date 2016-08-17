@@ -17,7 +17,7 @@ score_influence <- function(views, dep_mat){
 
 
 #' @export
-findviews_core <- function(data, view_size_max=NULL, clust_method="single"){
+findviews_core <- function(data, view_size_max=NULL, clust_method="complete"){
 
    # Creates the views
    data_and_views <- findviews_trunk(data, view_size_max, clust_method)

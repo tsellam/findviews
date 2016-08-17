@@ -192,13 +192,15 @@ cut_max_size <- function(den, max_size){
    node_members <- get_dend_attributes(den, 'members')
 
    # Detects split point
-   over_thresh <- node_members >= max_size
+   under_thresh <- node_members <= max_size
 
    # If applicable, cuts and fetches node labels
-   clusters <- if (!any(over_thresh)){
-     as.list(get_dend_attributes(den, 'label'))
+   clusters <- if (all(under_thresh)){
+     list(get_dend_attributes(den, 'label'))
    } else {
-      split_point <- min(node_heights[over_thresh])
+      first_breach <- min(node_heights[!under_thresh])
+      split_point  <- max(node_heights[under_thresh &
+                                      node_heights < first_breach], 0)
       subtrees <- cut(den, h = split_point)
       clusters <- lapply(subtrees$lower, get_dend_attributes, 'label')
    }
@@ -226,7 +228,7 @@ cluster_columns <- function(dependency_mat, view_size_max,
    # Preprocesses the dependency matrix
    inv_dependency <- 1 - dependency_mat
    # Replaces NA by high dummy value - please mail me if you know better
-   inv_dependency[is.na(inv_dependency)] <- 1
+   inv_dependency[is.na(inv_dependency)] <- 1.1
 
    # Clusters it
    dist_obj <-  as.dist(inv_dependency)
@@ -243,12 +245,12 @@ cluster_columns <- function(dependency_mat, view_size_max,
 #####################################
 # Trunk for all findview functions  #
 #####################################
-findviews_trunk <- function(data,  view_size_max=NULL, clust_method="single"){
+findviews_trunk <- function(data,  view_size_max=NULL, clust_method="complete"){
 
    # Input checks
    if (!is.character(clust_method))
       stop(paste0("clust_method must be a string describing a ",
-                  "clustering method (e.g. 'single' or 'complete')"))
+                  "clustering method (e.g. 'complete' or 'complete')"))
 
    if (is.matrix(data)) data <- data.frame(data)
    else if (!is.data.frame(data)) stop("Input data is not a data frame")
