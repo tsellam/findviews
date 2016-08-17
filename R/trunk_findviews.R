@@ -26,7 +26,7 @@ preprocess <- function(data){
 
    # Removes flat columns
    is_flat_cat <- sapply(data_cat, function(col){
-      n <- length(unique(col))
+      n <- length(na.omit(unique(col)))
       return(n/nrow(data_cat) > .9 | n < 2)
    })
    is_flat_cat   <- as.logical(is_flat_cat)
@@ -34,7 +34,7 @@ preprocess <- function(data){
    data_cat      <- data_cat[, !is_flat_cat, drop=FALSE]
 
    is_flat_num <- sapply(data_num, function(col){
-      n <- length(unique(col))
+      n <- length(na.omit(unique(col)))
       return(n < 2)
    })
    is_flat_num <- as.logical(is_flat_num)
@@ -196,7 +196,7 @@ cut_max_size <- function(den, max_size){
 
    # If applicable, cuts and fetches node labels
    clusters <- if (!any(over_thresh)){
-     get_dend_attributes(den, 'label')
+     as.list(get_dend_attributes(den, 'label'))
    } else {
       split_point <- min(node_heights[over_thresh])
       subtrees <- cut(den, h = split_point)
@@ -211,17 +211,22 @@ cluster_columns <- function(dependency_mat, view_size_max){
    stopifnot(is.numeric(view_size_max))
    stopifnot(view_size_max >= 1)
 
-   if (any(is.na(dependency_mat)))
-      stop('NAs detected in dependency matrix')
-   if (any(dependency_mat > 1 | dependency_mat < 0))
+   if (any(dependency_mat > 1 | dependency_mat < 0, na.rm = T))
       stop('Dependency must vary between 0 and 1')
+   if (all(is.na(dependency_mat)))
+      stop("Could not compute a valid dependency matrix")
 
    # Trivial case: 0 or 1 column
    if (ncol(dependency_mat) == 0) return(list())
    if (ncol(dependency_mat) == 1) return(list(colnames(dependency_mat)))
 
    # Runs complete link clustering on the remainder
+   # Preprocesses the dependency matrix
    inv_dependency <- 1 - dependency_mat
+   # Replaces NA by high dummy value - please mail me if you know better
+   inv_dependency[is.na(inv_dependency)] <- 1
+
+   # Clusters it
    dist_obj <-  as.dist(inv_dependency)
    clust_out <- hclust(dist_obj, method = "complete")
    dendrogram <- as.dendrogram(clust_out)

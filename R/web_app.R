@@ -1,43 +1,42 @@
 ################################
 # Shiny code to create the app #
 ################################
-#' @import shiny
 create_fdviews_client <- function(app_type, target=NULL){
    stopifnot(is.character(app_type))
    stopifnot(app_type %in% APP_TYPES)
 
-   shinyUI(fluidPage(
+   shiny::shinyUI(shiny::fluidPage(
 
       if (app_type == 'findviews')
-         titlePanel("Views", windowTitle = app_type)
+         shiny::titlePanel("Views", windowTitle = app_type)
       else if (app_type == 'findviews_to_compare')
-         titlePanel("Views to Compare", windowTitle = app_type)
+         shiny::titlePanel("Views to Compare", windowTitle = app_type)
       else if (app_type == 'findviews_to_predict')
-         titlePanel(paste0("Views to Predict ", target), windowTitle = app_type),
+         shiny::titlePanel(paste0("Views to Predict ", target), windowTitle = app_type),
 
-      sidebarLayout(
+      shiny::sidebarLayout(
 
-         sidebarPanel(
-            tabsetPanel(id = "viewTab",
-                        tabPanel("Continuous",
+         shiny::sidebarPanel(
+            shiny::tabsetPanel(id = "viewTab",
+                               shiny::tabPanel("Continuous",
                                  dataTableOutput("numViewsTable"),
                                  value = "num"),
-                        tabPanel("Categorical",
+                               shiny::tabPanel("Categorical",
                                  dataTableOutput("catViewsTable"),
                                  value = "cat"),
-                        tabPanel("Excluded",
+                               shiny::tabPanel("Excluded",
                                  htmlOutput("exclusionComments"),
                                  value = "exc")
             ),
-            div(id="view-specs", class="hidden",
-                textInput("currentView", NULL)
+            shiny::div(id="view-specs", class="hidden",
+                       shiny::textInput("currentView", NULL)
             )
          ),
 
-          mainPanel(
-             htmlOutput("viewTitle"),
-             plotOutput("viewPlot"),
-             htmlOutput("viewComment")
+         shiny::mainPanel(
+            shiny::htmlOutput("viewTitle"),
+            shiny::plotOutput("viewPlot"),
+            shiny::htmlOutput("viewComment")
           )
        )
    ))
@@ -50,42 +49,42 @@ create_fdviews_server <- function(fdviews_out, app_type, data,
    stopifnot(is.character(app_type))
    stopifnot(app_type %in% APP_TYPES)
 
-   shinyServer(function(input, output) {
+   shiny::shinyServer(function(input, output) {
 
        # Side panel maintenance
-       output$numViewsTable <- renderDataTable(
+       output$numViewsTable <- shiny::renderDataTable(
           create_view_table('num', app_type, fdviews_out),
           options = data_table_options(app_type),
           callback = data_table_js(app_type)
        )
 
-       output$catViewsTable <- renderDataTable(
+       output$catViewsTable <- shiny::renderDataTable(
           create_view_table('cat', app_type, fdviews_out),
           options = data_table_options(app_type),
           callback = data_table_js(app_type)
        )
 
-       output$exclusionComments <- renderUI({
+       output$exclusionComments <- shiny::renderUI({
           describeExclusions(fdviews_out)
        })
 
       # Main panel maintenance
       # Reactive variables
-      selected_view_id <- reactive({
+      selected_view_id <- shiny::reactive({
          as.integer(input$currentView)
       })
 
       # Output bindings
-      output$viewTitle <- renderUI({
-         view_type <- isolate(input$viewTab)
+      output$viewTitle <- shiny::renderUI({
+         view_type <- shiny::isolate(input$viewTab)
          view_id   <- selected_view_id()
          if(is.na(view_id)) return(NULL)
 
          create_view_title(view_id, view_type, fdviews_out)
       })
 
-      output$viewPlot <- renderPlot({
-         view_type <- isolate(input$viewTab)
+      output$viewPlot <- shiny::renderPlot({
+         view_type <- shiny::isolate(input$viewTab)
          view_id   <- selected_view_id()
          if(is.na(view_id)) return(NULL)
 
@@ -94,8 +93,8 @@ create_fdviews_server <- function(fdviews_out, app_type, data,
                         fdviews_group1, fdviews_group2, target)
       })
 
-      output$viewComment <- renderUI({
-         view_type <- isolate(input$viewTab)
+      output$viewComment <- shiny::renderUI({
+         view_type <- shiny::isolate(input$viewTab)
          view_id   <- selected_view_id()
          if(is.na(view_id)) return(NULL)
 
@@ -131,7 +130,7 @@ create_fdviews_app <- function(fdviews_out, app_type, data,
 #' @export
 findviews <- function(data, view_size_max=NULL, ...){
    fdviews_out <- findviews_core(data, view_size_max)
-   fdviews_app <- create_fdviews_app(fdviews_out, "findviews", data, target)
+   fdviews_app <- create_fdviews_app(fdviews_out, "findviews", data)
    shiny::runApp(fdviews_app, display.mode = "normal", ...)
 }
 

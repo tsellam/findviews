@@ -298,8 +298,8 @@ cat_1d_view <- function(data, mapping, ...){
 
 #### Wrappers
 plot_selection_numeric <- function(data, target, app_type){
-   col_types <- sapply(data, class)
-   if (!all(col_types == 'numeric')) stop('Cannot plot, type not supported')
+   col_is_num <- sapply(data, is.numeric)
+   if (!all(col_is_num)) stop('Cannot plot, type not supported')
 
    # Prepares the data frame to be visualized
    data <- cbind(data, target)
@@ -309,9 +309,9 @@ plot_selection_numeric <- function(data, target, app_type){
 
    # Subsamples if necessary
    if (nrow(data) > SCATTERPLOT_SAMPLE_SIZE){
-      warning('The dataframe contains more that',SCATTERPLOT_SAMPLE_SIZE,
+      warning('The dataframe contains more that ',SCATTERPLOT_SAMPLE_SIZE,
               ' rows, I am subsampling the data')
-      data <- data[sample(1:nrow(data), SCATTERPLOT_SAMPLE_SIZE, F)]
+      data <- data[sample(1:nrow(data), SCATTERPLOT_SAMPLE_SIZE, F),,drop=F]
    }
 
    # Sets plotting parameters, depending on app type
@@ -462,7 +462,7 @@ plot_selection <- function(view_id, view_type, app_type,
 
    # Generates a target vector, used later to color the plots
    if (app_type == 'findviews'){
-      target <- rep(NA, nrow(data))
+      target_data <- rep(NA, nrow(data))
 
    } else if (app_type == 'findviews_to_compare'){
       # Generates a target vector
