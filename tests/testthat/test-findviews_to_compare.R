@@ -161,7 +161,8 @@ check_output <- function(df, to_describe, num){
    # Structure checks
    expect_is(out, "list")
    expect_named(out, c('views_cat', 'views_num', 'scores_cat', 'scores_num',
-                       'details_cat', 'details_num', 'excluded'), ignore.order=T)
+                      'details_cat', 'details_num', 'excluded'),
+                ignore.order=T)
 
    # Content check
    expect_is(out$views_num, "list")
@@ -217,6 +218,10 @@ test_that("findviews_to_compare can deal with NAs", {
    check_output(df_cat_NA, to_describe, 3)
 })
 
+test_that("findviews_to_compare can handle 0 length strings", {
+   check_output(df_cat_emptystring, to_describe, 3)
+})
+
 test_that("findviews_to_compare work for main function", {
    expect_is(findviews_to_compare_core(to_describe, !to_describe, df_mix), "list")
 })
@@ -226,4 +231,21 @@ test_that("findviews_to_compare fails properly", {
    expect_error(findviews_to_compare_core(c(), c(), df_empty))
    expect_error(findviews_to_compare_core(c(), c(), df_onerow))
    expect_error(findviews_to_compare_core(c(), c(), df_mix))
+})
+
+
+# Checks sampling
+test_that("sampling works properly", {
+   OLD <- SAMPLE_SIZE
+   SAMPLE_SIZE <<- 4
+   expect_warning(findviews_to_compare_core(to_describe, !to_describe, df_num))
+   SAMPLE_SIZE <<- OLD
+})
+
+
+# Checks target with NA
+test_that("findview_to_compare handles NAs in selection", {
+   to_describe_NA <- to_describe
+   to_describe_NA[2] <- NA
+   check_output(df_mix, to_describe_NA, 3)
 })

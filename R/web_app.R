@@ -150,6 +150,7 @@ findviews_to_predict <- function(target, data,
                                  nbins=4,...){
    fdviews_out <- findviews_to_predict_core(target, data,
                                             view_size_max, clust_method, nbins)
-   fdviews_app <- create_fdviews_app(fdviews_out, "findviews_to_predict", data, target=target)
+   fdviews_app <- create_fdviews_app(fdviews_out, "findviews_to_predict", data,
+                                     target=target)
    shiny::runApp(fdviews_app, display.mode = "normal", ...)
 }

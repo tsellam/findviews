@@ -26,6 +26,7 @@ findviews_core <- function(data, view_size_max=NULL, clust_method="complete"){
    dep_mat_cat <- data_and_views$dependency_mat_cat
    views_cat   <- data_and_views$views_cat
    excluded    <- data_and_views$excluded
+   sampled_rows<- data_and_views$sampled_rows
 
    # Aggregates all the Diff-Components into one score
    influence_scores_num <- score_influence(views_num, dep_mat_num)
@@ -42,6 +43,7 @@ findviews_core <- function(data, view_size_max=NULL, clust_method="complete"){
       views_num   = views_num[order_num],
       scores_num  = influence_scores_num[order_num],
       details_num = NA,
-      excluded    = excluded
+      excluded    = excluded,
+      sampled_rows = sampled_rows
    ))
 }

@@ -159,8 +159,21 @@ test_that("findviews_to_predict can deal with NAs", {
    check_output(df_cat_NA, 3)
 })
 
-# Error checking
-test_that("findviews_to_predict fails properly", {
-   expect_error(findviews_trunk(df_empty, 3))
-   expect_error(findviews_trunk(df_onerow, 3))
+test_that("findviews_to_predict can handle 0 length strings", {
+   check_output(df_cat_emptystring, 3)
 })
+
+
+# Checks sampling
+test_that("sampling works properly", {
+   # Generates a phony target column
+   target <- sample(factor(c('1', '2', '3')), nrow(df_num), replace = T)
+   df <- cbind(df_num, target)
+   names(df)[[length(names(df))]] <- 'target'
+
+   OLD <- SAMPLE_SIZE
+   SAMPLE_SIZE <<- 4
+   expect_warning(findviews_to_predict_core('target', df))
+   SAMPLE_SIZE <<- OLD
+})
+

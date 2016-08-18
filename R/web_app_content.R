@@ -483,7 +483,7 @@ plot_selection <- function(view_id, view_type, app_type,
               PLOT_SAMPLE_SIZE, ' rows, I am subsampling the data')
       sample_index <- sample(1:nrow(data), PLOT_SAMPLE_SIZE, F)
       data   <- data[sample_index,,drop=F]
-      target <- target[sample_index]
+      target_data <- target_data[sample_index]
    }
 
    plot <- if (view_type=='num') plot_selection_numeric(data[view_cols],

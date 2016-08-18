@@ -235,6 +235,7 @@ diff_corr <- function(view, g1_data, g2_data) {
 # Dissimilarities for nominal data #
 #----------------------------------#
 hist_diss_score <- function(table_g1, table_g2){
+
    # First, aligns tables
    g1_minus_g2 <- setdiff(names(table_g1), names(table_g2))
    table_g2[g1_minus_g2] <- 0
@@ -333,8 +334,8 @@ diff_histogram <- function(view, g1_data, g2_data) {
 
    # Computes and compares the histograms
    chisq_analysis <- lapply(view, function(v){
-      hist_g1  <- table(g1_data[[v]],  useNA = "no")
-      hist_g2 <- table(g2_data[[v]], useNA = "no")
+      hist_g1 <- safe_table(g1_data[[v]])
+      hist_g2 <- safe_table(g2_data[[v]])
 
       diss_score  <- hist_diss_score(hist_g1, hist_g2)
 
@@ -469,10 +470,17 @@ findviews_to_compare_core <- function(group1, group2, data,
       stop('The input variables group1 and group2 must be vectors of booleans')
    if (nrow(data) != length(group1) | nrow(data) != length(group2))
       stop("The size of the group description does not match the size of the data")
-   if (sum(group1) == 0 | sum(group2) == 0)
-      stop("The groups should contain at least 1 row")
    if (all(group1 == group2))
       stop("The groups to be compared are strictly identical.")
+
+   NAs <- is.na(group1) | is.na(group2)
+   group1 <- group1[!NAs]
+   group2 <- group2[!NAs]
+   data <- data[!NAs,,drop=F]
+   if (nrow(data) < 2 | length(group1) < 1 | length(group1) < 2)
+      stop("Not enough rows to compare")
+   if (sum(group1) == 0 | sum(group2) == 0)
+      stop("The groups should contain at least 1 row")
 
    # Checks all the other parameters and creates the views
    data_and_views <- findviews_trunk(data, view_size_max, clust_method)
@@ -481,19 +489,31 @@ findviews_to_compare_core <- function(group1, group2, data,
    data_cat  <- data_and_views$data_cat
    views_cat <- data_and_views$views_cat
    excluded  <- data_and_views$excluded
+   sampled_rows <- data_and_views$sampled_rows
+
+   # Subsamples the groups if necessary
+   if (!is.na(sampled_rows)){
+      sampled_group1 <- group1[sampled_rows]
+      sampled_group2 <- group2[sampled_rows]
+      if (sum(sampled_group1) < 1 | sum(sampled_group2) < 1)
+         stop("Sampling failed - please try with smaller data set.")
+   } else {
+      sampled_group1 <- group1
+      sampled_group2 <- group2
+   }
 
    # Dissimilarity analysis of each view
    #cat('Scoring the views.... ')
-   diff_components_num <- score_difference(views_num, group1, group2,
-                                     data_num, DIFF_COMPONENTS_NUM)
-   diff_components_cat <- score_difference(views_cat, group1, group2,
-                                     data_cat, DIFF_COMPONENTS_CAT)
+   diff_components_num <- score_difference(views_num, sampled_group1, sampled_group2,
+                                           data_num, DIFF_COMPONENTS_NUM)
+   diff_components_cat <- score_difference(views_cat, sampled_group1, sampled_group2,
+                                           data_cat, DIFF_COMPONENTS_CAT)
 
    # Aggregates all the Diff-Components into one score
    diff_scores_num <- aggregate_differences(diff_components_num,
-                                           WEIGHT_COMPONENTS_NUM)
+                                            WEIGHT_COMPONENTS_NUM)
    diff_scores_cat <- aggregate_differences(diff_components_cat,
-                                           WEIGHT_COMPONENTS_CAT)
+                                            WEIGHT_COMPONENTS_CAT)
 
    # Ranks the views accordingly
    order_num <- order(diff_scores_num, decreasing = T, na.last = T)

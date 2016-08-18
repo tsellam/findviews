@@ -38,7 +38,8 @@ check_output <- function(df, num, ...){
                        'scores_num',
                        'details_num',
                        'details_cat',
-                       'excluded'), ignore.order=T)
+                       'excluded',
+                       'sampled_rows'), ignore.order=T)
 
    # Content checks
    expect_is(out$views_num, "list")
@@ -68,7 +69,7 @@ check_output <- function(df, num, ...){
    expect_length(out$scores_cat, length(out$views_cat))
 }
 
-test_that("findviews_trunk returns properly", {
+test_that("findviews returns properly", {
    check_output(df_mix, 3)
    check_output(df_num, 3)
    check_output(df_cat, 2)
@@ -77,19 +78,34 @@ test_that("findviews_trunk returns properly", {
    check_output(df_onecol_cat, 3)
 })
 
-test_that("findviews_trunk can deal with flat columns", {
+test_that("findviews can deal with flat columns", {
    check_output(df_flat1, 2)
    check_output(df_flat2, 2)
    check_output(df_flat3, 2)
 })
 
-test_that("findviews_trunk can deal with NAs", {
+test_that("findviews can deal with NAs", {
    check_output(df_num_NA, 3)
    check_output(df_cat_NA, 3)
 })
 
 # Error checking
-test_that("findviews_trunk fails properly", {
-   expect_error(findviews_trunk(df_empty, 3))
-   expect_error(findviews_trunk(df_onerow, 3))
+test_that("findviews fails properly", {
+   expect_error(findviews_core(df_empty, 3))
+   expect_error(findviews_core(df_onerow, 3))
+})
+
+# Checks sampling
+test_that("sampling works properly", {
+   OLD <- SAMPLE_SIZE
+   SAMPLE_SIZE <<- 4
+   expect_warning(findviews_core(df_mix))
+   out <- suppressWarnings(findviews_core(df_mix))
+   expect_true(all(!is.na(out$sampled_rows)))
+   expect_length(out$sampled_rows, SAMPLE_SIZE)
+   SAMPLE_SIZE <<- OLD
+})
+
+test_that("findviews can handle 0 length strings", {
+   check_output(df_cat_emptystring, 3)
 })

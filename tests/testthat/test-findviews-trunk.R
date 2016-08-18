@@ -5,7 +5,7 @@ source('generate_df.R')
 #################
 context("trunk functions - preprocessing")
 test_that("preprocessor does its job", {
-   out_names <- c('data_cat', 'data_num', 'excluded')
+   out_names <- c('data_cat', 'data_num', 'excluded', 'sampled_rows')
 
    expect_is(preprocess(df_mix), 'list')
    expect_named(preprocess(df_mix), out_names, ignore.order=T)
@@ -170,7 +170,8 @@ check_output <- function(df, num, ...){
                        'data_num',
                        'excluded',
                        'dependency_mat_num',
-                       'dependency_mat_cat'), ignore.order=T)
+                       'dependency_mat_cat',
+                       'sampled_rows'), ignore.order=T)
 
    # Content checks
    expect_is(out$data_cat, "data.frame")
@@ -234,4 +235,17 @@ test_that("findviews_trunk can deal with NAs", {
 test_that("findviews_trunk fails properly", {
    expect_error(findviews_trunk(df_empty, 3))
    expect_error(findviews_trunk(df_onerow, 3))
+})
+
+# Checks sampling
+test_that("sampling works properly", {
+   OLD <- SAMPLE_SIZE
+   SAMPLE_SIZE <<- 4
+   expect_warning(findviews_trunk(df_mix))
+   out <- suppressWarnings(findviews_trunk(df_mix))
+   expect_true(all(!is.na(out$sampled_rows)))
+   expect_equal(length(out$sampled_rows), SAMPLE_SIZE)
+   expect_equal(nrow(out$data_num),SAMPLE_SIZE)
+   expect_equal(nrow(out$data_cat),SAMPLE_SIZE)
+   SAMPLE_SIZE <<- OLD
 })

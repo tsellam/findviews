@@ -181,10 +181,17 @@ findviews_to_predict_core <- function(target, data,
    data_cat  <- data_and_views$data_cat
    views_cat <- data_and_views$views_cat
    excluded  <- data_and_views$excluded
+   sampled_rows <- data_and_views$sampled_rows
+
+   # Subsamples the target if necessary
+   sampled_target_data <- if (!is.na(sampled_rows)) target_data[sampled_rows]
+                          else target_data
 
    # Aggregates all the Diff-Components into one score
-   prediction_scores_num <- score_predictive_num(views_num, data_num, target_data)
-   prediction_scores_cat <- score_predictive_cat(views_cat, data_cat, target_data)
+   prediction_scores_num <- score_predictive_num(views_num, data_num,
+                                                 sampled_target_data)
+   prediction_scores_cat <- score_predictive_cat(views_cat, data_cat,
+                                                 sampled_target_data)
 
    # Ranks the views accordingly
    order_num <- order(prediction_scores_num, decreasing = T, na.last = T)

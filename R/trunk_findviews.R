@@ -4,6 +4,16 @@
 preprocess <- function(data){
    stopifnot(is.data.frame(data))
 
+   # Subsamples if needed
+  if (nrow(data) > SAMPLE_SIZE){
+      warning('View creation: the dataframe contains more that ',
+              SAMPLE_SIZE, ' rows, I am subsampling the data')
+      sampled_rows <- sample(1:nrow(data), SAMPLE_SIZE, F)
+      data <- data[sampled_rows,,drop=F]
+   } else {
+      sampled_rows <-  NA
+   }
+
    # Type detection
    is_num_col <- sapply(data, function(col) is.numeric(col))
    is_num_col <- as.logical(is_num_col)
@@ -17,12 +27,11 @@ preprocess <- function(data){
    data_num <- data[,is_num_col,drop=F]
    data_cat <- data[,is_cat_col,drop=F]
 
-
    # Performs coercions if necessary
    to_cast <- sapply(data_cat, function(c) !is.factor(c))
    to_cast <- as.logical(to_cast)
-   for (c in names(data_cat)[to_cast]) data_cat[[c]] <- as.factor(data_cat[[c]])
-
+   for (c in names(data_cat)[to_cast])
+      data_cat[[c]] <- as.factor(data_cat[[c]])
 
    # Removes flat columns
    is_flat_cat <- sapply(data_cat, function(col){
@@ -51,7 +60,8 @@ preprocess <- function(data){
          unknown_type = unknown_type_cols,
          flat_num     = flat_cols_num,
          flat_cat     = flat_cols_cat
-      )
+      ),
+      sampled_rows = sampled_rows
    ))
 }
 
@@ -267,6 +277,7 @@ findviews_trunk <- function(data,  view_size_max=NULL, clust_method="complete"){
    data_num <- preprocessed$data_num
    data_cat <- preprocessed$data_cat
    excluded <- preprocessed$excluded
+   sampled_rows <- preprocessed$sampled_rows
 
    # Computes the dependency matrices
    dep_mat_num <- dependency_matrix(data_num, DEP_FUNC_NUM)
@@ -283,6 +294,7 @@ findviews_trunk <- function(data,  view_size_max=NULL, clust_method="complete"){
       data_cat           = data_cat,
       dependency_mat_cat = dep_mat_cat,
       views_cat          = views_cat,
-      excluded           = excluded
+      excluded           = excluded,
+      sampled_rows       = sampled_rows
    ))
 }

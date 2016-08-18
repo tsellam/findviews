@@ -21,6 +21,9 @@ df_num_NA[1,2] <- NA
 df_cat_NA <- df_cat
 df_cat_NA[1,2] <- NA
 
+df_cat_emptystring <- df_cat
+levels(df_cat_emptystring$mpg)[1] <- ''
+
 # Undesired DFs
 df_empty <- data.frame()
 df_zerocol <- mtcars[,1>2]

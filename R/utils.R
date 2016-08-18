@@ -109,3 +109,10 @@ bin_equiwidth <- function(s, nbins){
 
    cut(s, nbins, ordered_result = T)
 }
+
+# This is necessary to avoid strange effects in Chi-2 calculations
+safe_table <- function(v){
+   t <- table(v, useNA = "no")
+   names(t)[nchar(names(t)) == 0] <- '_empty_'
+   t
+}
