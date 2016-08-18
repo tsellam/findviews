@@ -35,5 +35,10 @@ NBINS_CONT_VARIABLES <- 8
 APP_TYPES <- c('findviews', 'findviews_to_compare', 'findviews_to_predict')
 
 # Graphing parameters
-SCATTERPLOT_SAMPLE_SIZE <- 2500
 NBARS_BEFORE_FLIP <- 50
+
+############
+# SAMPLING #
+############
+VIEW_SAMPLE_SIZE <- 10000
+PLOT_SAMPLE_SIZE <- 2500

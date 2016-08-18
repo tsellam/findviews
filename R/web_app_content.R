@@ -307,12 +307,6 @@ plot_selection_numeric <- function(data, target, app_type){
    to_plot_col   <- names(data)[to_plot_index]
    labels_col    <- names(data)[[ncol(data)]]
 
-   # Subsamples if necessary
-   if (nrow(data) > SCATTERPLOT_SAMPLE_SIZE){
-      warning('The dataframe contains more that ',SCATTERPLOT_SAMPLE_SIZE,
-              ' rows, I am subsampling the data')
-      data <- data[sample(1:nrow(data), SCATTERPLOT_SAMPLE_SIZE, F),,drop=F]
-   }
 
    # Sets plotting parameters, depending on app type
    if (app_type == 'findviews'){
@@ -481,6 +475,15 @@ plot_selection <- function(view_id, view_type, app_type,
       target_data <- fdviews_out$target_data
       stopifnot(is.factor(target_data))
 
+   }
+
+   # Subsamples if necessary
+   if (nrow(data) > PLOT_SAMPLE_SIZE){
+      warning('View plotting: the dataframe contains more that ',
+              PLOT_SAMPLE_SIZE, ' rows, I am subsampling the data')
+      sample_index <- sample(1:nrow(data), PLOT_SAMPLE_SIZE, F)
+      data   <- data[sample_index,,drop=F]
+      target <- target[sample_index]
    }
 
    plot <- if (view_type=='num') plot_selection_numeric(data[view_cols],

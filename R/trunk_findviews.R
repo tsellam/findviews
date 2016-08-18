@@ -259,7 +259,7 @@ findviews_trunk <- function(data,  view_size_max=NULL, clust_method="complete"){
    # Sets view_size_max = log2(ncol(data)) if no value specified
    if (is.null(view_size_max)) view_size_max <- max(1, log2(ncol(data)))
    stopifnot(is.numeric(view_size_max), view_size_max >= 1)
-   view_size_max <- as.integer(view_size_max)
+   view_size_max <- ceiling(view_size_max)
 
    # Type detection and conversions
    # Flat columns = pimary keys, or columns with only 1 distinct value
