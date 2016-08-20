@@ -1,5 +1,7 @@
-# Ziggy, a R package to describe tuples
+# findviews: a View Generator for Multidimensional Data
 
-Ziggy is a data characterization engine. Give it a data frame, a selection of rows, and it answers the question *what makes those rows special*? To do so it returns characteristic views, that is, visualizations that depict how the rows' distribution differ from that of the rest of the data.
+findviews helps exploring wide data sets, by detecting, ranking and plotting
+groups of statistically dependent columns. It relies heavily on ggplot and
+shiny.
 
 Stay tuned for updates!
