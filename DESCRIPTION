@@ -1,13 +1,13 @@
-Package: ziggy
+Package: findivews
 Type: Package
-Title: Ziggy: A data characterization engine
+Title: findviews: a view generator for multidimensional data
 Version: 0.1.0
 Author: Thibault Sellam
 Maintainer: Thibault Sellam <thibault.sellam@cwi.nl>
-Description: Ziggy is a data characterization engine. Give it a data frame,
-    a selection of rows, and it will answer the question "what make those rows
-    special?"
-License: What license is it under?
+Description: findviews helps exploring wide data sets, by detecting, ranking
+    and plotting groups of statistically dependent columns. It relies heavily
+    on ggplot and shiny.
+License: MIT + file LICENSE
 LazyData: TRUE
 Imports:
    shiny,
