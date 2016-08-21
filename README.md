@@ -13,7 +13,7 @@ your data in a data frame, call `findviews`, and you are ready to go!
 Currently, findviews is under heavy development. You may install the latest
 version as follows:
     ```R
-    devtools::install_github("hannesmuehleisen/MonetDBLite")
+    devtools::install_github("tsellam/findviews")
     ```
 Please bear in mind the package is at a very early stage of development.
 Hopefully, it will be available on CRAN before October.
@@ -40,8 +40,7 @@ findviews(mtcars)
 
 As a result, R will start a browser and display the views.
 
-######TETET
-
+![Screenshot of findviews](screenshot-findviews.png?raw=true "Screenshot of findviews")
 
 ### Ranking the views: `findviews_to_predict` and `findviews_to_compare`
 
@@ -63,7 +62,7 @@ findviews_to_predict('mpg', mtcars)
 
 The result is a ranked set of views, as shown below.
 
-######TETET
+![Screenshot of findviews_to_predict](screenshot-findviews_to_predict.png?raw=true "Screenshot of findviews_to_predict")
 
 
 The function `findviews_to_compare` targets a slightly difference scenario. The
@@ -78,7 +77,7 @@ findviews_to_compare(mtcars$mpg >= 20 , mtcars$mpg < 20 , mtcars)
 The result is a set of views on which the two groups have different statistical
 distributions:
 
-######TETET
+![Screenshot of findviews_to_compare](screenshot-findviews_to_compare.png?raw=true "Screenshot of findviews_to_compare")
 
 ### `_core` functions
 
