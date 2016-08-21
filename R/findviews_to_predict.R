@@ -165,6 +165,7 @@ preprocess_target <- function(target_data, nbins=4){
 #' \code{\link[stats]{findviews_to_predict_core}} is that the former presents its results
 #' with a Shiny app, while the latter simply outputs them as R stuctures.
 #'
+#' @inheritParams findviews
 #' @inheritParams findviews_to_predict
 #'
 #'

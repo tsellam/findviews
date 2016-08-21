@@ -14,12 +14,13 @@ equi-width binning.}
 
 \item{data}{Data frame or matrix to be visualized}
 
-\item{view_size_max}{Maximum number of columns in the views to be returned.
-If this parameter is set to \code{NULL}, findviews uses
-\code{log2(ncol(data)))}, rounded upwards if necessary.}
+\item{view_size_max}{Maximum number of columns in the views. If set to
+\code{NULL}, findviews uses \code{log2(ncol(data))}, rounded upwards if
+necessary.}
 
-\item{clust_method}{Character describing a clustering method, used internally by
-\code{\link[stats]{hclust}}. Examples are "complete", "single" or "average".}
+\item{clust_method}{Character describing a clustering method, used internally
+by \code{\link[stats]{hclust}}. Example values are "complete", "single" or
+"average".}
 
 \item{nbins}{Number of bins used to discretize the target variable.}
 
@@ -28,7 +29,7 @@ If this parameter is set to \code{NULL}, findviews uses
 }
 \description{
 \code{findviews_to_predict} detects groups of mutually dependent columns,
-ranks them by their predictive power, and presents them with Shiny and ggplot.
+ranks them by their predictive power, and plots them with Shiny and ggplot.
 }
 \details{
 The function \code{findviews_to_predict} takes a data set and a target

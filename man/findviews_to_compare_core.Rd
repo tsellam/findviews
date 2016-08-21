@@ -16,6 +16,16 @@ the i-th row of \code{data} belongs to the group.}
 \item{group2}{Logical vector, which describes the second group to compare.
 The value \code{TRUE} at position i indicates the the i-th row of
 \code{data} belongs to the group.}
+
+\item{data}{Data frame or matrix to be visualized}
+
+\item{view_size_max}{Maximum number of columns in the views. If set to
+\code{NULL}, findviews uses \code{log2(ncol(data))}, rounded upwards if
+necessary.}
+
+\item{clust_method}{Character describing a clustering method, used internally
+by \code{\link[stats]{hclust}}. Example values are "complete", "single" or
+"average".}
 }
 \description{
 \code{findviews_to_compare_core} detects views on which two arbitrary sets of
@@ -35,8 +45,7 @@ its results with a Shiny app, while the latter simply outputs them as R
 stuctures.
 }
 \examples{
-findviews_to_predict('mpg', mtcars)
-findviews_to_predict('mpg', mtcars, view_size_max = 4, nbins = 3)
+findviews_to_compare_core(mtcars$mpg >= 20 , mtcars$mpg < 20 , mtcars)
 
 }
 

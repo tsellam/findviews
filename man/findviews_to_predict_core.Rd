@@ -12,6 +12,16 @@ findviews_to_predict_core(target, data, view_size_max = NULL,
 \code{findviews_to_predit} discretizes the continuous variables with
 equi-width binning.}
 
+\item{data}{Data frame or matrix to be visualized}
+
+\item{view_size_max}{Maximum number of columns in the views. If set to
+\code{NULL}, findviews uses \code{log2(ncol(data))}, rounded upwards if
+necessary.}
+
+\item{clust_method}{Character describing a clustering method, used internally
+by \code{\link[stats]{hclust}}. Example values are "complete", "single" or
+"average".}
+
 \item{nbins}{Number of bins used to discretize the target variable.}
 }
 \description{

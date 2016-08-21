@@ -9,12 +9,13 @@ findviews_core(data, view_size_max = NULL, clust_method = "complete")
 \arguments{
 \item{data}{Data frame or matrix to be visualized}
 
-\item{view_size_max}{Maximum number of columns in the views to be returned.
-If this parameter is set to \code{NULL}, findviews uses
-\code{log2(ncol(data)))}, rounded upwards if necessary.}
+\item{view_size_max}{Maximum number of columns in the views. If set to
+\code{NULL}, findviews uses \code{log2(ncol(data))}, rounded upwards if
+necessary.}
 
-\item{clust_method}{Character describing a clustering method, used internally by
-\code{\link[stats]{hclust}}. Examples are "complete", "single" or "average".}
+\item{clust_method}{Character describing a clustering method, used internally
+by \code{\link[stats]{hclust}}. Example values are "complete", "single" or
+"average".}
 }
 \description{
 \code{findviews_core} generates views of a multidimensional data set. It

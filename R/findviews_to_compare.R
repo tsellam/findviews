@@ -480,6 +480,7 @@ score_difference <- function(views, group1, group2, data, diff_components){
 #' its results with a Shiny app, while the latter simply outputs them as R
 #' stuctures.
 #'
+#' @inheritParams findviews
 #' @inheritParams findviews_to_compare
 #'
 #'

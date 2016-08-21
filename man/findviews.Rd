@@ -9,28 +9,29 @@ findviews(data, view_size_max = NULL, clust_method = "complete", ...)
 \arguments{
 \item{data}{Data frame or matrix to be visualized}
 
-\item{view_size_max}{Maximum number of columns in the views to be returned.
-If this parameter is set to \code{NULL}, findviews uses
-\code{log2(ncol(data)))}, rounded upwards if necessary.}
+\item{view_size_max}{Maximum number of columns in the views. If set to
+\code{NULL}, findviews uses \code{log2(ncol(data))}, rounded upwards if
+necessary.}
 
-\item{clust_method}{Character describing a clustering method, used internally by
-\code{\link[stats]{hclust}}. Examples are "complete", "single" or "average".}
+\item{clust_method}{Character describing a clustering method, used internally
+by \code{\link[stats]{hclust}}. Example values are "complete", "single" or
+"average".}
 
 \item{...}{Optional Shiny parameters, used in Shiny's
 \code{\link[shiny]{runApp}} function.}
 }
 \description{
-\code{findviews} detects groups of mutually dependent columns and plots
-them with Shiny and ggplot.
+\code{findviews} detects and plots groups of mutually dependent columns.
+It is based on Shiny and ggplot.
 }
 \details{
 The function \code{findviews} takes a data frame or a matrix as input. It
 computes the pairwise dependency between the columns, detects clusters in the
-resulting structure, and displays the output with a Shiny application.
+resulting structure, and starts a Shiny application to display the results.
 
-\code{findviews} processes numerical and categorical data separately. It
-exclude the columns with only one value, or the columns in which all the values
-are distinct (e.g., primary keys).
+The function processes numerical and categorical data separately. It excludes
+the columns with only one value, or the columns in which all the values are
+distinct (e.g., primary keys).
 
 \code{findviews} computes the dependency between the columns differently
 depending on their type. It uses Pearson's coefficient of correlation for
@@ -38,9 +39,9 @@ numerical data, and Cramer's V for categorical data.
 
 To cluster the columns, \code{findviews} uses the function
 \code{\link[stats]{hclust}}, R's implementation of agglomerative hierarchical
-clustering. The number of clusters is determinded by the parameter
+clustering. The number of clusters is determined by the parameter
 \code{view_size_max}. The parameter \code{clust_method} specifies which
-flavor of agglomerative clustering is to be used.
+flavor of agglomerative clustering to use.
 }
 \examples{
 findviews(mtcars)

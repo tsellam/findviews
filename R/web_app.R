@@ -129,17 +129,17 @@ create_fdviews_app <- function(fdviews_out, app_type, data,
 
 #' Views of a multidimensional dataset.
 #'
-#' \code{findviews} detects groups of mutually dependent columns and plots
-#' them with Shiny and ggplot.
+#' \code{findviews} detects and plots groups of mutually dependent columns.
+#' It is based on Shiny and ggplot.
 #'
 #
 #' The function \code{findviews} takes a data frame or a matrix as input. It
 #' computes the pairwise dependency between the columns, detects clusters in the
-#' resulting structure, and displays the output with a Shiny application.
+#' resulting structure, and starts a Shiny application to display the results.
 #'
-#' \code{findviews} processes numerical and categorical data separately. It
-#' exclude the columns with only one value, or the columns in which all the values
-#' are distinct (e.g., primary keys).
+#' The function processes numerical and categorical data separately. It excludes
+#' the columns with only one value, or the columns in which all the values are
+#' distinct (e.g., primary keys).
 #'
 #' \code{findviews} computes the dependency between the columns differently
 #' depending on their type. It uses Pearson's coefficient of correlation for
@@ -147,17 +147,18 @@ create_fdviews_app <- function(fdviews_out, app_type, data,
 #'
 #' To cluster the columns, \code{findviews} uses the function
 #' \code{\link[stats]{hclust}}, R's implementation of agglomerative hierarchical
-#' clustering. The number of clusters is determinded by the parameter
+#' clustering. The number of clusters is determined by the parameter
 #' \code{view_size_max}. The parameter \code{clust_method} specifies which
-#' flavor of agglomerative clustering is to be used.
+#' flavor of agglomerative clustering to use.
 #'
 #'
 #' @param data Data frame or matrix to be visualized
-#' @param view_size_max Maximum number of columns in the views to be returned.
-#'   If this parameter is set to \code{NULL}, findviews uses
-#'   \code{log2(ncol(data)))}, rounded upwards if necessary.
-#' @param clust_method Character describing a clustering method, used internally by
-#' \code{\link[stats]{hclust}}. Examples are "complete", "single" or "average".
+#' @param view_size_max Maximum number of columns in the views. If set to
+#'   \code{NULL}, findviews uses \code{log2(ncol(data))}, rounded upwards if
+#'   necessary.
+#' @param clust_method Character describing a clustering method, used internally
+#'   by \code{\link[stats]{hclust}}. Example values are "complete", "single" or
+#'   "average".
 #' @param ... Optional Shiny parameters, used in Shiny's
 #'   \code{\link[shiny]{runApp}} function.
 #'
@@ -177,22 +178,22 @@ findviews <- function(data, view_size_max=NULL, clust_method="complete", ...){
 
 #' Views of a multidimensional dataset, ranked by their differentiation power.
 #'
-#' \code{findviews_to_compare} detects views on which two arbitrary sets of
-#' tuples are well separated. It plots the results with ggplot and Shiny.
+#' \code{findviews_to_compare} detects views that show how two arbitrary sets
+#' of rows differ. It plots the results with ggplot and Shiny.
 #'
 #'
-#' The function \code{findviews_to_compare} takes two groups of tuples as input,
+#' The function \code{findviews_to_compare} takes two groups of rows as input,
 #' and detects views on which the statistical distribution of those two groups
-#' is different.
+#' differ.
 #'
-#' To detect the views, \code{findviews_to_predict} concatenate the two groups
-#' and applies the same method as \code{\link{findview}}.
+#' To detect the initial set of views, \code{findviews_to_compare} concatenates
+#' the two groups and applies the same method as \code{\link{findview}}.
 #'
-#' To evaluate their differentiation power, it behaves differently according to
-#' the type of data. To compare continuous data, it computes a synthetic score,
-#' based on the difference between the means, the difference between the
-#' variances and the difference between coefficient of of correlations. For
-#' categorical data, it exploits the cosine distance between the histograms.
+#' To evaluate their differentiation power, it behaves as follows. For
+#' continuous data, it computes a synthetic score, based on the difference
+#' between the means, the difference between the variances and the difference
+#' between coefficient of of correlations. For categorical data, it exploits the
+#' cosine distance between the histograms.
 #'
 #' This method is roughly based on the following paper: \preformatted{
 #' Fast, Explainable View Detection to Characterize Exploration Queries
@@ -228,7 +229,7 @@ findviews_to_compare <- function(group1, group2, data,
 #' Views of a multidimensional dataset, ranked by their prediction power.
 #'
 #' \code{findviews_to_predict} detects groups of mutually dependent columns,
-#' ranks them by their predictive power, and presents them with Shiny and ggplot.
+#' ranks them by their predictive power, and plots them with Shiny and ggplot.
 #'
 #'
 #' The function \code{findviews_to_predict} takes a data set and a target

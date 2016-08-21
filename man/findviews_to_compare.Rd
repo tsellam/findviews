@@ -18,12 +18,13 @@ The value \code{TRUE} at position i indicates the the i-th row of
 
 \item{data}{Data frame or matrix to be visualized}
 
-\item{view_size_max}{Maximum number of columns in the views to be returned.
-If this parameter is set to \code{NULL}, findviews uses
-\code{log2(ncol(data)))}, rounded upwards if necessary.}
+\item{view_size_max}{Maximum number of columns in the views. If set to
+\code{NULL}, findviews uses \code{log2(ncol(data))}, rounded upwards if
+necessary.}
 
-\item{clust_method}{Character describing a clustering method, used internally by
-\code{\link[stats]{hclust}}. Examples are "complete", "single" or "average".}
+\item{clust_method}{Character describing a clustering method, used internally
+by \code{\link[stats]{hclust}}. Example values are "complete", "single" or
+"average".}
 
 \item{...}{Optional Shiny parameters, used in Shiny's
 \code{\link[shiny]{runApp}} function.}
@@ -31,22 +32,22 @@ If this parameter is set to \code{NULL}, findviews uses
 \item{nbins}{Number of bins used to discretize the target variable.}
 }
 \description{
-\code{findviews_to_compare} detects views on which two arbitrary sets of
-tuples are well separated. It plots the results with ggplot and Shiny.
+\code{findviews_to_compare} detects views that show how two arbitrary sets
+of rows differ. It plots the results with ggplot and Shiny.
 }
 \details{
-The function \code{findviews_to_compare} takes two groups of tuples as input,
+The function \code{findviews_to_compare} takes two groups of rows as input,
 and detects views on which the statistical distribution of those two groups
-is different.
+differ.
 
-To detect the views, \code{findviews_to_predict} concatenate the two groups
-and applies the same method as \code{\link{findview}}.
+To detect the initial set of views, \code{findviews_to_compare} concatenates
+the two groups and applies the same method as \code{\link{findview}}.
 
-To evaluate their differentiation power, it behaves differently according to
-the type of data. To compare continuous data, it computes a synthetic score,
-based on the difference between the means, the difference between the
-variances and the difference between coefficient of of correlations. For
-categorical data, it exploits the cosine distance between the histograms.
+To evaluate their differentiation power, it behaves as follows. For
+continuous data, it computes a synthetic score, based on the difference
+between the means, the difference between the variances and the difference
+between coefficient of of correlations. For categorical data, it exploits the
+cosine distance between the histograms.
 
 This method is roughly based on the following paper: \preformatted{
 Fast, Explainable View Detection to Characterize Exploration Queries
