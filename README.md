@@ -10,11 +10,11 @@ your data in a data frame, call `findviews`, and you are ready to go!
 
 ## Installation
 
-Currently, findviews is under heavy development. You may install the latest
+`findviews` is currently under heavy development. You may install the latest
 version as follows:
-    ```R
-    devtools::install_github("tsellam/findviews")
-    ```
+```R
+devtools::install_github("tsellam/findviews")
+```
 Please bear in mind the package is at a very early stage of development.
 Hopefully, it will be available on CRAN before October.
 
