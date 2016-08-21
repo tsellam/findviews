@@ -45,9 +45,9 @@ As a result, R will start a browser and display the views.
 
 ### Ranking the views: `findviews_to_predict` and `findviews_to_compare`
 
-The function `findviews` can generate views, but it cannot tell you which view
+The function `findviews` can generate views, but it cannot tell you which ones
 you should look at. `findviews_to_predict` and `findviews_to_compare` are steps
-in this direction. These of functions generate views, exactly as `findviews`
+in this direction. These two functions generate views, exactly as `findviews`
 does - in fact, they call `findviews` internally. But they can also *rank*
 the results, in effect making recommendations.
 
@@ -93,9 +93,9 @@ return their results directly as lists and data frames.
 
 ## A word of warning
 
-Beware - `findviews`'s recommendations must be taken with a huge grain of salt.
+Beware - the recommendations of `findviews` must be taken with a huge grain of salt.
 Some of its views are absurd - they are artifacts of the algorithms, or the
-system just ``got lucky'' and made totally spurious findings. Inversely,
+system just "got lucky" and made totally spurious findings. Inversely,
 `findviews` *will*  miss important aspect of the data.
 
 In summary `findviews` is designed to help you start exploring a data set and
