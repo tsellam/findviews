@@ -462,6 +462,30 @@ score_difference <- function(views, group1, group2, data, diff_components){
 }
 
 
+#' Views of a multidimensional dataset, ranked by their differentiation power,
+#' non-Shiny version
+#'
+#'\code{findviews_to_compare_core} detects views on which two arbitrary sets of
+#' tuples are well separated. It produces the same
+#' results as \code{\link[stats]{findviews_to_compare}}, but does \emph{not}
+#' present them with a Shiny app.
+#'
+#'The function \code{findviews_to_compare_core} takes two groups of tuples as
+#'input, and detects views on which the statistical distribution of those two
+#'groups is different. See the documentation of
+#'\code{\link[stats]{findviews_to_compare}} for more details.
+#'
+#' The  difference between \code{\link[stats]{findviews_to_compare}} and
+#' \code{\link[stats]{findviews_to_compare_core}} is that the former presents
+#' its results with a Shiny app, while the latter simply outputs them as R
+#' stuctures.
+#'
+#' @inheritParams findviews_to_compare
+#'
+#'
+#' @examples
+#' findviews_to_compare_core(mtcars$mpg >= 20 , mtcars$mpg < 20 , mtcars)
+#'
 #' @export
 findviews_to_compare_core <- function(group1, group2, data,
                                       view_size_max=NULL, clust_method="complete"){

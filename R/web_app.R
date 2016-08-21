@@ -127,6 +127,44 @@ create_fdviews_app <- function(fdviews_out, app_type, data,
 # Wrappers for viewsearch functions #
 #####################################
 
+#' Views of a multidimensional dataset.
+#'
+#' \code{findviews} detects groups of mutually dependent columns and plots
+#' them with Shiny and ggplot.
+#'
+#
+#' The function \code{findviews} takes a data frame or a matrix as input. It
+#' computes the pairwise dependency between the columns, detects clusters in the
+#' resulting structure, and displays the output with a Shiny application.
+#'
+#' \code{findviews} processes numerical and categorical data separately. It
+#' exclude the columns with only one value, or the columns in which all the values
+#' are distinct (e.g., primary keys).
+#'
+#' \code{findviews} computes the dependency between the columns differently
+#' depending on their type. It uses Pearson's coefficient of correlation for
+#' numerical data, and Cramer's V for categorical data.
+#'
+#' To cluster the columns, \code{findviews} uses the function
+#' \code{\link[stats]{hclust}}, R's implementation of agglomerative hierarchical
+#' clustering. The number of clusters is determinded by the parameter
+#' \code{view_size_max}. The parameter \code{clust_method} specifies which
+#' flavor of agglomerative clustering is to be used.
+#'
+#'
+#' @param data Data frame or matrix to be visualized
+#' @param view_size_max Maximum number of columns in the views to be returned.
+#'   If this parameter is set to \code{NULL}, findviews uses
+#'   \code{log2(ncol(data)))}, rounded upwards if necessary.
+#' @param clust_method Character describing a clustering method, used internally by
+#' \code{\link[stats]{hclust}}. Examples are "complete", "single" or "average".
+#' @param ... Optional Shiny parameters, used in Shiny's
+#'   \code{\link[shiny]{runApp}} function.
+#'
+#' @examples
+#' findviews(mtcars)
+#' findviews(mtcars, view_size_max = 4,  port = 7000)
+#'
 #' @export
 findviews <- function(data, view_size_max=NULL, clust_method="complete", ...){
    fdviews_out <- findviews_core(data, view_size_max, clust_method)
@@ -134,6 +172,46 @@ findviews <- function(data, view_size_max=NULL, clust_method="complete", ...){
    shiny::runApp(fdviews_app, display.mode = "normal", ...)
 }
 
+
+
+
+#' Views of a multidimensional dataset, ranked by their differentiation power.
+#'
+#' \code{findviews_to_compare} detects views on which two arbitrary sets of
+#' tuples are well separated. It plots the results with ggplot and Shiny.
+#'
+#'
+#' The function \code{findviews_to_compare} takes two groups of tuples as input,
+#' and detects views on which the statistical distribution of those two groups
+#' is different.
+#'
+#' To detect the views, \code{findviews_to_predict} concatenate the two groups
+#' and applies the same method as \code{\link{findview}}.
+#'
+#' To evaluate their differentiation power, it behaves differently according to
+#' the type of data. To compare continuous data, it computes a synthetic score,
+#' based on the difference between the means, the difference between the
+#' variances and the difference between coefficient of of correlations. For
+#' categorical data, it exploits the cosine distance between the histograms.
+#'
+#' This method is roughly based on the following paper: \preformatted{
+#' Fast, Explainable View Detection to Characterize Exploration Queries
+#' Thibault Sellam, Martin Kersten
+#' SSDBM, 2016}
+#'
+#' @inheritParams findviews
+#' @param group1 Logical vector of size \code{nrow(data)}, which describes the
+#'   first group to compare. The value \code{TRUE} at position i indicates the
+#'   the i-th row of \code{data} belongs to the group.
+#' @param group2 Logical vector, which describes the second group to compare.
+#'   The value \code{TRUE} at position i indicates the the i-th row of
+#'   \code{data} belongs to the group.
+#' @param nbins Number of bins used to discretize the target variable.
+#'
+#'
+#' @examples
+#' findviews_to_compare(mtcars$mpg >= 20 , mtcars$mpg < 20 , mtcars)
+#'
 #' @export
 findviews_to_compare <- function(group1, group2, data,
                                  view_size_max=NULL, clust_method="complete", ...){
@@ -144,6 +222,40 @@ findviews_to_compare <- function(group1, group2, data,
    shiny::runApp(fdviews_app, display.mode = "normal", ...)
 }
 
+
+
+
+#' Views of a multidimensional dataset, ranked by their prediction power.
+#'
+#' \code{findviews_to_predict} detects groups of mutually dependent columns,
+#' ranks them by their predictive power, and presents them with Shiny and ggplot.
+#'
+#'
+#' The function \code{findviews_to_predict} takes a data set and a target
+#' variable as input. It detects clusters of statistically dependent columns in
+#' the data set - e.g., views - and ranks those groups according to how well
+#' they predict the target variable.
+#'
+#' To detect the views, \code{findviews_to_predict} relies on \code{findviews}.
+#' To evaluate their predictive power, it uses the \emph{mutual information} between
+#' the joint distribution of the columns and that of the target variable.
+#'
+#' Internally, \code{findviews_to_predict} discretizes all the continuous
+#' variables with equi-width binning. The parameter \code{nbins} determines the
+#' number of bins used for the target variable.
+#'
+#'
+#' @inheritParams findviews
+#' @param target Name of the variable to be predicted.
+#'   \code{findviews_to_predit} discretizes the continuous variables with
+#'   equi-width binning.
+#' @param nbins Number of bins used to discretize the target variable.
+#'
+#'
+#' @examples
+#' findviews_to_predict('mpg', mtcars)
+#' findviews_to_predict('mpg', mtcars, view_size_max = 4, nbins = 3)
+#'
 #' @export
 findviews_to_predict <- function(target, data,
                                  view_size_max=NULL, clust_method="complete",

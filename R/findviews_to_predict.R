@@ -146,6 +146,32 @@ preprocess_target <- function(target_data, nbins=4){
    stop("Unknown data type for target column!")
 }
 
+#' Views of a multidimensional dataset, ranked by their prediction power, non-Shiny version.
+#'
+#' \code{findviews_to_predict_core} detects groups of mutually dependent
+#' columns, and ranks them by their predictive power.  It produces the same
+#' results as \code{\link[stats]{findviews_to_predict}}, but does \emph{not}
+#' present them with a Shiny app.
+#'
+#'
+#' The function \code{findviews_to_predict_core} takes a data set and a target
+#' variable as input. It detects clusters of statistically dependent columns in
+#' the data set - e.g., views - and ranks those groups according to how well
+#' they predict the target variable.
+#' See the documentation of \code{\link[stats]{findviews_to_predict}} for more
+#' details.
+#'
+#' The  difference between \code{\link[stats]{findviews_to_predict}} and
+#' \code{\link[stats]{findviews_to_predict_core}} is that the former presents its results
+#' with a Shiny app, while the latter simply outputs them as R stuctures.
+#'
+#' @inheritParams findviews_to_predict
+#'
+#'
+#' @examples
+#' findviews_to_predict_core('mpg', mtcars)
+#' findviews_to_predict_core('mpg', mtcars, view_size_max = 4, nbins = 3)
+#'
 #' @export
 findviews_to_predict_core <- function(target, data,
                                       view_size_max=NULL, clust_method="complete",
