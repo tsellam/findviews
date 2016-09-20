@@ -12,20 +12,20 @@ create_fdviews_client <- function(app_type, target=NULL){
       else if (app_type == 'findviews_to_compare')
          shiny::titlePanel("Views to Compare", windowTitle = app_type)
       else if (app_type == 'findviews_to_predict')
-         shiny::titlePanel(paste0("Views to Predict ", target), windowTitle = app_type),
+         shiny::titlePanel(paste0("Views to Predict", target), windowTitle = app_type),
 
       shiny::sidebarLayout(
 
          shiny::sidebarPanel(
             shiny::tabsetPanel(id = "viewTab",
                                shiny::tabPanel("Continuous",
-                                 dataTableOutput("numViewsTable"),
+                                 shiny::dataTableOutput("numViewsTable"),
                                  value = "num"),
                                shiny::tabPanel("Categorical",
-                                 dataTableOutput("catViewsTable"),
+                                 shiny::dataTableOutput("catViewsTable"),
                                  value = "cat"),
                                shiny::tabPanel("Excluded",
-                                 htmlOutput("exclusionComments"),
+                                 shiny::htmlOutput("exclusionComments"),
                                  value = "exc")
             ),
             shiny::div(id="view-specs", class="hidden",
@@ -248,8 +248,6 @@ findviews_to_compare <- function(group1, group2, data,
 #'
 #' @inheritParams findviews
 #' @param target Name of the variable to be predicted.
-#'   \code{findviews_to_predit} discretizes the continuous variables with
-#'   equi-width binning.
 #' @param nbins Number of bins used to discretize the target variable.
 #'
 #'
