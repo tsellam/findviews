@@ -258,29 +258,6 @@ plot_selection <- function(view_id, view_type, app_type,
    # Retrieves the views to output
    view_cols <- retrieve_view(view_id, view_type, fdviews_out)
 
-   # Generates a target vector, used later to color the plots
-   if (app_type == 'findviews'){
-      target_data <- rep(NA, nrow(data))
-
-   } else if (app_type == 'findviews_to_compare'){
-      # Generates a target vector
-      target_data <- integer(nrow(data))
-      target_data[group1] <- 1
-      target_data[group2] <- 2
-      target_data <- factor(paste0("Group ", target_data))
-
-      # Trims the data to the user's selection
-      row_selection <- group1 | group2
-      data   <- data[row_selection, view_cols, drop=F]
-      target_data <- target_data[row_selection]
-
-   } else if (app_type == 'findviews_to_predict'){
-      stopifnot("target_data" %in% names(fdviews_out))
-      target_data <- fdviews_out$target_data
-      stopifnot(is.factor(target_data))
-
-   }
-
    # Subsamples if necessary
    if (nrow(data) > PLOT_SAMPLE_SIZE){
       warning('View plotting: the dataframe contains more that ',
@@ -290,15 +267,71 @@ plot_selection <- function(view_id, view_type, app_type,
       target_data <- target_data[sample_index]
    }
 
-   plot <- if (view_type=='num') plot_selection_numeric(data[view_cols],
-                                                        target_data,
-                                                        app_type)
-           else plot_selection_categorical(data[view_cols],
-                                           target_data,
-                                           app_type)
+   plot <- if (app_type == 'findviews')
+            plot_views(data, view_cols, view_type)
+          else if (app_type == 'findviews_to_compare')
+            NA
+          else if (app_type =='findviews_to_predict')
+            NA
+          else NA
 
    return(plot)
 }
+#
+# plot_selection <- function(view_id, view_type, app_type,
+#                            fdviews_out, data,
+#                            group1=NULL, group2=NULL, target=NULL){
+#
+#    stopifnot(is.integer(view_id))
+#    stopifnot(view_type %in% c('num', 'cat'))
+#    stopifnot(app_type %in% APP_TYPES)
+#    stopifnot(c('views_num', 'views_cat') %in% names(fdviews_out))
+#    stopifnot(is.data.frame(data))
+#
+#    # Retrieves the views to output
+#    view_cols <- retrieve_view(view_id, view_type, fdviews_out)
+#
+#    # Generates a target vector, used later to color the plots
+#    if (app_type == 'findviews'){
+#       target_data <- rep(NA, nrow(data))
+#
+#    } else if (app_type == 'findviews_to_compare'){
+#       # Generates a target vector
+#       target_data <- integer(nrow(data))
+#       target_data[group1] <- 1
+#       target_data[group2] <- 2
+#       target_data <- factor(paste0("Group ", target_data))
+#
+#       # Trims the data to the user's selection
+#       row_selection <- group1 | group2
+#       data   <- data[row_selection, view_cols, drop=F]
+#       target_data <- target_data[row_selection]
+#
+#    } else if (app_type == 'findviews_to_predict'){
+#       stopifnot("target_data" %in% names(fdviews_out))
+#       target_data <- fdviews_out$target_data
+#       stopifnot(is.factor(target_data))
+#
+#    }
+#
+#    # Subsamples if necessary
+#    if (nrow(data) > PLOT_SAMPLE_SIZE){
+#       warning('View plotting: the dataframe contains more that ',
+#               PLOT_SAMPLE_SIZE, ' rows, I am subsampling the data')
+#       sample_index <- sample(1:nrow(data), PLOT_SAMPLE_SIZE, F)
+#       data   <- data[sample_index,,drop=F]
+#       target_data <- target_data[sample_index]
+#    }
+#
+#    plot <- if (view_type=='num') plot_selection_numeric(data[view_cols],
+#                                                         target_data,
+#                                                         app_type)
+#    else plot_selection_categorical(data[view_cols],
+#                                    target_data,
+#                                    app_type)
+#
+#    return(plot)
+# }
 
 
 #-------------------#

@@ -1,3 +1,191 @@
+#########
+# Utils #
+#########
+# Creates a lower triangular matrix with numbers from 1 to n
+make_layout_matrix <- function(view_cols){
+   stopifnot(is.vector(view_cols))
+   stopifnot(length(view_cols) >= 1)
+
+   layout_matrix <- matrix(NA, nrow=length(view_cols), ncol=length(view_cols))
+   lower_triangle <- lower.tri(layout_matrix, diag = T)
+
+   n_plots <- sum(lower_triangle, na.rm = T)
+   seq <- 1:n_plots
+   # This is necessary to fill the values by row (R's default is by column)
+   ord <- order(
+      row(lower_triangle)[lower_triangle],
+      col(lower_triangle)[lower_triangle]
+   )
+
+   layout_matrix[lower_triangle] <- seq[ord]
+
+   layout_matrix
+}
+
+
+# Removes axise labels for plots located inside a grid
+remove_internal_labels <- function(plots, layout){
+   stopifnot(is.list(plots))
+   stopifnot(is.matrix(layout))
+   stopifnot(max(layout, na.rm = T) == length(plots))
+   stopifnot(nrow(layout) == ncol(layout))
+
+   if(nrow(layout) <= 1) return(plots)
+
+   for (i in 1:nrow(layout)){
+      for (j in 1:ncol(layout)){
+         # Fetches plot
+         plot_index <- layout[i,j]
+         if (is.na(plot_index)) next
+         plot <- plots[[plot_index]]
+
+         # Removes axises as necessary and ticks
+         if (i < nrow(layout))
+            plot <- plot + ggplot2::theme(
+               axis.title.x=ggplot2::element_blank(),
+               axis.text.x=ggplot2::element_blank()
+            )
+         if (j > 1)
+            plot <- plot + ggplot2::theme(
+               axis.title.y=ggplot2::element_blank(),
+               axis.text.y=ggplot2::element_blank()
+            )
+         #if (clean_y_on_diagonal & i == j)
+         #   plot <- plot + ggplot2::theme(
+         #      axis.text.y=ggplot2::element_blank(),
+         #      axis.ticks.y=ggplot2::element_blank()
+         #   )
+
+         # Puts it back in list
+         plots[[plot_index]] <- plot
+
+      }
+   }
+
+   return(plots)
+}
+
+##################
+# Plotting utils #
+##################
+ggplot_theme <- function(){
+   ggplot2::theme_bw() +
+   ggplot2::theme(axis.text.y = ggplot2::element_text(angle=90),
+                  legend.text = ggplot2::element_text(size = 12),
+                  legend.key.size = ggplot2::unit(1, "cm"))
+}
+
+draw_1d_density <- function(data, colx, standalone=F){
+
+   minx <- min(data[[colx]], na.rm = T)
+   maxx <- max(data[[colx]], na.rm = T)
+
+   if (!standalone){
+      scale_x <- ggplot2::scale_x_continuous(limits=c(minx, maxx),
+                                             breaks=c(minx, maxx))
+      scale_y <- ggplot2::scale_y_continuous('Distribution (Density Function)',
+                                             breaks=c(0,1))
+      theme_extra <- ggplot2::theme(
+         axis.line.y  = ggplot2::element_blank(),
+         axis.title.y = ggplot2::element_text(color="white"),
+         axis.ticks.y = ggplot2::element_line(color="white"),
+         axis.text.y  = ggplot2::element_text(color="white"),
+         panel.border = ggplot2::element_blank(),
+         panel.grid.major = ggplot2::element_blank(),
+         panel.grid.minor = ggplot2::element_blank()
+      )
+   } else {
+      scale_x <- ggplot2::scale_x_continuous()
+      scale_y <- ggplot2::scale_y_continuous('Density Function')
+      theme_extra <- ggplot2::theme(axis.text.y = ggplot2::element_text(angle=0))
+   }
+
+   p <- ggplot2::ggplot(data=data, ggplot2::aes_string(x = colx)) +
+      ggplot2::geom_density(fill = 'grey', show.legend = TRUE) +
+      scale_x +
+      scale_y +
+      ggplot_theme() + theme_extra
+
+   return(p)
+}
+
+draw_2d_scatterplot <- function(data, colx, coly){
+
+   minx <- min(data[[colx]], na.rm = T)
+   maxx <- max(data[[colx]], na.rm = T)
+   miny <- min(data[[coly]], na.rm = T)
+   maxy <- max(data[[coly]], na.rm = T)
+
+   scat_pt_size <- if (nrow(data) > 1000) .5
+   else if (nrow(data) > 500) .75
+   else 1
+
+   p <- ggplot2::ggplot(data=data, ggplot2::aes_string(x = colx,
+                                                       y = coly)) +
+      ggplot2::geom_point(size = scat_pt_size) +
+      ggplot2::scale_x_continuous(limits=c(minx, maxx), breaks=c(minx, maxx)) +
+      ggplot2::scale_y_continuous(limits=c(miny, maxy), breaks=c(miny, maxy)) +
+      ggplot_theme()
+
+   return(p)
+}
+
+###############################
+# Plots for vanilla findviews #
+###############################
+
+plot_views <- function(data, view_cols, view_type){
+   stopifnot(is.data.frame(data))
+   stopifnot(is.character(view_cols))
+   stopifnot(view_type %in% c('num', 'cat'))
+
+   if (!all(view_cols %in% names(data)))
+      stop("Cannot find the requested columns in the dataset!")
+   if (length(view_cols) < 1)
+      stop("I cannot plot less than one column")
+
+   # Layouting
+   layout_matrix <- make_layout_matrix(view_cols)
+   n_plots <- max(layout_matrix, na.rm = T)
+
+   # Graph plotting
+   plots <- vector("list", n_plots)
+   for (i in 1:length(view_cols)){
+      for (j in 1:i){
+         # Retrieves columns
+         col_i <- view_cols[i]
+         col_j <- view_cols[j]
+         # Draws the appropriate chart
+         if (length(view_cols) == 1)
+            p <- draw_1d_density(data=data, colx=col_i, standalone=T)
+         else if (col_i == col_j)
+            p <- draw_1d_density(data=data, colx=col_i)
+         else
+            p <- draw_2d_scatterplot(data=data, colx=col_j, coly=col_i)
+         # Appends it to the list
+         plot_index <- layout_matrix[i,j]
+         plots[[plot_index]] <- p
+      }
+   }
+
+   # Removes intermediate axis labels
+   plots <- remove_internal_labels(plots, layout_matrix)
+
+   # Done!
+   gridExtra::grid.arrange(grobs=plots, layout_matrix = layout_matrix)
+}
+
+
+
+
+
+
+
+
+
+
+
+# Old stuff!!!!
 num_1d_view <- function(data, mapping, ...){
    p <- ggplot2::ggplot(data=data, mapping=mapping) +
       ggplot2::geom_density(...) +

@@ -13,7 +13,8 @@ Imports:
    shiny,
    ggplot2,
    GGally,
-   grDevices
+   grDevices,
+   gridExtra
 Suggests:
     testthat
 RoxygenNote: 5.0.1
