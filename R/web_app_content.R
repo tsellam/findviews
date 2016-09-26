@@ -267,8 +267,10 @@ plot_selection <- function(view_id, view_type, app_type,
       target_data <- target_data[sample_index]
    }
 
-   plot <- if (app_type == 'findviews')
-            plot_views(data, view_cols, view_type)
+   plot <- if (app_type == 'findviews' & view_type == 'num')
+            plot_views_num(data, view_cols)
+          else if (app_type == 'findviews' & view_type == 'cat')
+             plot_views_cat(data, view_cols)
           else if (app_type == 'findviews_to_compare')
             NA
           else if (app_type =='findviews_to_predict')

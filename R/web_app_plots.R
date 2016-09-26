@@ -50,11 +50,6 @@ remove_internal_labels <- function(plots, layout){
                axis.title.y=ggplot2::element_blank(),
                axis.text.y=ggplot2::element_blank()
             )
-         #if (clean_y_on_diagonal & i == j)
-         #   plot <- plot + ggplot2::theme(
-         #      axis.text.y=ggplot2::element_blank(),
-         #      axis.ticks.y=ggplot2::element_blank()
-         #   )
 
          # Puts it back in list
          plots[[plot_index]] <- plot
@@ -70,9 +65,17 @@ remove_internal_labels <- function(plots, layout){
 ##################
 ggplot_theme <- function(){
    ggplot2::theme_bw() +
-   ggplot2::theme(axis.text.y = ggplot2::element_text(angle=90),
-                  legend.text = ggplot2::element_text(size = 12),
+   ggplot2::theme(legend.text = ggplot2::element_text(size = 12),
                   legend.key.size = ggplot2::unit(1, "cm"))
+}
+
+draw_1d_histogram <- function(data, colx){
+   p <- ggplot2::ggplot(data, ggplot2::aes_string(x=colx)) +
+      ggplot2::geom_bar(ggplot2::aes(y = (..count..)/sum(..count..))) +
+      ggplot2::scale_y_continuous('Prop.', labels = scales::percent) +
+      ggplot_theme()
+
+   p
 }
 
 draw_1d_density <- function(data, colx, standalone=F){
@@ -83,20 +86,22 @@ draw_1d_density <- function(data, colx, standalone=F){
    if (!standalone){
       scale_x <- ggplot2::scale_x_continuous(limits=c(minx, maxx),
                                              breaks=c(minx, maxx))
-      scale_y <- ggplot2::scale_y_continuous('Distribution (Density Function)',
+      scale_y <- ggplot2::scale_y_continuous(colx,
                                              breaks=c(0,1))
       theme_extra <- ggplot2::theme(
-         axis.line.y  = ggplot2::element_blank(),
-         axis.title.y = ggplot2::element_text(color="white"),
-         axis.ticks.y = ggplot2::element_line(color="white"),
+         #axis.title.x = ggplot2::element_text(color="white"),
+         #axis.title.y = ggplot2::element_text(color="white"),
          axis.text.y  = ggplot2::element_text(color="white"),
+         axis.line.y  = ggplot2::element_blank(),
+         axis.ticks.y = ggplot2::element_line(color="white"),
          panel.border = ggplot2::element_blank(),
          panel.grid.major = ggplot2::element_blank(),
-         panel.grid.minor = ggplot2::element_blank()
+         panel.grid.minor = ggplot2::element_blank(),
+         axis.text.y = ggplot2::element_text(angle=90)
       )
    } else {
       scale_x <- ggplot2::scale_x_continuous()
-      scale_y <- ggplot2::scale_y_continuous('Density Function')
+      scale_y <- ggplot2::scale_y_continuous('Distribution (density function)')
       theme_extra <- ggplot2::theme(axis.text.y = ggplot2::element_text(angle=0))
    }
 
@@ -125,7 +130,8 @@ draw_2d_scatterplot <- function(data, colx, coly){
       ggplot2::geom_point(size = scat_pt_size) +
       ggplot2::scale_x_continuous(limits=c(minx, maxx), breaks=c(minx, maxx)) +
       ggplot2::scale_y_continuous(limits=c(miny, maxy), breaks=c(miny, maxy)) +
-      ggplot_theme()
+      ggplot_theme() +
+      ggplot2::theme(axis.text.y = ggplot2::element_text(angle=90))
 
    return(p)
 }
@@ -133,11 +139,9 @@ draw_2d_scatterplot <- function(data, colx, coly){
 ###############################
 # Plots for vanilla findviews #
 ###############################
-
-plot_views <- function(data, view_cols, view_type){
+plot_views_num <- function(data, view_cols){
    stopifnot(is.data.frame(data))
    stopifnot(is.character(view_cols))
-   stopifnot(view_type %in% c('num', 'cat'))
 
    if (!all(view_cols %in% names(data)))
       stop("Cannot find the requested columns in the dataset!")
@@ -173,6 +177,27 @@ plot_views <- function(data, view_cols, view_type){
 
    # Done!
    gridExtra::grid.arrange(grobs=plots, layout_matrix = layout_matrix)
+}
+
+plot_views_cat <- function(data, view_cols){
+   stopifnot(is.data.frame(data))
+   stopifnot(is.character(view_cols))
+
+   if (!all(view_cols %in% names(data)))
+      stop("Cannot find the requested columns in the dataset!")
+   if (length(view_cols) < 1)
+      stop("I cannot plot less than one column")
+
+   n_plots <- length(view_cols)
+   plots <- vector("list", n_plots)
+   for (i in 1:n_plots){
+     plots[[i]] <- draw_1d_histogram(data, view_cols[i])
+   }
+
+   # Done!
+   ncol <- 2
+   gridExtra::grid.arrange(grobs=plots, ncol=ncol)
+
 }
 
 
