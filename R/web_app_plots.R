@@ -24,7 +24,7 @@ make_layout_matrix <- function(view_cols){
 
 
 # Removes axise labels for plots located inside a grid,
-# and scales the remaining ones to avoid clutter
+# scales the remaining ones to avoid clutter
 format_axis_labels <- function(plots, layout, colnames){
    stopifnot(is.list(plots))
    stopifnot(is.matrix(layout))

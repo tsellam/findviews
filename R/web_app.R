@@ -1,18 +1,22 @@
 ################################
 # Shiny code to create the app #
 ################################
-create_fdviews_client <- function(app_type, target=NULL){
+create_fdviews_client <- function(app_type, data_name, target=NULL){
    stopifnot(is.character(app_type))
    stopifnot(app_type %in% APP_TYPES)
 
    shiny::shinyUI(shiny::fluidPage(
 
-      if (app_type == 'findviews')
-         shiny::titlePanel("Views", windowTitle = app_type)
-      else if (app_type == 'findviews_to_compare')
-         shiny::titlePanel("Views to Compare", windowTitle = app_type)
-      else if (app_type == 'findviews_to_predict')
-         shiny::titlePanel(paste0("Views to Predict", target), windowTitle = app_type),
+      if (app_type == 'findviews'){
+         title <- paste0("Views of ", data_name)
+         shiny::titlePanel(title, windowTitle = app_type)
+      } else if (app_type == 'findviews_to_compare'){
+         title <- paste0("Views to Compare for ", data_name)
+         shiny::titlePanel(title, windowTitle = app_type)
+      } else if (app_type == 'findviews_to_predict'){
+         title <- paste0("Views to Predict for ", data_name)
+         shiny::titlePanel(title, windowTitle = app_type)
+      },
 
       shiny::sidebarLayout(
 
@@ -104,16 +108,18 @@ create_fdviews_server <- function(fdviews_out, app_type, data,
 }
 
 
-create_fdviews_app <- function(fdviews_out, app_type, data,
+create_fdviews_app <- function(fdviews_out, app_type,
+                               data, data_name,
                                fdviews_group1=NULL, fdviews_group2=NULL,
-                               target=NULL){
+                               fdviews_group1_name=NULL, fdviews_group2_name=NULL,
+                               target=NULL, target_name=NULL){
 
    stopifnot(is.character(app_type))
    stopifnot(app_type %in% APP_TYPES)
    stopifnot(is.data.frame(data))
 
    fdviews_app <- shiny::shinyApp(
-      ui     = create_fdviews_client(app_type, target),
+      ui     = create_fdviews_client(app_type, data_name, target),
       server = create_fdviews_server(fdviews_out, app_type, data,
                                      fdviews_group1, fdviews_group2,
                                      target)
@@ -168,8 +174,12 @@ create_fdviews_app <- function(fdviews_out, app_type, data,
 #'
 #' @export
 findviews <- function(data, view_size_max=NULL, clust_method="complete", ...){
+   # Generates the views
    fdviews_out <- findviews_core(data, view_size_max, clust_method)
-   fdviews_app <- create_fdviews_app(fdviews_out, "findviews", data)
+
+   # Creates and launches the Shiny server
+   data_name <- deparse(substitute(data))
+   fdviews_app <- create_fdviews_app(fdviews_out, "findviews", data, data_name)
    shiny::runApp(fdviews_app, display.mode = "normal", ...)
 }
 
@@ -218,7 +228,11 @@ findviews_to_compare <- function(group1, group2, data,
                                  view_size_max=NULL, clust_method="complete", ...){
    fdviews_out <- findviews_to_compare_core(group1, group2, data,
                                             view_size_max, clust_method)
-   fdviews_app <- create_fdviews_app(fdviews_out, "findviews_to_compare", data,
+
+   # Creates and launches the Shiny server
+   data_name <- deparse(substitute(data))
+   fdviews_app <- create_fdviews_app(fdviews_out, "findviews_to_compare",
+                                     data, data_name = data_name,
                                      fdviews_group1=group1, fdviews_group2=group2)
    shiny::runApp(fdviews_app, display.mode = "normal", ...)
 }
@@ -261,7 +275,11 @@ findviews_to_predict <- function(target, data,
                                  nbins=4,...){
    fdviews_out <- findviews_to_predict_core(target, data,
                                             view_size_max, clust_method, nbins)
-   fdviews_app <- create_fdviews_app(fdviews_out, "findviews_to_predict", data,
-                                     target=target)
+
+   # Creates and launches the Shiny server
+   data_name <- deparse(substitute(data))
+   fdviews_app <- create_fdviews_app(fdviews_out, "findviews_to_predict",
+                                     data, data_name = data_name,
+                                     target = target)
    shiny::runApp(fdviews_app, display.mode = "normal", ...)
 }
