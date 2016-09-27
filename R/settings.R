@@ -35,6 +35,9 @@ NBINS_CONT_VARIABLES <- 8
 APP_TYPES <- c('findviews', 'findviews_to_compare', 'findviews_to_predict')
 
 # Graphing
+MAX_XLABEL_SIZE <- 40
+MAX_YLABEL_SIZE <- 18
+
 MAX_LEVELS_HIST <- 20
 MAX_LEVELS_PER_LINE_HIST <- 20
 MAX_CHAR_HIST <- 10

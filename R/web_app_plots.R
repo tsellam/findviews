@@ -1,3 +1,6 @@
+# Named used for dummy column representing groups
+GROUP_COL_NAME <- 'GROUP_DUMMY__'
+
 #########
 # Utils #
 #########
@@ -63,7 +66,7 @@ format_axis_labels <- function(plots, layout, colnames){
    if(nrow(layout) <= 1) return(plots)
 
    # Gets the label size for the axis
-   size_label <- if (length(colnames) < 4) 12
+   size_label  <- if (length(colnames) < 4) 12
                  else if (length(colnames) < 5) 10
                  else 8
 
@@ -132,6 +135,13 @@ preprocess_for_histogram <- function(data, colx){
    return(data)
 }
 
+label_trim <- function(label, max){
+   if (label <= max) return(label)
+   label <- strtrim(label, max)
+   label <- paste0(label, '...')
+   label
+}
+
 ##################
 # Plotting utils #
 ##################
@@ -141,11 +151,9 @@ ggplot_theme <- function(){
                   legend.key.size = ggplot2::unit(1, "cm"))
 }
 
-draw_1d_histogram <- function(data, colx){
+draw_1d_histogram <- function(data, colx, colgroup=NULL){
 
    data <- preprocess_for_histogram(data, colx)
-
-
 
    # Makes the actual chart
    p <- ggplot2::ggplot(data, ggplot2::aes_string(x=colx)) +
@@ -157,15 +165,20 @@ draw_1d_histogram <- function(data, colx){
    p
 }
 
-draw_1d_density <- function(data, colx, standalone=F){
+draw_1d_density <- function(data, colx, standalone=F, colgroup=NULL){
 
    minx <- min(data[[colx]], na.rm = T)
    maxx <- max(data[[colx]], na.rm = T)
 
+   x_title <- label_trim(colx, MAX_XLABEL_SIZE)
+   y_title <- label_trim(colx, MAX_YLABEL_SIZE)
+
+   # Adjustements related to standalone
    if (!standalone){
-      scale_x <- ggplot2::scale_x_continuous(limits=c(minx, maxx),
+      scale_x <- ggplot2::scale_x_continuous(name = x_title,
+                                             limits=c(minx, maxx),
                                              breaks=c(minx, maxx))
-      scale_y <- ggplot2::scale_y_continuous(colx,
+      scale_y <- ggplot2::scale_y_continuous(y_title,
                                              breaks=c(0,1))
       theme_extra <- ggplot2::theme(
          axis.text.y  = ggplot2::element_text(color="white"),
@@ -182,32 +195,81 @@ draw_1d_density <- function(data, colx, standalone=F){
       theme_extra <- NULL
    }
 
+   # Adjustements related to colgroup
+   if (is.null(colgroup)){
+      density_curve <- ggplot2::geom_density(fill = 'grey')
+      scale_fill <- NULL
+      scale_color  <- NULL
+   } else {
+      mapping <- ggplot2::aes_string(color = colgroup,
+                                     fill  = colgroup)
+      density_curve <- ggplot2::geom_density(show.legend = standalone,
+                                             mapping,
+                                             alpha = 0.5)
+      legend_title <- if (colgroup == GROUP_COL_NAME) 'Group' else colgroup
+      scale_fill <- ggplot2::scale_fill_discrete(legend_title)
+      scale_color  <- ggplot2::scale_color_discrete(legend_title)
+   }
+
+   # Actual plot definition
    p <- ggplot2::ggplot(data=data, ggplot2::aes_string(x = colx)) +
-      ggplot2::geom_density(fill = 'grey', show.legend = TRUE) +
+      density_curve +
       scale_x +
       scale_y +
+      scale_fill +
+      scale_color +
       ggplot_theme() +
       theme_extra
 
    return(p)
 }
 
-draw_2d_scatterplot <- function(data, colx, coly){
+draw_2d_scatterplot <- function(data, colx, coly, colgroup=NULL){
 
    minx <- min(data[[colx]], na.rm = T)
    maxx <- max(data[[colx]], na.rm = T)
    miny <- min(data[[coly]], na.rm = T)
    maxy <- max(data[[coly]], na.rm = T)
 
-   scat_pt_size <- if (nrow(data) > 1000) .5
-   else if (nrow(data) > 500) .75
-   else 1
+   scat_pt_size <- if (nrow(data) > 1500) .35
+                   else if (nrow(data) > 1000) .5
+                   else if (nrow(data) > 500) .75
+                   else 1
+
+   x_title <- label_trim(colx, MAX_XLABEL_SIZE)
+   y_title <- label_trim(colx, MAX_YLABEL_SIZE)
+
+
+   # Adjustements related to colgroup
+   if (is.null(colgroup)){
+      points       <- ggplot2::geom_point(size = scat_pt_size)
+      scale_fill   <- NULL
+      scale_color  <- NULL
+      smooth       <- NULL
+   } else {
+      mapping <- ggplot2::aes_string(color = colgroup, fill  = colgroup)
+      alpha   <- if (nrow(data) > 50) .5 else 1
+      points      <- ggplot2::geom_point(mapping,
+                                         size = scat_pt_size,
+                                         alpha = alpha)
+      scale_fill  <- ggplot2::scale_fill_discrete(guide=FALSE)
+      scale_color <- ggplot2::scale_color_discrete(guide=FALSE)
+      smooth      <- if (nrow(data)>20) ggplot2::geom_smooth(method=lm,
+                                                             mapping,
+                                                             se = F)
+                     else NULL
+   }
 
    p <- ggplot2::ggplot(data=data, ggplot2::aes_string(x = colx,
                                                        y = coly)) +
-      ggplot2::geom_point(size = scat_pt_size) +
-      ggplot2::scale_x_continuous(limits=c(minx, maxx), breaks=c(minx, maxx)) +
-      ggplot2::scale_y_continuous(limits=c(miny, maxy), breaks=c(miny, maxy)) +
+      points +
+      ggplot2::scale_x_continuous(name = x_title,
+                                  limits=c(minx, maxx), breaks=c(minx, maxx)) +
+      ggplot2::scale_y_continuous(name = y_title,
+                                  limits=c(miny, maxy), breaks=c(miny, maxy)) +
+      smooth +
+      scale_fill +
+      scale_color +
       ggplot_theme() +
       ggplot2::theme(axis.text.y = ggplot2::element_text(angle=90))
 
@@ -281,8 +343,68 @@ plot_views_cat <- function(data, view_cols){
 
 }
 
+plot_views_num_to_compare<- function(data, view_cols, group1, group2,
+                                     group1_name, group2_name){
+   stopifnot(is.data.frame(data))
+   stopifnot(is.character(view_cols))
+   stopifnot(is.logical(group1) & length(group1) == nrow(data))
+   stopifnot(is.logical(group2) & length(group2) == nrow(data))
+   stopifnot(is.character(group1_name) & is.character(group2_name))
 
 
+   if (!all(view_cols %in% names(data)))
+      stop("Cannot find the requested columns in the dataset!")
+   if (length(view_cols) < 1)
+      stop("I cannot plot less than one column")
+
+   # Adds a dummy column with the group name
+   group <- rep(NA_character_, nrow(data))
+   group[group1] <- group1_name
+   group[group2] <- group2_name
+   group[group1 & group2] <- "Both groups"
+
+   data <- cbind(data, group)
+   names(data)[length(names(data))] <- GROUP_COL_NAME
+   # Removes the plots which are outside the selection
+   data <- data[!is.na(group),]
+
+   # Layouting
+   layout_matrix <- make_layout_matrix(view_cols)
+   n_plots <- max(layout_matrix, na.rm = T)
+
+   # Graph plotting
+   plots <- vector("list", n_plots)
+   for (i in 1:length(view_cols)){
+      for (j in 1:i){
+         # Retrieves columns
+         col_i <- view_cols[i]
+         col_j <- view_cols[j]
+         # Draws the appropriate chart
+         if (length(view_cols) == 1)
+            p <- draw_1d_density(data=data,
+                                 colx=col_i,
+                                 standalone=T,
+                                 colgroup=GROUP_COL_NAME)
+         else if (col_i == col_j)
+            p <- draw_1d_density(data=data, colx=col_i,
+                                 colgroup=GROUP_COL_NAME)
+         else
+            p <- draw_2d_scatterplot(data=data,
+                                     colx=col_j,
+                                     coly=col_i,
+                                     colgroup=GROUP_COL_NAME)
+         # Appends it to the list
+         plot_index <- layout_matrix[i,j]
+         plots[[plot_index]] <- p
+      }
+   }
+
+   # Ajusts axis label sizes and removes them if necessary
+   plots <- format_axis_labels(plots, layout_matrix, view_cols)
+
+   # Done!
+   gridExtra::grid.arrange(grobs=plots, layout_matrix = layout_matrix)
+}
 
 
 

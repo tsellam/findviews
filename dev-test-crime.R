@@ -20,8 +20,8 @@ for (i in 20:30){
       crime[[i]] <- cut(crime[[i]], breaks = 10)
 }
 
-findviews(crime)
-#findviews_to_compare(to_describe, !to_describe, crime, view_size_max = 8)
+#findviews(crime)
+findviews_to_compare(to_describe, !to_describe, crime, view_size_max=5)
 #findviews_to_predict('ViolentCrimesPerPop', crime, view_size_max=5)
 
 

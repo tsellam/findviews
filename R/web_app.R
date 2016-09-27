@@ -95,7 +95,9 @@ create_fdviews_server <- function(fdviews_out, app_type, data,
 
          plot_selection(view_id, view_type, app_type,
                         fdviews_out, data,
-                        fdviews_group1, fdviews_group2, target)
+                        fdviews_group1, fdviews_group2,
+                        fdviews_group1_name, fdviews_group2_name,
+                        target)
       })
 
       output$viewComment <- shiny::renderUI({

@@ -247,7 +247,9 @@ create_view_title <- function(view_id, view_type, fdviews_out){
 #----------#
 plot_selection <- function(view_id, view_type, app_type,
                            fdviews_out, data,
-                           group1=NULL, group2=NULL, target=NULL){
+                           group1=NULL, group2=NULL,
+                           group1_name=NULL, group2_name=NULL,
+                           target=NULL){
 
    stopifnot(is.integer(view_id))
    stopifnot(view_type %in% c('num', 'cat'))
@@ -280,8 +282,10 @@ plot_selection <- function(view_id, view_type, app_type,
             plot_views_num(data, view_cols)
           else if (app_type == 'findviews' & view_type == 'cat')
              plot_views_cat(data, view_cols)
-          else if (app_type == 'findviews_to_compare')
-            NA
+          else if (app_type == 'findviews_to_compare' & view_type == 'num')
+             plot_views_num_to_compare(data, view_cols,
+                                       group1, group2,
+                                       group1_name, group2_name)
           else if (app_type =='findviews_to_predict')
             NA
           else NA
