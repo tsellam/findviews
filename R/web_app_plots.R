@@ -22,6 +22,35 @@ make_layout_matrix <- function(view_cols){
    layout_matrix
 }
 
+# creates a layout matrix for categorical data
+make_layout_matrix_hist <- function(data, view_cols){
+   stopifnot(is.data.frame(data))
+   stopifnot(is.vector(view_cols))
+   stopifnot(length(view_cols) >= 1)
+   stopifnot(all(view_cols %in% names(data)))
+
+   # If many charts, default to 2 column layout
+   if (length(view_cols) > 5)
+      return(matrix(seq_along(view_cols), ncol=2, byrow = T))
+
+   # Gets distinct values per column, checks if exceed threshold
+   nvalues <- sapply(view_cols, function(col){
+      length(unique(data[[col]]))
+   })
+   needs_two_cols <- nvalues > MAX_LEVELS_PER_LINE_HIST
+
+   # Puts bigger charts first
+   view_cols_index <- order(needs_two_cols, decreasing = T)
+   needs_two_cols <- needs_two_cols[view_cols_index]
+
+   # creates the layout matrix
+   s <- rep(view_cols_index, ifelse(needs_two_cols, 2, 1))
+   length(s) <- ceiling(length(s) / 2) * 2
+   layout_matrix <- matrix(s, ncol = 2, byrow = T)
+
+   layout_matrix
+}
+
 
 # Removes axise labels for plots located inside a grid,
 # scales the remaining ones to avoid clutter
@@ -77,6 +106,32 @@ format_axis_labels <- function(plots, layout, colnames){
    return(plots)
 }
 
+preprocess_for_histogram <- function(data, colx){
+   stopifnot(is.data.frame(data))
+   stopifnot(is.character(colx) & length(colx) == 1)
+   stopifnot(colx %in% names(data))
+
+   series <- data[[colx]]
+   series <- as.character(series)
+
+   # Groups small categories
+   if (length(unique(series)) > MAX_LEVELS_HIST){
+      tab <- table(series)
+      tab <- sort(tab, decreasing = T)
+      to_replace <- names(tab)[MAX_LEVELS_HIST:length(tab)]
+      new_name <- paste0(length(tab) - MAX_LEVELS_HIST, ' others')
+      series[series %in% to_replace] <- new_name
+   }
+
+   # Crops long labels
+   long_labels <- nchar(series) > MAX_CHAR_HIST
+   long_labels <- na.omit(long_labels)
+   series[long_labels] <- substr(series[long_labels], 1, MAX_CHAR_HIST)
+
+   data[[colx]] <- series
+   return(data)
+}
+
 ##################
 # Plotting utils #
 ##################
@@ -87,11 +142,17 @@ ggplot_theme <- function(){
 }
 
 draw_1d_histogram <- function(data, colx){
+
+   data <- preprocess_for_histogram(data, colx)
+
+
+
+   # Makes the actual chart
    p <- ggplot2::ggplot(data, ggplot2::aes_string(x=colx)) +
       ggplot2::geom_bar(ggplot2::aes(y = (..count..)/sum(..count..))) +
       ggplot2::scale_y_continuous('Prop.', labels = scales::percent) +
       ggplot_theme() +
-      ggplot2::theme(axis.text.x=ggplot2::element_text(angle=-15, hjust=0))
+      ggplot2::theme(axis.text.x=ggplot2::element_text(angle=-25, hjust=0))
 
    p
 }
@@ -205,6 +266,10 @@ plot_views_cat <- function(data, view_cols){
    if (length(view_cols) < 1)
       stop("I cannot plot less than one column")
 
+   # Generates the layout
+   layout_matrix <- make_layout_matrix_hist(data, view_cols)
+
+   # Generates the plots
    n_plots <- length(view_cols)
    plots <- vector("list", n_plots)
    for (i in 1:n_plots){
@@ -212,8 +277,7 @@ plot_views_cat <- function(data, view_cols){
    }
 
    # Done!
-   ncol <- 2
-   gridExtra::grid.arrange(grobs=plots, ncol=ncol)
+   gridExtra::grid.arrange(grobs=plots, layout_matrix = layout_matrix)
 
 }
 

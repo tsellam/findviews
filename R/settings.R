@@ -34,8 +34,10 @@ NBINS_CONT_VARIABLES <- 8
 # Web app parameters
 APP_TYPES <- c('findviews', 'findviews_to_compare', 'findviews_to_predict')
 
-# Graphing parameters
-NBARS_BEFORE_FLIP <- 50
+# Graphing
+MAX_LEVELS_HIST <- 20
+MAX_LEVELS_PER_LINE_HIST <- 20
+MAX_CHAR_HIST <- 10
 
 ############
 # SAMPLING #

@@ -49,7 +49,8 @@ create_fdviews_client <- function(app_type, data_name, target=NULL){
 #' @import shiny
 create_fdviews_server <- function(fdviews_out, app_type, data,
                                   fdviews_group1 = NULL, fdviews_group2 = NULL,
-                                  target = NULL){
+                                  fdviews_group1_name=NULL, fdviews_group2_name=NULL,
+                                  target = NULL, target_name = NULL){
    stopifnot(is.character(app_type))
    stopifnot(app_type %in% APP_TYPES)
 
@@ -122,7 +123,8 @@ create_fdviews_app <- function(fdviews_out, app_type,
       ui     = create_fdviews_client(app_type, data_name, target),
       server = create_fdviews_server(fdviews_out, app_type, data,
                                      fdviews_group1, fdviews_group2,
-                                     target)
+                                     fdviews_group1_name, fdviews_group2_name,
+                                     target, target_name)
    )
 
    return(fdviews_app)
@@ -231,9 +233,16 @@ findviews_to_compare <- function(group1, group2, data,
 
    # Creates and launches the Shiny server
    data_name <- deparse(substitute(data))
+   group1_name <- deparse(substitute(group1))
+   group2_name <- deparse(substitute(group2))
+
    fdviews_app <- create_fdviews_app(fdviews_out, "findviews_to_compare",
                                      data, data_name = data_name,
-                                     fdviews_group1=group1, fdviews_group2=group2)
+                                     fdviews_group1 = group1,
+                                     fdviews_group2 = group2,
+                                     fdviews_group1_name = group1_name,
+                                     fdviews_group2_name = group2_name
+   )
    shiny::runApp(fdviews_app, display.mode = "normal", ...)
 }
 
@@ -272,7 +281,7 @@ findviews_to_compare <- function(group1, group2, data,
 #' @export
 findviews_to_predict <- function(target, data,
                                  view_size_max=NULL, clust_method="complete",
-                                 nbins=4,...){
+                                 nbins=4, ...){
    fdviews_out <- findviews_to_predict_core(target, data,
                                             view_size_max, clust_method, nbins)
 

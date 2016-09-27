@@ -260,11 +260,20 @@ plot_selection <- function(view_id, view_type, app_type,
 
    # Subsamples if necessary
    if (nrow(data) > PLOT_SAMPLE_SIZE){
+
       warning('View plotting: the dataframe contains more that ',
               PLOT_SAMPLE_SIZE, ' rows, I am subsampling the data')
       sample_index <- sample(1:nrow(data), PLOT_SAMPLE_SIZE, F)
+
       data   <- data[sample_index,,drop=F]
-      target_data <- target_data[sample_index]
+
+      if (!is.null(target))
+         target <- target[sample_index]
+
+      if (!is.null(group1) & !is.null(group2)){
+         group1 <- group1[sample_index]
+         group2 <- group2[sample_index]
+      }
    }
 
    plot <- if (app_type == 'findviews' & view_type == 'num')
