@@ -21,7 +21,7 @@ for (i in 20:30){
 }
 
 #findviews(crime)
-findviews_to_compare(to_describe, !to_describe, crime, view_size_max=5)
+findviews_to_compare(to_describe, !to_describe, crime)
 #findviews_to_predict('ViolentCrimesPerPop', crime, view_size_max=5)
 
 

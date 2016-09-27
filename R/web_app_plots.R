@@ -135,7 +135,7 @@ preprocess_for_histogram <- function(data, colx){
    return(data)
 }
 
-label_trim <- function(label, max){
+axis_label_trim <- function(label, max){
    if (label <= max) return(label)
    label <- strtrim(label, max)
    label <- paste0(label, '...')
@@ -170,8 +170,8 @@ draw_1d_density <- function(data, colx, standalone=F, colgroup=NULL){
    minx <- min(data[[colx]], na.rm = T)
    maxx <- max(data[[colx]], na.rm = T)
 
-   x_title <- label_trim(colx, MAX_XLABEL_SIZE)
-   y_title <- label_trim(colx, MAX_YLABEL_SIZE)
+   x_title <- axis_label_trim(colx, MAX_XLABEL_SIZE)
+   y_title <- axis_label_trim(colx, MAX_YLABEL_SIZE)
 
    # Adjustements related to standalone
    if (!standalone){
@@ -236,8 +236,8 @@ draw_2d_scatterplot <- function(data, colx, coly, colgroup=NULL){
                    else if (nrow(data) > 500) .75
                    else 1
 
-   x_title <- label_trim(colx, MAX_XLABEL_SIZE)
-   y_title <- label_trim(colx, MAX_YLABEL_SIZE)
+   x_title <- axis_label_trim(colx, MAX_XLABEL_SIZE)
+   y_title <- axis_label_trim(coly, MAX_YLABEL_SIZE)
 
 
    # Adjustements related to colgroup
