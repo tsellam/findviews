@@ -260,7 +260,7 @@ plot_selection <- function(view_id, view_type, app_type,
    # Retrieves the views to output
    view_cols <- retrieve_view(view_id, view_type, fdviews_out)
 
-   # Subsamples if necessary
+   # If applicable, subsamples
    if (nrow(data) > PLOT_SAMPLE_SIZE){
 
       warning('View plotting: the dataframe contains more that ',
@@ -278,6 +278,23 @@ plot_selection <- function(view_id, view_type, app_type,
       }
    }
 
+   # If applicable, checks the target type
+   target_type <- if (is.null(target)){
+      NA
+   } else {
+      stopifnot(target %in% names(data))
+      target_col <- data[[target]]
+      if (is.numeric(target_col))
+         'num'
+      else if(is.factor(target_col) |
+              is.character(target_col) |
+              is.logical(target_col))
+         'cat'
+      else NA
+   }
+
+
+   # Produces the correct plot
    plot <- if (app_type == 'findviews' & view_type == 'num')
             plot_views_num(data, view_cols)
           else if (app_type == 'findviews' & view_type == 'cat')
@@ -290,6 +307,10 @@ plot_selection <- function(view_id, view_type, app_type,
              plot_views_cat_to_compare(data, view_cols,
                                        group1, group2,
                                        group1_name, group2_name)
+          # else if (app_type    == 'findviews_to_predict' &
+          #          view_type   == 'num' &
+          #          target_type == 'cat')
+          #    plot_views_num_to_predict_cat(data, view_cols, target)
           else NA
 
    return(plot)

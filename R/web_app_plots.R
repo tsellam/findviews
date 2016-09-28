@@ -33,8 +33,11 @@ make_layout_matrix_hist <- function(data, view_cols){
    stopifnot(all(view_cols %in% names(data)))
 
    # If many charts, default to 2 column layout
-   if (length(view_cols) > 5)
-      return(matrix(seq_along(view_cols), ncol=2, byrow = T))
+   if (length(view_cols) > 4){
+      s <- seq_along(view_cols)
+      length(s) <- ceiling(length(s) / 2) * 2
+      return(matrix(s, ncol=2, byrow = T))
+   }
 
    # Gets distinct values per column, checks if exceed threshold
    nvalues <- sapply(view_cols, function(col){
@@ -109,7 +112,7 @@ format_axis_labels <- function(plots, layout, colnames){
    return(plots)
 }
 
-preprocess_for_histogram <- function(data, colx){
+preprocess_for_histogram <- function(data, colx, faceted = F){
    stopifnot(is.data.frame(data))
    stopifnot(is.character(colx) & length(colx) == 1)
    stopifnot(colx %in% names(data))
@@ -118,11 +121,13 @@ preprocess_for_histogram <- function(data, colx){
    series <- as.character(series)
 
    # Groups small categories
-   if (length(unique(series)) > MAX_LEVELS_HIST){
+   max_levels <- if (!faceted) MAX_LEVELS_HIST
+                  else MAX_LEVELS_FACET_HIST
+   if (length(unique(series)) > max_levels){
       tab <- table(series)
       tab <- sort(tab, decreasing = T)
-      to_replace <- names(tab)[MAX_LEVELS_HIST:length(tab)]
-      new_name <- paste0(length(tab) - MAX_LEVELS_HIST, ' others')
+      to_replace <- names(tab)[max_levels:length(tab)]
+      new_name <- paste0(length(tab) - max_levels, ' others')
       series[series %in% to_replace] <- new_name
    }
 
@@ -135,7 +140,7 @@ preprocess_for_histogram <- function(data, colx){
    return(data)
 }
 
-trim_axis_label <- function(label, max){
+trim_axis_title <- function(label, max){
    if (nchar(label) <= max) return(label)
    label <- strtrim(label, max)
    label <- paste0(label, '...')
@@ -156,28 +161,45 @@ ggplot_theme <- function(...){
                   ...)
 }
 
-draw_1d_histogram <- function(data, colx, colgroup=NULL, standalone=F){
+draw_1d_histogram <- function(data, colx, standalone=F){
 
    data <- preprocess_for_histogram(data, colx)
 
-   # Adjustements related to colgroup
-   if (is.null(colgroup)){
-      ytitle <- 'Prop.'
-      bars <- ggplot2::geom_bar(ggplot2::aes(y=(..count..)/sum(..count..)))
-      scale_fill <- NULL
-      scale_color  <- NULL
+   # Adjustements related to standalone
+   if (standalone){
+      extra_theme <- NULL
    } else {
-      ytitle <- 'Prop. per group'
-      bars <- ggplot2::geom_bar(ggplot2::aes_string(y='..prop..',
-                                                    group = colgroup,
-                                                    color = colgroup,
-                                                    fill  = colgroup),
-                                position='dodge')
-
-      legend_title <- if (colgroup == GROUP_COL_NAME) 'Group' else colgroup
-      scale_fill  <- ggplot2::scale_fill_discrete(legend_title)
-      scale_color <- ggplot2::scale_color_discrete(legend_title)
+      extra_theme <- ggplot2::theme(legend.position="none")
    }
+
+   # Makes the actual chart
+      p <- ggplot2::ggplot(data, ggplot2::aes_string(x=colx)) +
+         ggplot2::geom_bar(ggplot2::aes(y=(..count..)/sum(..count..))) +
+         ggplot2::scale_y_continuous('Prop.', labels = scales::percent) +
+         ggplot_theme(axis.text.x=ggplot2::element_text(size=9, angle=-25, hjust=0)) +
+         extra_theme
+
+   p
+}
+
+draw_1d_faceted_histogram <- function(data, colx, colgroup){
+   data <- preprocess_for_histogram(data, colx, faceted=T)
+
+   # Makes the actual chart
+   p <- ggplot2::ggplot(data, ggplot2::aes_string(x=colx)) +
+      ggplot2::geom_bar(ggplot2::aes_string(y='..prop..', group = colgroup)) +
+      ggplot2::scale_y_continuous('Prop.', labels = scales::percent) +
+      ggplot_theme(axis.text.x=ggplot2::element_text(size=8, angle=-30, hjust=0)) +
+      ggplot2::facet_grid(paste0('.~', colgroup))
+
+   p
+}
+
+
+draw_1d_stacked_histogram <- function(data, colx, colgroup, standalone=F){
+
+   data <- preprocess_for_histogram(data, colx)
+   ytitle <- 'Prop. per group'
 
    # Adjustements related to standalone
    if (standalone){
@@ -188,23 +210,27 @@ draw_1d_histogram <- function(data, colx, colgroup=NULL, standalone=F){
 
    # Makes the actual chart
    p <- ggplot2::ggplot(data, ggplot2::aes_string(x=colx)) +
-         bars +
-         ggplot2::scale_y_continuous(ytitle, labels = scales::percent) +
-         scale_fill +
-         scale_color +
-         ggplot_theme(axis.text.x=ggplot2::element_text(angle=-25, hjust=0)) +
-         extra_theme
+      ggplot2::geom_bar(ggplot2::aes_string(y='..prop..',
+                                            group = colgroup,
+                                            color = colgroup,
+                                            fill  = colgroup)) +
+      ggplot2::scale_y_continuous(ytitle, labels = scales::percent) +
+      ggplot2::scale_fill_discrete(legend_title) +
+      ggplot2::scale_color_discrete(legend_title) +
+      ggplot_theme(axis.text.x=ggplot2::element_text(angle=-25, hjust=0)) +
+      extra_theme
 
    p
 }
+
 
 draw_1d_density <- function(data, colx, standalone=F, colgroup=NULL){
 
    minx <- min(data[[colx]], na.rm = T)
    maxx <- max(data[[colx]], na.rm = T)
 
-   x_title <- trim_axis_label(colx, MAX_XLABEL_SIZE)
-   y_title <- trim_axis_label(colx, MAX_YLABEL_SIZE)
+   x_title <- trim_axis_title(colx, MAX_XLABEL_SIZE)
+   y_title <- trim_axis_title(colx, MAX_YLABEL_SIZE)
 
    # Adjustements related to standalone
    if (!standalone){
@@ -268,8 +294,8 @@ draw_2d_scatterplot <- function(data, colx, coly, colgroup=NULL){
                    else if (nrow(data) > 500) .75
                    else 1
 
-   x_title <- trim_axis_label(colx, MAX_XLABEL_SIZE)
-   y_title <- trim_axis_label(coly, MAX_YLABEL_SIZE)
+   x_title <- trim_axis_title(colx, MAX_XLABEL_SIZE)
+   y_title <- trim_axis_title(coly, MAX_YLABEL_SIZE)
 
 
    # Adjustements related to colgroup
@@ -358,13 +384,13 @@ plot_views_num <- function(data, view_cols){
    if (length(view_cols) < 1)
       stop("I cannot plot less than one column")
 
-   # Simple case: just one plot
+   ## Simple case: just one plot
    if (length(view_cols) == 1){
       p <- draw_1d_density(data=data, colx=view_cols[1], standalone=T)
       return(p)
    }
 
-   # From now on, creates a plot grid
+   ## From now on, creates a plot grid
    # Layouting
    layout_matrix <- make_layout_matrix(view_cols)
    n_plots <- max(layout_matrix, na.rm = T)
@@ -403,13 +429,13 @@ plot_views_cat <- function(data, view_cols){
    if (length(view_cols) < 1)
       stop("I cannot plot less than one column")
 
-   # Simple case: just one plot
+   ## Simple case: just one plot
    if (length(view_cols) == 1){
       p <- draw_1d_histogram(data, view_cols[1])
       return(p)
    }
 
-   # From now on, creates a plot grid
+   ## From now on, creates a plot grid
    # Generates the layout
    layout_matrix <- make_layout_matrix_hist(data, view_cols)
 
@@ -521,8 +547,8 @@ plot_views_cat_to_compare <- function(data, view_cols, group1, group2,
 
    ## Simple case: just one plot
    if (length(view_cols) == 1){
-      p <- draw_1d_histogram(data, view_cols[1],
-                             colgroup = GROUP_COL_NAME, standalone = T)
+      p <- draw_1d_faceted_histogram(data, view_cols[1],
+                             colgroup = GROUP_COL_NAME)
       return(p)
    }
 
@@ -534,24 +560,24 @@ plot_views_cat_to_compare <- function(data, view_cols, group1, group2,
    n_plots <- length(view_cols)
    plots <- vector("list", n_plots)
    for (i in 1:n_plots){
-      plots[[i]] <- draw_1d_histogram(data, view_cols[i],
-                                      colgroup = GROUP_COL_NAME, standalone = F)
+      plots[[i]] <- draw_1d_faceted_histogram(data, view_cols[i],
+                             colgroup = GROUP_COL_NAME)
    }
 
-   # Creates the legend
-   legend_grob  <- draw_legend(data, view_cols, GROUP_COL_NAME, 'cat')
-   legend_index <- n_plots + 1
-   plots[[legend_index]] <- legend_grob
-   # If there is space in the grid, puts it there...
-   if (any(is.na(layout_matrix))){
-      empty_slots <- which(is.na(layout_matrix))
-      layout_matrix[empty_slots[1]] <- legend_index
-   } else {
-   # ... otherwise places it on the right side
-      extra_layout_col <- rep(NA, nrow(layout_matrix))
-      extra_layout_col[1] <- legend_index
-      layout_matrix <- cbind(layout_matrix, extra_layout_col)
-   }
+   # # Creates the legend
+   # legend_grob  <- draw_legend(data, view_cols, GROUP_COL_NAME, 'cat')
+   # legend_index <- n_plots + 1
+   # plots[[legend_index]] <- legend_grob
+   # # If there is space in the grid, puts it there...
+   # if (any(is.na(layout_matrix))){
+   #    empty_slots <- which(is.na(layout_matrix))
+   #    layout_matrix[empty_slots[1]] <- legend_index
+   # } else {
+   # # ... otherwise places it on the right side
+   #    extra_layout_col <- rep(NA, nrow(layout_matrix))
+   #    extra_layout_col[1] <- legend_index
+   #    layout_matrix <- cbind(layout_matrix, extra_layout_col)
+   # }
 
    # Done!
    gridExtra::grid.arrange(grobs=plots, layout_matrix = layout_matrix)
