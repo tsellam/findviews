@@ -307,10 +307,22 @@ plot_selection <- function(view_id, view_type, app_type,
              plot_views_cat_to_compare(data, view_cols,
                                        group1, group2,
                                        group1_name, group2_name)
-          # else if (app_type    == 'findviews_to_predict' &
-          #          view_type   == 'num' &
-          #          target_type == 'cat')
-          #    plot_views_num_to_predict_cat(data, view_cols, target)
+          else if (app_type    == 'findviews_to_predict' &
+                   view_type   == 'num' &
+                   target_type == 'cat')
+             plot_views_num_to_predict_cat(data, view_cols, target)
+          else if (app_type    == 'findviews_to_predict' &
+                   view_type   == 'cat' &
+                   target_type == 'cat')
+             plot_views_cat_to_predict_cat(data, view_cols, target)
+          else if (app_type    == 'findviews_to_predict' &
+                   view_type   == 'num' &
+                   target_type == 'num')
+             plot_views_num_to_predict_num(data, view_cols, target)
+          else if (app_type    == 'findviews_to_predict' &
+                   view_type   == 'cat' &
+                   target_type == 'num')
+             plot_views_cat_to_predict_num(data, view_cols, target)
           else NA
 
    return(plot)
