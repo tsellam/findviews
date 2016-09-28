@@ -11,10 +11,10 @@ create_fdviews_client <- function(app_type, data_name, target=NULL){
          title <- paste0("Views of ", data_name)
          shiny::titlePanel(title, windowTitle = app_type)
       } else if (app_type == 'findviews_to_compare'){
-         title <- paste0("Views to Compare for ", data_name)
+         title <- paste0("Views of ", data_name, ", sorted by discrimination power")
          shiny::titlePanel(title, windowTitle = app_type)
       } else if (app_type == 'findviews_to_predict'){
-         title <- paste0("Views to Predict for ", data_name)
+         title <- paste0("Views of ", data_name, ", sorted by prediction power")
          shiny::titlePanel(title, windowTitle = app_type)
       },
 
