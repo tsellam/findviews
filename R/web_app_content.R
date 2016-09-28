@@ -156,7 +156,7 @@ describeExclusions <- function(fdviews_out){
       NA
    }
 
-   # Text for the flat num columns
+   # Text for the flat cat columns
    cols_flat_cat <- fdviews_out$excluded$flat_cat
    comments[3] <- if (length(cols_flat_cat) > 0){
       s1 <- enumerate_char(cols_flat_cat)
@@ -286,8 +286,10 @@ plot_selection <- function(view_id, view_type, app_type,
              plot_views_num_to_compare(data, view_cols,
                                        group1, group2,
                                        group1_name, group2_name)
-          else if (app_type =='findviews_to_predict')
-            NA
+          else if (app_type == 'findviews_to_compare' & view_type == 'cat')
+             plot_views_cat_to_compare(data, view_cols,
+                                       group1, group2,
+                                       group1_name, group2_name)
           else NA
 
    return(plot)

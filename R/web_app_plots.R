@@ -135,8 +135,8 @@ preprocess_for_histogram <- function(data, colx){
    return(data)
 }
 
-axis_label_trim <- function(label, max){
-   if (label <= max) return(label)
+trim_axis_label <- function(label, max){
+   if (nchar(label) <= max) return(label)
    label <- strtrim(label, max)
    label <- paste0(label, '...')
    label
@@ -145,22 +145,55 @@ axis_label_trim <- function(label, max){
 ##################
 # Plotting utils #
 ##################
-ggplot_theme <- function(){
+ggplot_theme <- function(...){
    ggplot2::theme_bw() +
    ggplot2::theme(legend.text = ggplot2::element_text(size = 12),
-                  legend.key.size = ggplot2::unit(1, "cm"))
+                  legend.key.size = ggplot2::unit(1, "cm"),
+                  legend.key	 =
+                     ggplot2::element_rect(color = 'white'),
+                  legend.title =
+                     ggplot2::element_text(face = 'bold'),
+                  ...)
 }
 
-draw_1d_histogram <- function(data, colx, colgroup=NULL){
+draw_1d_histogram <- function(data, colx, colgroup=NULL, standalone=F){
 
    data <- preprocess_for_histogram(data, colx)
 
+   # Adjustements related to colgroup
+   if (is.null(colgroup)){
+      ytitle <- 'Prop.'
+      bars <- ggplot2::geom_bar(ggplot2::aes(y=(..count..)/sum(..count..)))
+      scale_fill <- NULL
+      scale_color  <- NULL
+   } else {
+      ytitle <- 'Prop. per group'
+      bars <- ggplot2::geom_bar(ggplot2::aes_string(y='..prop..',
+                                                    group = colgroup,
+                                                    color = colgroup,
+                                                    fill  = colgroup),
+                                position='dodge')
+
+      legend_title <- if (colgroup == GROUP_COL_NAME) 'Group' else colgroup
+      scale_fill  <- ggplot2::scale_fill_discrete(legend_title)
+      scale_color <- ggplot2::scale_color_discrete(legend_title)
+   }
+
+   # Adjustements related to standalone
+   if (standalone){
+      extra_theme <- NULL
+   } else {
+      extra_theme <- ggplot2::theme(legend.position="none")
+   }
+
    # Makes the actual chart
    p <- ggplot2::ggplot(data, ggplot2::aes_string(x=colx)) +
-      ggplot2::geom_bar(ggplot2::aes(y = (..count..)/sum(..count..))) +
-      ggplot2::scale_y_continuous('Prop.', labels = scales::percent) +
-      ggplot_theme() +
-      ggplot2::theme(axis.text.x=ggplot2::element_text(angle=-25, hjust=0))
+         bars +
+         ggplot2::scale_y_continuous(ytitle, labels = scales::percent) +
+         scale_fill +
+         scale_color +
+         ggplot_theme(axis.text.x=ggplot2::element_text(angle=-25, hjust=0)) +
+         extra_theme
 
    p
 }
@@ -170,8 +203,8 @@ draw_1d_density <- function(data, colx, standalone=F, colgroup=NULL){
    minx <- min(data[[colx]], na.rm = T)
    maxx <- max(data[[colx]], na.rm = T)
 
-   x_title <- axis_label_trim(colx, MAX_XLABEL_SIZE)
-   y_title <- axis_label_trim(colx, MAX_YLABEL_SIZE)
+   x_title <- trim_axis_label(colx, MAX_XLABEL_SIZE)
+   y_title <- trim_axis_label(colx, MAX_YLABEL_SIZE)
 
    # Adjustements related to standalone
    if (!standalone){
@@ -180,7 +213,7 @@ draw_1d_density <- function(data, colx, standalone=F, colgroup=NULL){
                                              breaks=c(minx, maxx))
       scale_y <- ggplot2::scale_y_continuous(y_title,
                                              breaks=c(0,1))
-      theme_extra <- ggplot2::theme(
+      theme <- ggplot_theme(
          axis.text.y  = ggplot2::element_text(color="white"),
          axis.line.y  = ggplot2::element_blank(),
          axis.ticks.y = ggplot2::element_line(color="white"),
@@ -192,7 +225,7 @@ draw_1d_density <- function(data, colx, standalone=F, colgroup=NULL){
    } else {
       scale_x <- ggplot2::scale_x_continuous()
       scale_y <- ggplot2::scale_y_continuous('Distribution (density function)')
-      theme_extra <- NULL
+      theme <- ggplot_theme()
    }
 
    # Adjustements related to colgroup
@@ -218,8 +251,7 @@ draw_1d_density <- function(data, colx, standalone=F, colgroup=NULL){
       scale_y +
       scale_fill +
       scale_color +
-      ggplot_theme() +
-      theme_extra
+      theme
 
    return(p)
 }
@@ -236,8 +268,8 @@ draw_2d_scatterplot <- function(data, colx, coly, colgroup=NULL){
                    else if (nrow(data) > 500) .75
                    else 1
 
-   x_title <- axis_label_trim(colx, MAX_XLABEL_SIZE)
-   y_title <- axis_label_trim(coly, MAX_YLABEL_SIZE)
+   x_title <- trim_axis_label(colx, MAX_XLABEL_SIZE)
+   y_title <- trim_axis_label(coly, MAX_YLABEL_SIZE)
 
 
    # Adjustements related to colgroup
@@ -270,11 +302,49 @@ draw_2d_scatterplot <- function(data, colx, coly, colgroup=NULL){
       smooth +
       scale_fill +
       scale_color +
-      ggplot_theme() +
-      ggplot2::theme(axis.text.y = ggplot2::element_text(angle=90))
+      ggplot_theme(axis.text.y = ggplot2::element_text(angle=90))
 
    return(p)
 }
+
+extract_legend <- function(plot){
+   stopifnot('ggplot' %in% class(plot))
+
+   grob <- ggplot2::ggplotGrob(plot)$grobs
+   grob_is_legend <- sapply(grob, function(x) x$name) == "guide-box"
+
+   if (!any(grob_is_legend)) return(NULL)
+   grob[[which(grob_is_legend)]]
+}
+
+draw_legend <- function(data, view_cols, colgroup, type){
+   stopifnot(type %in% c('num', 'cat'))
+
+    dummy_col <- view_cols[1]
+    legend_title <- if (colgroup == GROUP_COL_NAME) 'Group'
+                    else colgroup
+
+    geom <-  if (type=='num')
+               ggplot2::geom_point(ggplot2::aes_string(y = dummy_col),
+                                   size=8,
+                                   alpha=.5)
+             else
+                ggplot2::geom_bar()
+
+    dummy_plot <- ggplot2::ggplot(data = data,
+                                  ggplot2::aes_string(x = dummy_col,
+                                                      color = colgroup,
+                                                      fill  = colgroup)) +
+                  ggplot2::scale_fill_discrete(legend_title) +
+                  ggplot2::scale_color_discrete(legend_title) +
+                  geom +
+                  ggplot_theme()
+
+    legend <- extract_legend(dummy_plot)
+
+    return(legend)
+}
+
 
 ###############################
 # Plots for vanilla findviews #
@@ -288,6 +358,13 @@ plot_views_num <- function(data, view_cols){
    if (length(view_cols) < 1)
       stop("I cannot plot less than one column")
 
+   # Simple case: just one plot
+   if (length(view_cols) == 1){
+      p <- draw_1d_density(data=data, colx=view_cols[1], standalone=T)
+      return(p)
+   }
+
+   # From now on, creates a plot grid
    # Layouting
    layout_matrix <- make_layout_matrix(view_cols)
    n_plots <- max(layout_matrix, na.rm = T)
@@ -300,9 +377,7 @@ plot_views_num <- function(data, view_cols){
          col_i <- view_cols[i]
          col_j <- view_cols[j]
          # Draws the appropriate chart
-         if (length(view_cols) == 1)
-            p <- draw_1d_density(data=data, colx=col_i, standalone=T)
-         else if (col_i == col_j)
+         if (col_i == col_j)
             p <- draw_1d_density(data=data, colx=col_i)
          else
             p <- draw_2d_scatterplot(data=data, colx=col_j, coly=col_i)
@@ -328,6 +403,13 @@ plot_views_cat <- function(data, view_cols){
    if (length(view_cols) < 1)
       stop("I cannot plot less than one column")
 
+   # Simple case: just one plot
+   if (length(view_cols) == 1){
+      p <- draw_1d_histogram(data, view_cols[1])
+      return(p)
+   }
+
+   # From now on, creates a plot grid
    # Generates the layout
    layout_matrix <- make_layout_matrix_hist(data, view_cols)
 
@@ -368,6 +450,14 @@ plot_views_num_to_compare<- function(data, view_cols, group1, group2,
    # Removes the plots which are outside the selection
    data <- data[!is.na(group),]
 
+   ## Simple case: just one plot
+   if (length(view_cols) == 1){
+      p <- draw_1d_density(data=data, colx=view_cols[1],
+                           standalone=T, colgroup=GROUP_COL_NAME)
+      return(p)
+   }
+
+   ## From now on, creates a plot grid
    # Layouting
    layout_matrix <- make_layout_matrix(view_cols)
    n_plots <- max(layout_matrix, na.rm = T)
@@ -380,12 +470,7 @@ plot_views_num_to_compare<- function(data, view_cols, group1, group2,
          col_i <- view_cols[i]
          col_j <- view_cols[j]
          # Draws the appropriate chart
-         if (length(view_cols) == 1)
-            p <- draw_1d_density(data=data,
-                                 colx=col_i,
-                                 standalone=T,
-                                 colgroup=GROUP_COL_NAME)
-         else if (col_i == col_j)
+         if (col_i == col_j)
             p <- draw_1d_density(data=data, colx=col_i,
                                  colgroup=GROUP_COL_NAME)
          else
@@ -402,11 +487,75 @@ plot_views_num_to_compare<- function(data, view_cols, group1, group2,
    # Ajusts axis label sizes and removes them if necessary
    plots <- format_axis_labels(plots, layout_matrix, view_cols)
 
+   # Adds the legend
+   legend_grob  <- draw_legend(data, view_cols, GROUP_COL_NAME, 'num')
+   legend_index <- n_plots + 1
+   plots[[legend_index]] <- legend_grob
+   layout_matrix[1, ncol(layout_matrix)] <- legend_index
+
    # Done!
    gridExtra::grid.arrange(grobs=plots, layout_matrix = layout_matrix)
 }
 
 
+plot_views_cat_to_compare <- function(data, view_cols, group1, group2,
+                                      group1_name, group2_name){
+   stopifnot(is.data.frame(data))
+   stopifnot(is.character(view_cols))
+
+   if (!all(view_cols %in% names(data)))
+      stop("Cannot find the requested columns in the dataset!")
+   if (length(view_cols) < 1)
+      stop("I cannot plot less than one column")
+
+   # Adds a dummy column with the group name
+   group <- rep(NA_character_, nrow(data))
+   group[group1] <- group1_name
+   group[group2] <- group2_name
+   group[group1 & group2] <- "Both groups"
+
+   data <- cbind(data, group)
+   names(data)[length(names(data))] <- GROUP_COL_NAME
+   # Removes the plots which are outside the selection
+   data <- data[!is.na(group),]
+
+   ## Simple case: just one plot
+   if (length(view_cols) == 1){
+      p <- draw_1d_histogram(data, view_cols[1],
+                             colgroup = GROUP_COL_NAME, standalone = T)
+      return(p)
+   }
+
+   ## From now on, creates a plot grid
+   # Generates the layout
+   layout_matrix <- make_layout_matrix_hist(data, view_cols)
+
+   # Generates the plots
+   n_plots <- length(view_cols)
+   plots <- vector("list", n_plots)
+   for (i in 1:n_plots){
+      plots[[i]] <- draw_1d_histogram(data, view_cols[i],
+                                      colgroup = GROUP_COL_NAME, standalone = F)
+   }
+
+   # Creates the legend
+   legend_grob  <- draw_legend(data, view_cols, GROUP_COL_NAME, 'cat')
+   legend_index <- n_plots + 1
+   plots[[legend_index]] <- legend_grob
+   # If there is space in the grid, puts it there...
+   if (any(is.na(layout_matrix))){
+      empty_slots <- which(is.na(layout_matrix))
+      layout_matrix[empty_slots[1]] <- legend_index
+   } else {
+   # ... otherwise places it on the right side
+      extra_layout_col <- rep(NA, nrow(layout_matrix))
+      extra_layout_col[1] <- legend_index
+      layout_matrix <- cbind(layout_matrix, extra_layout_col)
+   }
+
+   # Done!
+   gridExtra::grid.arrange(grobs=plots, layout_matrix = layout_matrix)
+}
 
 
 
