@@ -168,6 +168,31 @@ describeExclusions <- function(fdviews_out){
       NA
    }
 
+
+   # Text for the sparse num columns
+   cols_sparse_num <- fdviews_out$excluded$sparse_num
+   comments[4]  <- if (length(cols_sparse_num) > 0){
+      s1 <- enumerate_char(cols_sparse_num)
+      s2 <- " because "
+      s3 <- this_or_these_column_s(cols_sparse_num)
+      s4 <- " have too many missing values."
+      paste0(s1, s2, s3, s4)
+   } else {
+      NA
+   }
+
+   # Text for the sparse cat columns
+   cols_sparse_cat <- fdviews_out$excluded$sparse_cat
+   comments[5] <- if (length(cols_sparse_cat) > 0){
+      s1 <- enumerate_char(cols_sparse_cat)
+      s2 <- " because "
+      s3 <- this_or_these_column_s(cols_sparse_cat)
+      s4 <- " have too many missing values."
+      paste0(s1, s2, s3, s4)
+   } else {
+      NA
+   }
+
    comments <- na.omit(comments)
 
    html <- if (length(comments) == 0){
@@ -256,6 +281,11 @@ plot_selection <- function(view_id, view_type, app_type,
    stopifnot(app_type %in% APP_TYPES)
    stopifnot(c('views_num', 'views_cat') %in% names(fdviews_out))
    stopifnot(is.data.frame(data))
+   stopifnot(is.logical(group1) | is.null(group1))
+   stopifnot(is.logical(group1) | is.null(group1))
+   stopifnot(is.character(group1_name) | is.null(group1_name))
+   stopifnot(is.character(group2_name) | is.null(group2_name))
+   stopifnot(is.character(target) | is.null(target))
 
    # Retrieves the views to output
    view_cols <- retrieve_view(view_id, view_type, fdviews_out)
@@ -268,9 +298,6 @@ plot_selection <- function(view_id, view_type, app_type,
       sample_index <- sample(1:nrow(data), PLOT_SAMPLE_SIZE, F)
 
       data   <- data[sample_index,,drop=F]
-
-      if (!is.null(target))
-         target <- target[sample_index]
 
       if (!is.null(group1) & !is.null(group2)){
          group1 <- group1[sample_index]
@@ -327,61 +354,6 @@ plot_selection <- function(view_id, view_type, app_type,
 
    return(plot)
 }
-#
-# plot_selection <- function(view_id, view_type, app_type,
-#                            fdviews_out, data,
-#                            group1=NULL, group2=NULL, target=NULL){
-#
-#    stopifnot(is.integer(view_id))
-#    stopifnot(view_type %in% c('num', 'cat'))
-#    stopifnot(app_type %in% APP_TYPES)
-#    stopifnot(c('views_num', 'views_cat') %in% names(fdviews_out))
-#    stopifnot(is.data.frame(data))
-#
-#    # Retrieves the views to output
-#    view_cols <- retrieve_view(view_id, view_type, fdviews_out)
-#
-#    # Generates a target vector, used later to color the plots
-#    if (app_type == 'findviews'){
-#       target_data <- rep(NA, nrow(data))
-#
-#    } else if (app_type == 'findviews_to_compare'){
-#       # Generates a target vector
-#       target_data <- integer(nrow(data))
-#       target_data[group1] <- 1
-#       target_data[group2] <- 2
-#       target_data <- factor(paste0("Group ", target_data))
-#
-#       # Trims the data to the user's selection
-#       row_selection <- group1 | group2
-#       data   <- data[row_selection, view_cols, drop=F]
-#       target_data <- target_data[row_selection]
-#
-#    } else if (app_type == 'findviews_to_predict'){
-#       stopifnot("target_data" %in% names(fdviews_out))
-#       target_data <- fdviews_out$target_data
-#       stopifnot(is.factor(target_data))
-#
-#    }
-#
-#    # Subsamples if necessary
-#    if (nrow(data) > PLOT_SAMPLE_SIZE){
-#       warning('View plotting: the dataframe contains more that ',
-#               PLOT_SAMPLE_SIZE, ' rows, I am subsampling the data')
-#       sample_index <- sample(1:nrow(data), PLOT_SAMPLE_SIZE, F)
-#       data   <- data[sample_index,,drop=F]
-#       target_data <- target_data[sample_index]
-#    }
-#
-#    plot <- if (view_type=='num') plot_selection_numeric(data[view_cols],
-#                                                         target_data,
-#                                                         app_type)
-#    else plot_selection_categorical(data[view_cols],
-#                                    target_data,
-#                                    app_type)
-#
-#    return(plot)
-# }
 
 
 #-------------------#

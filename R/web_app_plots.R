@@ -1,9 +1,9 @@
 # Named used for dummy column representing groups
 GROUP_COL_NAME <- 'GROUP_DUMMY__'
 
-#########
-# Utils #
-#########
+#######################
+# Layouting Functions #
+#######################
 # Creates a lower triangular matrix with numbers from 1 to n
 make_layout_matrix <- function(view_cols){
    stopifnot(is.vector(view_cols))
@@ -57,7 +57,9 @@ make_layout_matrix_hist <- function(data, view_cols){
    layout_matrix
 }
 
-
+##################
+# Plotting utils #
+##################
 # Removes axise labels for plots located inside a grid,
 # scales the remaining ones to avoid clutter
 format_axis_labels <- function(plots, layout, colnames, ignore_diag=F){
@@ -157,12 +159,11 @@ trim_axis_title <- function(label, max){
    label
 }
 
-##################
-# Plotting utils #
-##################
+
 ggplot_theme <- function(...){
    ggplot2::theme_bw() +
-   ggplot2::theme(legend.text = ggplot2::element_text(size = 12),
+   ggplot2::theme(panel.grid = ggplot2::element_blank(),
+                  legend.text = ggplot2::element_text(size = 12),
                   legend.key	 =
                      ggplot2::element_rect(color = 'white'),
                   legend.title =
@@ -172,6 +173,65 @@ ggplot_theme <- function(...){
                   ...)
 }
 
+#############################
+# Legend Manipulation Utils #
+#############################
+extract_legend <- function(plot){
+   stopifnot('ggplot' %in% class(plot))
+
+   grob <- ggplot2::ggplotGrob(plot)$grobs
+   grob_is_legend <- sapply(grob, function(x) x$name) == "guide-box"
+
+   if (!any(grob_is_legend)) return(NULL)
+   grob[[which(grob_is_legend)]]
+}
+
+draw_legend_cat <- function(data, view_cols, colgroup, type){
+   stopifnot(type %in% c('num', 'cat'))
+
+   dummy_col <- view_cols[1]
+   legend_title <- if (colgroup == GROUP_COL_NAME) 'Group'
+   else colgroup
+
+   geom <-  if (type=='num')
+      ggplot2::geom_point(ggplot2::aes_string(y = dummy_col), size=8)
+   else
+      ggplot2::geom_bar()
+
+   dummy_plot <- ggplot2::ggplot(data = data,
+                                 ggplot2::aes_string(x = dummy_col,
+                                                     color = colgroup,
+                                                     fill  = colgroup)) +
+      ggplot2::scale_fill_discrete(legend_title) +
+      ggplot2::scale_color_discrete(legend_title) +
+      geom +
+      ggplot_theme()
+
+   legend <- extract_legend(dummy_plot)
+
+   return(legend)
+}
+
+draw_legend_cont <- function(data, view_cols, target){
+
+   dummy_plot <- ggplot2::ggplot(data = data,
+                                 ggplot2::aes_string(x = view_cols[1],
+                                                     y = view_cols[2],
+                                                     z = target)) +
+      ggplot2::stat_summary_2d() +
+      ggplot2::scale_fill_continuous('Target') +
+      ggplot2::scale_color_continuous('Target') +
+      ggplot_theme()
+
+   legend <- extract_legend(dummy_plot)
+
+   return(legend)
+}
+
+
+#######################
+# Collection of Plots #
+#######################
 draw_1d_histogram <- function(data, colx){
 
    data <- preprocess_for_histogram(data, colx)
@@ -180,8 +240,7 @@ draw_1d_histogram <- function(data, colx){
       p <- ggplot2::ggplot(data, ggplot2::aes_string(x=colx)) +
          ggplot2::geom_bar(ggplot2::aes(y=(..count..)/sum(..count..))) +
          ggplot2::scale_y_continuous('Prop.', labels = scales::percent) +
-         ggplot_theme(axis.text.x=ggplot2::element_text(size=9, angle=-25, hjust=0)) +
-         extra_theme
+         ggplot_theme(axis.text.x=ggplot2::element_text(size=9, angle=-25, hjust=0))
 
    p
 }
@@ -222,7 +281,8 @@ draw_1d_stacked_histogram <- function(data, colx, colgroup, standalone=F){
       ggplot2::scale_y_continuous(ytitle, labels = scales::percent) +
       ggplot2::scale_fill_discrete() +
       ggplot2::scale_color_discrete() +
-      ggplot_theme(axis.text.x = ggplot2::element_text(angle=-25, hjust=0)) +
+      ggplot_theme(axis.text.x = ggplot2::element_text(angle=-25, hjust=0),
+                   axis.title.y =ggplot2::element_text(face="bold.italic")) +
       extra_theme
 
    p
@@ -235,31 +295,33 @@ draw_1d_density <- function(data, colx, standalone=F, colgroup=NULL, stacked=F){
    maxx <- max(data[[colx]], na.rm = T)
 
    x_title <- trim_axis_title(colx, MAX_XLABEL_SIZE)
-   y_title <- trim_axis_title(colx, MAX_YLABEL_SIZE)
 
    # Adjustements related to 'standalone' and 'stacked'
    if (!standalone){
       scale_x <- ggplot2::scale_x_continuous(name = x_title,
                                              limits=c(minx, maxx),
                                              breaks=c(minx, maxx))
-      scale_y <- ggplot2::scale_y_continuous(y_title,
+      scale_y <- ggplot2::scale_y_continuous(name = 'Distribution',
                                              breaks=c(0,1))
       theme <- ggplot_theme(
+         axis.title.y  = ggplot2::element_text(face="bold.italic"),
          axis.text.y  = ggplot2::element_text(color="white"),
-         axis.line.y  = ggplot2::element_blank(),
+         #axis.line.y  = ggplot2::element_blank(),
          axis.ticks.y = ggplot2::element_line(color="white"),
          panel.border = ggplot2::element_blank(),
-         panel.grid.major = ggplot2::element_blank(),
-         panel.grid.minor = ggplot2::element_blank(),
+         panel.background = ggplot2::element_rect(fill = "grey95"),
          axis.text.y = ggplot2::element_text(angle=90)
       )
    } else {
       scale_x <- ggplot2::scale_x_continuous()
-      title <- paste0('Distribution (density function,',
+      title <- paste0('Distribution (density function, ',
                       ifelse(stacked, 'stacked', 'normalized'),
                      ' )')
       scale_y <- ggplot2::scale_y_continuous(title)
-      theme <- ggplot_theme()
+      theme <- ggplot_theme(
+         panel.background = ggplot2::element_rect(fill = "grey95"),
+         axis.title.y  = ggplot2::element_text(face="bold.italic")
+      )
    }
 
    # Adjustements related to 'colgroup' and 'stacked'
@@ -356,61 +418,93 @@ draw_2d_scatterplot <- function(data, colx, coly, colgroup=NULL){
    return(p)
 }
 
-extract_legend <- function(plot){
-   stopifnot('ggplot' %in% class(plot))
+draw_1d_num_influence <- function(data, colx, target, standalone=F){
+   minx <- min(data[[colx]], na.rm = T)
+   maxx <- max(data[[colx]], na.rm = T)
 
-   grob <- ggplot2::ggplotGrob(plot)$grobs
-   grob_is_legend <- sapply(grob, function(x) x$name) == "guide-box"
+   miny <- min(data[[target]], na.rm = T)
+   maxy <- max(data[[target]], na.rm = T)
 
-   if (!any(grob_is_legend)) return(NULL)
-   grob[[which(grob_is_legend)]]
+   x_title <- trim_axis_title(colx,   MAX_XLABEL_SIZE)
+   y_title <- trim_axis_title(target, MAX_YLABEL_SIZE)
+
+   scat_pt_size <- if (nrow(data) > 1500) .35
+   else if (nrow(data) > 1000) .5
+   else if (nrow(data) > 500) .75
+   else 1
+
+   if (standalone){
+      theme <- ggplot_theme(
+         axis.title.y =ggplot2::element_text(face="bold.italic"),
+         panel.background = ggplot2::element_rect(fill = "grey95")
+      )
+      geom <- ggplot2::geom_point(size=scat_pt_size)
+      x_axis <- ggplot2::scale_x_continuous()
+   } else {
+      theme <- ggplot_theme(
+         axis.title.y =ggplot2::element_text(face="bold.italic"),
+         panel.background = ggplot2::element_rect(fill = "grey95"),
+         legend.position="none",
+         axis.text.y = ggplot2::element_text(angle=90)
+      )
+      geom <- ggplot2::geom_point(ggplot2::aes_string(color=target),
+                                  size=scat_pt_size)
+      x_axis <- ggplot2::scale_x_continuous(name = x_title)
+   }
+
+   g <- ggplot2::ggplot(data, ggplot2::aes_string(x = colx,
+                                                  y = target)) +
+      geom +
+      ggplot2::geom_smooth(se = F) +
+      x_axis +
+      theme
+   g
 }
 
-draw_legend_cat <- function(data, view_cols, colgroup, type){
-   stopifnot(type %in% c('num', 'cat'))
+draw_1d_cat_influence <- function(data, colx, target){
+   data <- preprocess_for_histogram(data, colx)
 
-    dummy_col <- view_cols[1]
-    legend_title <- if (colgroup == GROUP_COL_NAME) 'Group'
-                    else colgroup
+   # Makes the actual chart
+   p <- ggplot2::ggplot(data, ggplot2::aes_string(x=colx, y=target)) +
+      ggplot2::geom_boxplot() +
+      ggplot2::scale_y_continuous() +
+      ggplot_theme(axis.text.x=ggplot2::element_text(size=9, angle=-25, hjust=0),
+                   axis.title.y =ggplot2::element_text(face="bold.italic"))
 
-    geom <-  if (type=='num')
-               ggplot2::geom_point(ggplot2::aes_string(y = dummy_col), size=8)
-             else
-                ggplot2::geom_bar()
 
-    dummy_plot <- ggplot2::ggplot(data = data,
-                                  ggplot2::aes_string(x = dummy_col,
-                                                      color = colgroup,
-                                                      fill  = colgroup)) +
-                  ggplot2::scale_fill_discrete(legend_title) +
-                  ggplot2::scale_color_discrete(legend_title) +
-                  geom +
-                  ggplot_theme()
-
-    legend <- extract_legend(dummy_plot)
-
-    return(legend)
+   p
 }
 
-draw_legend_cont <- function(data, view_cols, target){
 
-   dummy_plot <- ggplot2::ggplot(data = data,
-                                 ggplot2::aes_string(x = view_cols[1],
-                                                     y = view_cols[2],
-                                                     z = target)) +
-      ggplot2::stat_summary_2d() +
-      ggplot2::scale_fill_continuous('Target') +
-      ggplot2::scale_color_continuous('Target') +
-      ggplot_theme()
+draw_2d_influence_num <- function(data, colx, coly, target, standalone = F){
 
-   legend <- extract_legend(dummy_plot)
+   minx <- min(data[[colx]], na.rm = T)
+   maxx <- max(data[[colx]], na.rm = T)
+   miny <- min(data[[coly]], na.rm = T)
+   maxy <- max(data[[coly]], na.rm = T)
 
-   return(legend)
+   x_title <- trim_axis_title(colx, MAX_XLABEL_SIZE)
+   y_title <- trim_axis_title(coly, MAX_YLABEL_SIZE)
+
+   p <- ggplot2::ggplot(data=data, ggplot2::aes_string(x = colx,
+                                                       y = coly)) +
+      ggplot2::stat_summary_2d(ggplot2::aes_string(z = target)) +
+      ggplot2::scale_x_continuous(name = x_title,
+                                  limits=c(minx, maxx), breaks=c(minx, maxx)) +
+      ggplot2::scale_y_continuous(name = y_title,
+                                  limits=c(miny, maxy), breaks=c(miny, maxy)) +
+      ggplot2::scale_fill_continuous(guide = if(standalone) 'colourbar' else FALSE) +
+      ggplot_theme(axis.text.y = ggplot2::element_text(angle=90))
+
+
+   return(p)
 }
 
-###############################
-# Plots for vanilla findviews #
-###############################
+
+
+#################################
+# High Level Plotting Functions #
+#################################
 plot_views_num <- function(data, view_cols){
    stopifnot(is.data.frame(data))
    stopifnot(is.character(view_cols))
@@ -450,7 +544,7 @@ plot_views_num <- function(data, view_cols){
    }
 
    # Ajusts axis label sizes and removes them if necessary
-   plots <- format_axis_labels(plots, layout_matrix, view_cols)
+   plots <- format_axis_labels(plots, layout_matrix, view_cols, ignore_diag = T)
 
    # Done!
    gridExtra::grid.arrange(grobs=plots, layout_matrix = layout_matrix)
@@ -547,7 +641,7 @@ plot_views_num_to_compare<- function(data, view_cols, group1, group2,
    }
 
    # Ajusts axis label sizes and removes them if necessary
-   plots <- format_axis_labels(plots, layout_matrix, view_cols)
+   plots <- format_axis_labels(plots, layout_matrix, view_cols, ignore_diag=T)
 
    # Adds the legend
    legend_grob  <- draw_legend_cat(data, view_cols, GROUP_COL_NAME, 'num')
@@ -558,7 +652,6 @@ plot_views_num_to_compare<- function(data, view_cols, group1, group2,
    # Done!
    gridExtra::grid.arrange(grobs=plots, layout_matrix = layout_matrix)
 }
-
 
 plot_views_cat_to_compare <- function(data, view_cols, group1, group2,
                                       group1_name, group2_name){
@@ -603,10 +696,6 @@ plot_views_cat_to_compare <- function(data, view_cols, group1, group2,
    # Done!
    gridExtra::grid.arrange(grobs=plots, layout_matrix = layout_matrix)
 }
-
-
-
-
 
 plot_views_num_to_predict_cat <- function(data, view_cols, target){
    stopifnot(is.data.frame(data))
@@ -664,7 +753,7 @@ plot_views_num_to_predict_cat <- function(data, view_cols, target){
    }
 
    # Ajusts axis label sizes and removes them if necessary
-   plots <- format_axis_labels(plots, layout_matrix, view_cols)
+   plots <- format_axis_labels(plots, layout_matrix, view_cols, ignore_diag=T)
 
    # Adds the legend
    legend_grob  <- draw_legend_cat(data, view_cols, target, 'num')
@@ -732,68 +821,6 @@ plot_views_cat_to_predict_cat <- function(data, view_cols, target){
    gridExtra::grid.arrange(grobs=plots, layout_matrix = layout_matrix)
 }
 
-
-draw_1d_num_influence <- function(data, colx, target){
-   minx <- min(data[[colx]], na.rm = T)
-   maxx <- max(data[[colx]], na.rm = T)
-
-   miny <- min(data[[target]], na.rm = T)
-   maxy <- max(data[[target]], na.rm = T)
-
-   x_title <- trim_axis_title(colx,   MAX_XLABEL_SIZE)
-   y_title <- trim_axis_title(target, MAX_YLABEL_SIZE)
-
-   scat_pt_size <- if (nrow(data) > 1500) .35
-                     else if (nrow(data) > 1000) .5
-                     else if (nrow(data) > 500) .75
-                     else 1
-
-   g <- ggplot2::ggplot(data, ggplot2::aes_string(x = colx,
-                                                  y = target)) +
-         ggplot2::geom_point(size=scat_pt_size) +
-         ggplot2::geom_smooth(se = F) +
-         ggplot_theme( axis.title.y = ggplot2::element_text(face="italic") )
-
-   g
-}
-
-draw_1d_cat_influence <- function(data, colx, target){
-   data <- preprocess_for_histogram(data, colx)
-
-   # Makes the actual chart
-   p <- ggplot2::ggplot(data, ggplot2::aes_string(x=colx, y=target)) +
-      ggplot2::geom_boxplot() +
-      ggplot2::scale_y_continuous() +
-      ggplot_theme(axis.text.x=ggplot2::element_text(size=9, angle=-25, hjust=0))
-
-
-   p
-}
-
-
-draw_2d_influence <- function(data, colx, coly, target, standalone = F){
-
-   minx <- min(data[[colx]], na.rm = T)
-   maxx <- max(data[[colx]], na.rm = T)
-   miny <- min(data[[coly]], na.rm = T)
-   maxy <- max(data[[coly]], na.rm = T)
-
-   x_title <- trim_axis_title(colx, MAX_XLABEL_SIZE)
-   y_title <- trim_axis_title(coly, MAX_YLABEL_SIZE)
-
-   p <- ggplot2::ggplot(data=data, ggplot2::aes_string(x = colx,
-                                                       y = coly)) +
-      ggplot2::stat_summary_2d(ggplot2::aes_string(z = target)) +
-      ggplot2::scale_x_continuous(name = x_title,
-                                  limits=c(minx, maxx), breaks=c(minx, maxx)) +
-      ggplot2::scale_y_continuous(name = y_title,
-                                  limits=c(miny, maxy), breaks=c(miny, maxy)) +
-      ggplot2::scale_fill_continuous(guide = if(standalone) 'colourbar' else FALSE) +
-      ggplot_theme(axis.text.y = ggplot2::element_text(angle=90))
-
-   return(p)
-}
-
 plot_views_num_to_predict_num <- function(data, view_cols, target){
    stopifnot(is.data.frame(data))
    stopifnot(is.character(view_cols))
@@ -812,7 +839,8 @@ plot_views_num_to_predict_num <- function(data, view_cols, target){
 
    ## Easy case: just one plot
    if (length(view_cols) == 1){
-      p <- draw_1d_num_influence(data, view_cols[1], target=target)
+      p <- draw_1d_num_influence(data, view_cols[1], target=target,
+                                 standalone = T)
       return(p)
    }
 
@@ -820,8 +848,6 @@ plot_views_num_to_predict_num <- function(data, view_cols, target){
    # Layouting
    layout_matrix <- make_layout_matrix(view_cols)
    n_plots <- max(layout_matrix, na.rm = T)
-
-   share_legend <- (length(view_cols) != 2)
 
    # Graph plotting
    plots <- vector("list", n_plots)
@@ -834,12 +860,13 @@ plot_views_num_to_predict_num <- function(data, view_cols, target){
          if (col_i == col_j)
             p <- draw_1d_num_influence(data,
                                  col_i,
-                                 target = target)
+                                 target = target,
+                                 standalone = F)
          else
-            p <- draw_2d_influence(data,
-                                  col_i, col_j,
+            p <- draw_2d_influence_num(data,
+                                  col_j, col_i,
                                   target = target,
-                                  standalone = !share_legend)
+                                  standalone = F)
          # Appends it to the list
          plot_index <- layout_matrix[i,j]
          plots[[plot_index]] <- p
@@ -849,20 +876,11 @@ plot_views_num_to_predict_num <- function(data, view_cols, target){
    # Ajusts axis label sizes and removes them if necessary
    plots <- format_axis_labels(plots, layout_matrix, view_cols, ignore_diag=T)
 
-   # Moves all the diagonal plots to the lower row
-   layout_diag <- diag(layout_matrix)
-   diag(layout_matrix) <- NA
-   tmp <- rbind(layout_matrix, layout_diag)
-   layout_matrix <- tmp[2:nrow(tmp),]
-
-
-   if (share_legend){
-      # Creates and places the legend
-      legend_grob  <- draw_legend_cont(data, view_cols, target)
-      legend_index <- n_plots + 1
-      plots[[legend_index]] <- legend_grob
-      layout_matrix[nrow(layout_matrix)-1, ncol(layout_matrix)] <- legend_index
-   }
+   # Creates and places the legend
+   legend_grob  <- draw_legend_cont(data, view_cols, target)
+   legend_index <- n_plots + 1
+   plots[[legend_index]] <- legend_grob
+   layout_matrix[1, ncol(layout_matrix)] <- legend_index
 
    # Done!
    gridExtra::grid.arrange(grobs=plots, layout_matrix = layout_matrix)

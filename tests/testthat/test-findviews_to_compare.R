@@ -189,7 +189,9 @@ check_output <- function(df, to_describe, num){
    }
 
    expect_is(out$excluded, "list")
-   expect_named(out$excluded, c('unknown_type', 'flat_num', 'flat_cat'),
+   expect_named(out$excluded, c('unknown_type',
+                                'flat_num', 'flat_cat',
+                                'sparse_num', 'sparse_cat'),
                 ignore.order = T)
 
    expect_true(all(names(df) %in% unlist(c(out$views_num,

@@ -7,6 +7,15 @@ create_fdviews_client <- function(app_type, data_name, target=NULL){
 
    shiny::shinyUI(shiny::fluidPage(
 
+      shiny::tags$head(
+         shiny::tags$style(HTML("
+            div.exclusion-container {
+               margin-top: 5px;
+               overflow: scroll;
+            }
+           "))
+         ),
+
       if (app_type == 'findviews'){
          title <- paste0("Views of ", data_name)
          shiny::titlePanel(title, windowTitle = app_type)
@@ -29,7 +38,10 @@ create_fdviews_client <- function(app_type, data_name, target=NULL){
                                  shiny::dataTableOutput("catViewsTable"),
                                  value = "cat"),
                                shiny::tabPanel("Excluded",
-                                 shiny::htmlOutput("exclusionComments"),
+                                       shiny::htmlOutput(
+                                          "exclusionComments",
+                                          container = shiny::tags$div,
+                                          class="exclusion-container"),
                                  value = "exc")
             ),
             shiny::div(id="view-specs", class="hidden",
@@ -50,7 +62,7 @@ create_fdviews_client <- function(app_type, data_name, target=NULL){
 create_fdviews_server <- function(fdviews_out, app_type, data,
                                   fdviews_group1 = NULL, fdviews_group2 = NULL,
                                   fdviews_group1_name=NULL, fdviews_group2_name=NULL,
-                                  target = NULL, target_name = NULL){
+                                  target = NULL){
    stopifnot(is.character(app_type))
    stopifnot(app_type %in% APP_TYPES)
 
@@ -115,7 +127,7 @@ create_fdviews_app <- function(fdviews_out, app_type,
                                data, data_name,
                                fdviews_group1=NULL, fdviews_group2=NULL,
                                fdviews_group1_name=NULL, fdviews_group2_name=NULL,
-                               target=NULL, target_name=NULL){
+                               target=NULL){
 
    stopifnot(is.character(app_type))
    stopifnot(app_type %in% APP_TYPES)
@@ -126,7 +138,7 @@ create_fdviews_app <- function(fdviews_out, app_type,
       server = create_fdviews_server(fdviews_out, app_type, data,
                                      fdviews_group1, fdviews_group2,
                                      fdviews_group1_name, fdviews_group2_name,
-                                     target, target_name)
+                                     target)
    )
 
    return(fdviews_app)
@@ -283,7 +295,7 @@ findviews_to_compare <- function(group1, group2, data,
 #' @export
 findviews_to_predict <- function(target, data,
                                  view_size_max=NULL, clust_method="complete",
-                                 nbins=4, ...){
+                                 nbins=16, ...){
    fdviews_out <- findviews_to_predict_core(target, data,
                                             view_size_max, clust_method, nbins)
 

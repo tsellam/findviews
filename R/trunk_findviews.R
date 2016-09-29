@@ -50,6 +50,23 @@ preprocess <- function(data){
    flat_cols_num <- names(data_num)[is_flat_num]
    data_num      <- data_num[, !is_flat_num, drop=FALSE]
 
+   # Removes sparse columns
+   is_sparse_cat <- sapply(data_cat, function(col){
+      n <- length(na.omit(col))
+      return(n/nrow(data_cat) < .25 | n < 3)
+   })
+   is_sparse_cat   <- as.logical(is_sparse_cat)
+   sparse_cols_cat <- names(data_cat)[is_sparse_cat]
+   data_cat      <- data_cat[, !is_sparse_cat, drop=FALSE]
+
+   is_sparse_num <- sapply(data_num, function(col){
+      n <- length(na.omit(col))
+      return(n/nrow(data_num) < .25 | n < 3)
+   })
+   is_sparse_num   <- as.logical(is_sparse_num)
+   sparse_cols_num <- names(data_num)[is_sparse_num]
+   data_num      <- data_num[, !is_sparse_num, drop=FALSE]
+
    # Gets rejected columns
    unknown_type_cols <- names(data)[no_type]
 
@@ -59,7 +76,9 @@ preprocess <- function(data){
       excluded = list(
          unknown_type = unknown_type_cols,
          flat_num     = flat_cols_num,
-         flat_cat     = flat_cols_cat
+         flat_cat     = flat_cols_cat,
+         sparse_cat   = sparse_cols_cat,
+         sparse_num   = sparse_cols_num
       ),
       sampled_rows = sampled_rows
    ))

@@ -60,7 +60,9 @@ check_output <- function(df, num, ...){
       expect_true(all(sapply(out$views_cat, function(v) length(v) > 0)))
    }
 
-   expect_named(out$excluded, c('unknown_type', 'flat_num', 'flat_cat'),
+   expect_named(out$excluded, c('unknown_type',
+                                'flat_num', 'flat_cat',
+                                'sparse_num', 'sparse_cat'),
                 ignore.order = T)
 
    expect_is(out$scores_num, "numeric")
