@@ -60,8 +60,7 @@ make_layout_matrix_hist <- function(data, view_cols){
 ##################
 # Plotting utils #
 ##################
-# Removes axise labels for plots located inside a grid,
-# scales the remaining ones to avoid clutter
+# Removes axise labels for plots located inside a grid
 format_axis_labels <- function(plots, layout, colnames, ignore_diag=F){
    stopifnot(is.list(plots))
    stopifnot(is.matrix(layout))
@@ -70,10 +69,6 @@ format_axis_labels <- function(plots, layout, colnames, ignore_diag=F){
 
    if(nrow(layout) <= 1) return(plots)
 
-   # Gets the label size for the axis
-   size_label  <- if (length(colnames) < 4) 12
-                 else if (length(colnames) < 5) 10
-                 else 8
 
    # Transformation
    for (i in 1:nrow(layout)){
@@ -87,11 +82,6 @@ format_axis_labels <- function(plots, layout, colnames, ignore_diag=F){
 
          ## Special case = ignore_diagonal
          if (i==j & ignore_diag){
-            plot <- plot + ggplot2::theme(
-               axis.title.x=ggplot2::element_text(size=size_label),
-               axis.title.y=ggplot2::element_text(size=size_label)
-            )
-            plots[[plot_index]] <- plot
             next
          }
 
@@ -101,19 +91,12 @@ format_axis_labels <- function(plots, layout, colnames, ignore_diag=F){
                axis.title.x=ggplot2::element_blank(),
                axis.text.x=ggplot2::element_blank()
             )
-         else
-            plot <- plot + ggplot2::theme(
-               axis.title.x = ggplot2::element_text(size=size_label)
-            )
 
          if (j > 1)
             plot <- plot + ggplot2::theme(
                axis.title.y=ggplot2::element_blank(),
                axis.text.y=ggplot2::element_blank()
-            ) else
-               plot <- plot + ggplot2::theme(
-                  axis.title.y=ggplot2::element_text(size=size_label)
-               )
+            )
 
          # Puts it back in list
          plots[[plot_index]] <- plot
@@ -152,12 +135,7 @@ preprocess_for_histogram <- function(data, colx, faceted = F){
    return(data)
 }
 
-trim_axis_title <- function(label, max){
-   if (nchar(label) <= max) return(label)
-   label <- strtrim(label, max)
-   label <- paste0(label, '.')
-   label
-}
+
 
 
 ggplot_theme <- function(...){
@@ -171,6 +149,55 @@ ggplot_theme <- function(...){
                   legend.key.size =
                      ggplot2::unit(.4, "cm"),
                   ...)
+}
+
+##################################
+# Axis labels manipulation utils #
+##################################
+create_label_setup_num <- function(n_cols){
+
+   size <- if (n_cols < 4) 12
+           else if (n_cols < 5) 10
+           else 8
+
+   nchar_x <- if (n_cols == 1) 80
+              else if (n_cols <= 3) 40
+              else if (n_cols <= 5) 30
+              else if (n_cols > 5)  15
+
+   nchar_y <- if (n_cols == 1) 40
+            else if (n_cols <= 3) 20
+            else if (n_cols <= 5) 15
+            else if (n_cols > 5)  10
+
+   return(list(
+      size = size,
+      nchar_x = nchar_x,
+      nchar_y = nchar_y
+   ))
+}
+
+create_label_setup_cat <- function(n_cols){
+
+   size <- if (n_cols < 4) 12
+           else if (n_cols < 5) 10
+           else 8
+
+   nchar_x <- if (n_cols == 1) 60
+            else if (n_cols <= 4) 40
+            else if (n_cols > 4) 30
+
+   return(list(
+      size = size,
+      nchar_x = nchar_x
+   ))
+}
+
+trim_axis_title <- function(label, max){
+   if (nchar(label) <= max) return(label)
+   label <- strtrim(label, max)
+   label <- paste0(label, '.')
+   label
 }
 
 #############################
@@ -229,40 +256,78 @@ draw_legend_cont <- function(data, view_cols, target){
 }
 
 
+
 #######################
 # Collection of Plots #
 #######################
-draw_1d_histogram <- function(data, colx){
+## 1D categorical data
+draw_1d_histogram <- function(data, colx, setup){
+   stopifnot(is.data.frame(data))
+   stopifnot(is.character(colx))
+   stopifnot(colx %in% names(data))
+   stopifnot(is.list(setup))
+   stopifnot(all(c('size', 'nchar_x') %in% names(setup)))
 
    data <- preprocess_for_histogram(data, colx)
+
+   size_title <- setup$size
+   title_x <- trim_axis_title(colx, setup$nchar_x)
 
    # Makes the actual chart
       p <- ggplot2::ggplot(data, ggplot2::aes_string(x=colx)) +
          ggplot2::geom_bar(ggplot2::aes(y=(..count..)/sum(..count..))) +
+         ggplot2::scale_x_discrete(name = title_x) +
          ggplot2::scale_y_continuous('Prop.', labels = scales::percent) +
-         ggplot_theme(axis.text.x=ggplot2::element_text(size=9, angle=-25, hjust=0))
+         ggplot_theme(axis.text.x=ggplot2::element_text(size=size_title,
+                                                        angle=-25,
+                                                        hjust=0),
+                      axis.text.y=ggplot2::element_text(size=size_title))
 
    p
 }
 
-draw_1d_faceted_histogram <- function(data, colx, colgroup){
+draw_1d_faceted_histogram <- function(data, colx, colgroup, setup){
+   stopifnot(is.data.frame(data))
+   stopifnot(is.character(colx))
+   stopifnot(colx %in% names(data))
+   stopifnot(is.character(colgroup))
+   stopifnot(colgroup %in% names(data))
+   stopifnot(is.list(setup))
+   stopifnot(all(c('size', 'nchar_x') %in% names(setup)))
+
    data <- preprocess_for_histogram(data, colx, faceted=T)
+
+   size_title <- setup$size
+   title_x <- trim_axis_title(colx, setup$nchar_x)
 
    # Makes the actual chart
    p <- ggplot2::ggplot(data, ggplot2::aes_string(x=colx)) +
       ggplot2::geom_bar(ggplot2::aes_string(y='..prop..', group = colgroup)) +
+      ggplot2::scale_x_discrete(name = title_x) +
       ggplot2::scale_y_continuous('Prop.', labels = scales::percent) +
-      ggplot_theme(axis.text.x=ggplot2::element_text(size=8, angle=-30, hjust=0)) +
+      ggplot_theme(
+         axis.text.x=ggplot2::element_text(size=size_title, angle=-30, hjust=0),
+         axis.text.y=ggplot2::element_text(size=size_title)
+      ) +
       ggplot2::facet_grid(paste0('.~', colgroup))
 
    p
 }
 
 
-draw_1d_stacked_histogram <- function(data, colx, colgroup, standalone=F){
-
+draw_1d_stacked_histogram <- function(data, colx, colgroup, setup, standalone=F){
+   stopifnot(is.data.frame(data))
+   stopifnot(is.character(colx))
+   stopifnot(colx %in% names(data))
+   stopifnot(is.character(colgroup))
+   stopifnot(colgroup %in% names(data))
+   stopifnot(is.list(setup))
+   stopifnot(all(c('size', 'nchar_x') %in% names(setup)))
    data <- preprocess_for_histogram(data, colx)
+
    ytitle <- 'Composition'
+   size_title <- setup$size
+   title_x <- trim_axis_title(colx, setup$nchar_x)
 
    # Adjustements related to standalone
    if (standalone){
@@ -277,51 +342,95 @@ draw_1d_stacked_histogram <- function(data, colx, colgroup, standalone=F){
                                             color = colgroup,
                                             fill  = colgroup),
                         position = 'stack') +
+      ggplot2::scale_x_discrete(name = title_x) +
       ggplot2::scale_y_continuous(ytitle, labels = scales::percent) +
       ggplot2::scale_fill_discrete() +
       ggplot2::scale_color_discrete() +
-      ggplot_theme(axis.text.x = ggplot2::element_text(angle=-25, hjust=0),
-                   axis.title.y =ggplot2::element_text(face="bold.italic")) +
+      ggplot_theme(
+         axis.text.x = ggplot2::element_text(size = size_title, angle=-25, hjust=0),
+         axis.title.y =ggplot2::element_text(face="bold.italic")) +
       extra_theme
 
    p
 }
 
+draw_1d_cat_influence <- function(data, colx, target, setup){
+   stopifnot(is.data.frame(data))
+   stopifnot(is.character(colx))
+   stopifnot(colx %in% names(data))
+   stopifnot(is.character(target))
+   stopifnot(target %in% names(data))
+   stopifnot(is.list(setup))
+   stopifnot(all(c('size', 'nchar_x') %in% names(setup)))
 
-draw_1d_density <- function(data, colx, standalone=F, colgroup=NULL, stacked=F){
+   data <- preprocess_for_histogram(data, colx)
+
+   size_title <- setup$size
+   title_x <- trim_axis_title(colx, setup$nchar_x)
+
+
+   data <- preprocess_for_histogram(data, colx)
+
+   # Makes the actual chart
+   p <- ggplot2::ggplot(data, ggplot2::aes_string(x=colx, y=target)) +
+      ggplot2::geom_boxplot() +
+      ggplot2::scale_x_discrete(name = title_x) +
+      ggplot2::scale_y_continuous() +
+      ggplot_theme(
+         axis.text.x=ggplot2::element_text(size=size_title, angle=-25, hjust=0),
+         axis.title.y=ggplot2::element_text(size = size_title, face="bold.italic")
+      )
+   p
+}
+
+
+## 1D continuous data
+draw_1d_density <- function(data, colx, setup, standalone=F,
+                            colgroup=NULL, stacked=F){
+   stopifnot(is.data.frame(data))
+   stopifnot(is.character(colx))
+   stopifnot(colx %in% names(data))
+   stopifnot(is.list(setup))
+   stopifnot(all(c('size', 'nchar_x', 'nchar_y') %in% names(setup)))
 
    minx <- min(data[[colx]], na.rm = T)
    maxx <- max(data[[colx]], na.rm = T)
 
+   title_x <- trim_axis_title(colx, setup$nchar_x)
+   size_title <- setup$size
+
    # Adjustements related to 'standalone' and 'stacked'
    if (!standalone){
-      x_title <- trim_axis_title(colx, MAX_XLABEL_SIZE)
-      scale_x <- ggplot2::scale_x_continuous(name = x_title,
+      scale_x <- ggplot2::scale_x_continuous(name = title_x,
                                              limits=c(minx, maxx),
                                              breaks=c(minx, maxx))
       scale_y <- ggplot2::scale_y_continuous(name = 'Distribution',
                                              breaks=c(0,1))
       theme <- ggplot_theme(
-         axis.title.y  = ggplot2::element_text(face="bold.italic"),
-         axis.text.y  = ggplot2::element_text(color="white"),
-         #axis.line.y  = ggplot2::element_blank(),
+         axis.title.x  = ggplot2::element_text(size = size_title),
+         axis.title.y  = ggplot2::element_text(size = size_title,
+                                               face ="bold.italic"),
+         axis.text.y  = ggplot2::element_text(color="white", angle=90),
+         axis.line.y  = ggplot2::element_blank(),
          axis.ticks.y = ggplot2::element_line(color="white"),
          panel.border = ggplot2::element_blank(),
-         panel.background = ggplot2::element_rect(fill = "grey95"),
-         axis.text.y = ggplot2::element_text(angle=90)
+         panel.background = ggplot2::element_rect(fill = "grey95")
       )
    } else {
-      x_title <- trim_axis_title(colx, MAX_XLABEL_SIZE_STANDALONE)
-      scale_x <- ggplot2::scale_x_continuous(name=x_title)
+      scale_x <- ggplot2::scale_x_continuous(name=title_x)
       title <- paste0('Distribution (density function, ',
                       ifelse(stacked, 'stacked', 'normalized'),
                      ' )')
       scale_y <- ggplot2::scale_y_continuous(title)
       theme <- ggplot_theme(
+         axis.title.x  = ggplot2::element_text(size = size_title),
+         axis.title.y  = ggplot2::element_text(size = size_title,
+                                               face ="bold.italic"),
          panel.background = ggplot2::element_rect(fill = "grey95"),
          axis.title.y  = ggplot2::element_text(face="bold.italic")
       )
    }
+
 
    # Adjustements related to 'colgroup' and 'stacked'
    if (is.null(colgroup)){
@@ -361,7 +470,13 @@ draw_1d_density <- function(data, colx, standalone=F, colgroup=NULL, stacked=F){
    return(p)
 }
 
-draw_2d_scatterplot <- function(data, colx, coly, colgroup=NULL){
+draw_2d_scatterplot <- function(data, colx, coly, setup,
+                                colgroup=NULL){
+   stopifnot(is.data.frame(data))
+   stopifnot(is.character(colx) & is.character(coly))
+   stopifnot(colx %in% names(data) & coly %in% names(data))
+   stopifnot(is.list(setup))
+   stopifnot(all(c('size', 'nchar_x', 'nchar_y') %in% names(setup)))
 
    minx <- min(data[[colx]], na.rm = T)
    maxx <- max(data[[colx]], na.rm = T)
@@ -373,8 +488,9 @@ draw_2d_scatterplot <- function(data, colx, coly, colgroup=NULL){
                    else if (nrow(data) > 500) .75
                    else 1
 
-   x_title <- trim_axis_title(colx, MAX_XLABEL_SIZE)
-   y_title <- trim_axis_title(coly, MAX_YLABEL_SIZE)
+   title_x <- trim_axis_title(colx, setup$nchar_x)
+   title_y <- trim_axis_title(colx, setup$nchar_y)
+   size_title <- setup$size
 
 
    # Adjustements related to colgroup
@@ -406,18 +522,28 @@ draw_2d_scatterplot <- function(data, colx, coly, colgroup=NULL){
    p <- ggplot2::ggplot(data=data, ggplot2::aes_string(x = colx,
                                                        y = coly)) +
       points + surface +
-      ggplot2::scale_x_continuous(name = x_title,
+      ggplot2::scale_x_continuous(name = title_x,
                                   limits=c(minx, maxx), breaks=c(minx, maxx)) +
-      ggplot2::scale_y_continuous(name = y_title,
+      ggplot2::scale_y_continuous(name = title_y,
                                   limits=c(miny, maxy), breaks=c(miny, maxy)) +
       scale_fill +
       scale_color +
-      ggplot_theme(axis.text.y = ggplot2::element_text(angle=90))
+      ggplot_theme(
+         axis.title.x = ggplot2::element_text(size = size_title),
+         axis.title.y = ggplot2::element_text(size = size_title),
+         axis.text.y = ggplot2::element_text(angle=90)
+      )
 
    return(p)
 }
 
-draw_1d_num_influence <- function(data, colx, target, standalone=F){
+draw_1d_num_influence <- function(data, colx, target, setup, standalone=F){
+   stopifnot(is.data.frame(data))
+   stopifnot(is.character(colx) & is.character(target))
+   stopifnot(colx %in% names(data) & target %in% names(data))
+   stopifnot(is.list(setup))
+   stopifnot(all(c('size', 'nchar_x', 'nchar_y') %in% names(setup)))
+
    minx <- min(data[[colx]], na.rm = T)
    maxx <- max(data[[colx]], na.rm = T)
 
@@ -430,31 +556,35 @@ draw_1d_num_influence <- function(data, colx, target, standalone=F){
    else if (nrow(data) > 500) .75
    else 1
 
+   title_x <- trim_axis_title(colx, setup$nchar_x)
+   title_y <- trim_axis_title(colx, setup$nchar_y)
+   size_title <- setup$size
+
    if (standalone){
       theme <- ggplot_theme(
-         axis.title.y =ggplot2::element_text(face="bold.italic"),
+         axis.title.x = ggplot2::element_text(size = size_title),
+         axis.title.y = ggplot2::element_text(size = size_title,
+                                              face ="bold.italic"),
          panel.background = ggplot2::element_rect(fill = "grey95")
       )
       geom <- ggplot2::geom_point(size=scat_pt_size)
-      x_title <- trim_axis_title(colx,   MAX_XLABEL_SIZE_STANDALONE)
-      y_title <- trim_axis_title(target, MAX_YLABEL_SIZE_STANDALONE)
-      x_axis <- ggplot2::scale_x_continuous(name = x_title)
-      y_axis <- ggplot2::scale_y_continuous(name = y_title)
+      x_axis <- ggplot2::scale_x_continuous(name = title_x)
+      y_axis <- ggplot2::scale_y_continuous(name = title_y)
 
    } else {
       theme <- ggplot_theme(
-         axis.title.y =ggplot2::element_text(face="bold.italic"),
+         axis.title.x = ggplot2::element_text(size = size_title),
+         axis.title.y =ggplot2::element_text(size = size_title,
+                                             face ="bold.italic"),
          panel.background = ggplot2::element_rect(fill = "grey95"),
          legend.position="none",
          axis.text.y = ggplot2::element_text(angle=90)
       )
       geom <- ggplot2::geom_point(ggplot2::aes_string(color=target),
                                   size=scat_pt_size)
-      x_title <- trim_axis_title(colx,   MAX_XLABEL_SIZE)
-      y_title <- trim_axis_title(target, MAX_YLABEL_SIZE)
-      x_axis <- ggplot2::scale_x_continuous(name = x_title,
+      x_axis <- ggplot2::scale_x_continuous(name = title_x,
                                             breaks = c(minx,maxx))
-      y_axis <- ggplot2::scale_y_continuous(name = y_title)
+      y_axis <- ggplot2::scale_y_continuous(name = title_y)
 
    }
 
@@ -468,40 +598,37 @@ draw_1d_num_influence <- function(data, colx, target, standalone=F){
    g
 }
 
-draw_1d_cat_influence <- function(data, colx, target){
-   data <- preprocess_for_histogram(data, colx)
-
-   # Makes the actual chart
-   p <- ggplot2::ggplot(data, ggplot2::aes_string(x=colx, y=target)) +
-      ggplot2::geom_boxplot() +
-      ggplot2::scale_y_continuous() +
-      ggplot_theme(axis.text.x=ggplot2::element_text(size=9, angle=-25, hjust=0),
-                   axis.title.y =ggplot2::element_text(face="bold.italic"))
 
 
-   p
-}
-
-
-draw_2d_influence_num <- function(data, colx, coly, target, standalone = F){
+draw_2d_num_influence <- function(data, colx, coly, target, setup, standalone = F){
+   stopifnot(is.data.frame(data))
+   stopifnot(is.character(colx) & is.character(coly))
+   stopifnot(colx %in% names(data) & coly %in% names(data))
+   stopifnot(is.list(setup))
+   stopifnot(all(c('size', 'nchar_x', 'nchar_y') %in% names(setup)))
 
    minx <- min(data[[colx]], na.rm = T)
    maxx <- max(data[[colx]], na.rm = T)
    miny <- min(data[[coly]], na.rm = T)
    maxy <- max(data[[coly]], na.rm = T)
 
-   x_title <- trim_axis_title(colx, MAX_XLABEL_SIZE)
-   y_title <- trim_axis_title(coly, MAX_YLABEL_SIZE)
+   title_x <- trim_axis_title(colx, setup$nchar_x)
+   title_y <- trim_axis_title(colx, setup$nchar_y)
+   size_title <- setup$size
 
    p <- ggplot2::ggplot(data=data, ggplot2::aes_string(x = colx,
-                                                       y = coly)) +
+                                                       y = colx)) +
       ggplot2::stat_summary_2d(ggplot2::aes_string(z = target)) +
-      ggplot2::scale_x_continuous(name = x_title,
+      ggplot2::scale_x_continuous(name = title_x,
                                   limits=c(minx, maxx), breaks=c(minx, maxx)) +
-      ggplot2::scale_y_continuous(name = y_title,
+      ggplot2::scale_y_continuous(name = title_y,
                                   limits=c(miny, maxy), breaks=c(miny, maxy)) +
       ggplot2::scale_fill_continuous(guide = if(standalone) 'colourbar' else FALSE) +
-      ggplot_theme(axis.text.y = ggplot2::element_text(angle=90))
+      ggplot_theme(
+         axis.title.x = ggplot2::element_text(size = size_title),
+         axis.title.y = ggplot2::element_text(size = size_title),
+         axis.text.y = ggplot2::element_text(angle=90)
+      )
 
 
    return(p)
@@ -521,9 +648,12 @@ plot_views_num <- function(data, view_cols){
    if (length(view_cols) < 1)
       stop("I cannot plot less than one column")
 
+   label_setup <- create_label_setup_num(length(view_cols))
+
    ## Simple case: just one plot
    if (length(view_cols) == 1){
-      p <- draw_1d_density(data=data, colx=view_cols[1], standalone=T)
+      p <- draw_1d_density(data=data, colx=view_cols[1], label_setup,
+                           standalone=T)
       return(p)
    }
 
@@ -541,9 +671,9 @@ plot_views_num <- function(data, view_cols){
          col_j <- view_cols[j]
          # Draws the appropriate chart
          if (col_i == col_j)
-            p <- draw_1d_density(data=data, colx=col_i)
+            p <- draw_1d_density(data=data, colx=col_i, label_setup)
          else
-            p <- draw_2d_scatterplot(data=data, colx=col_j, coly=col_i)
+            p <- draw_2d_scatterplot(data=data, colx=col_j, coly=col_i, label_setup)
          # Appends it to the list
          plot_index <- layout_matrix[i,j]
          plots[[plot_index]] <- p
@@ -566,9 +696,12 @@ plot_views_cat <- function(data, view_cols){
    if (length(view_cols) < 1)
       stop("I cannot plot less than one column")
 
+   n_plots <- length(view_cols)
+   label_setup <- create_label_setup_cat(n_plots)
+
    ## Simple case: just one plot
-   if (length(view_cols) == 1){
-      p <- draw_1d_histogram(data, view_cols[1])
+   if (n_plots == 1){
+      p <- draw_1d_histogram(data, view_cols[1], label_setup)
       return(p)
    }
 
@@ -577,10 +710,9 @@ plot_views_cat <- function(data, view_cols){
    layout_matrix <- make_layout_matrix_hist(data, view_cols)
 
    # Generates the plots
-   n_plots <- length(view_cols)
    plots <- vector("list", n_plots)
    for (i in 1:n_plots){
-     plots[[i]] <- draw_1d_histogram(data, view_cols[i])
+     plots[[i]] <- draw_1d_histogram(data, view_cols[i], label_setup)
    }
 
    # Done!
@@ -613,9 +745,11 @@ plot_views_num_to_compare<- function(data, view_cols, group1, group2,
    # Removes the plots which are outside the selection
    data <- data[!is.na(group),]
 
+   label_setup <- create_label_setup_num(length(view_cols))
+
    ## Simple case: just one plot
    if (length(view_cols) == 1){
-      p <- draw_1d_density(data=data, colx=view_cols[1],
+      p <- draw_1d_density(data=data, colx=view_cols[1], label_setup,
                            standalone=T, colgroup=GROUP_COL_NAME)
       return(p)
    }
@@ -634,12 +768,13 @@ plot_views_num_to_compare<- function(data, view_cols, group1, group2,
          col_j <- view_cols[j]
          # Draws the appropriate chart
          if (col_i == col_j)
-            p <- draw_1d_density(data=data, colx=col_i,
+            p <- draw_1d_density(data=data, colx=col_i, label_setup,
                                  colgroup=GROUP_COL_NAME)
          else
             p <- draw_2d_scatterplot(data=data,
                                      colx=col_j,
                                      coly=col_i,
+                                     label_setup,
                                      colgroup=GROUP_COL_NAME)
          # Appends it to the list
          plot_index <- layout_matrix[i,j]
@@ -681,10 +816,14 @@ plot_views_cat_to_compare <- function(data, view_cols, group1, group2,
    # Removes the plots which are outside the selection
    data <- data[!is.na(group),]
 
+   n_plots <- length(view_cols)
+   label_setup <- create_label_setup_cat(n_plots)
+
    ## Simple case: just one plot
-   if (length(view_cols) == 1){
+   if (n_plots == 1){
       p <- draw_1d_faceted_histogram(data, view_cols[1],
-                             colgroup = GROUP_COL_NAME)
+                             colgroup = GROUP_COL_NAME,
+                             label_setup)
       return(p)
    }
 
@@ -693,11 +832,11 @@ plot_views_cat_to_compare <- function(data, view_cols, group1, group2,
    layout_matrix <- make_layout_matrix_hist(data, view_cols)
 
    # Generates the plots
-   n_plots <- length(view_cols)
    plots <- vector("list", n_plots)
    for (i in 1:n_plots){
       plots[[i]] <- draw_1d_faceted_histogram(data, view_cols[i],
-                             colgroup = GROUP_COL_NAME)
+                             colgroup = GROUP_COL_NAME,
+                             label_setup)
    }
 
    # Done!
@@ -720,10 +859,13 @@ plot_views_num_to_predict_cat <- function(data, view_cols, target){
       return(NA)
    }
 
+   label_setup <- create_label_setup_num(length(view_cols))
+
    ## Easy case: just one plot
    if (length(view_cols) == 1){
       p <- draw_1d_density(data,
                            view_cols[1],
+                           label_setup,
                            standalone = TRUE,
                            colgroup = target,
                            stacked = TRUE)
@@ -746,12 +888,14 @@ plot_views_num_to_predict_cat <- function(data, view_cols, target){
          if (col_i == col_j)
             p <- draw_1d_density(data,
                                  col_i,
+                                 label_setup,
                                  colgroup = target,
                                  stacked = T)
          else
             p <- draw_2d_scatterplot(data=data,
                                      colx=col_j,
                                      coly=col_i,
+                                     label_setup,
                                      colgroup=target)
          # Appends it to the list
          plot_index <- layout_matrix[i,j]
@@ -789,11 +933,15 @@ plot_views_cat_to_predict_cat <- function(data, view_cols, target){
       return(NA)
    }
 
+   n_plots <- length(view_cols)
+   label_setup <- create_label_setup_cat(n_plots)
+
    ## Simple case: just one plot
-   if (length(view_cols) == 1){
+   if (n_plots){
       p <- draw_1d_stacked_histogram(data, view_cols[1],
                                      colgroup = target,
-                                     standalone = T)
+                                     standalone = T,
+                                     label_setup)
       return(p)
    }
 
@@ -806,7 +954,8 @@ plot_views_cat_to_predict_cat <- function(data, view_cols, target){
    plots <- vector("list", n_plots)
    for (i in 1:n_plots){
       plots[[i]] <- draw_1d_stacked_histogram(data, view_cols[i],
-                                              colgroup = target)
+                                              colgroup = target,
+                                              label_setup)
    }
 
    # Creates the legend
@@ -844,10 +993,12 @@ plot_views_num_to_predict_num <- function(data, view_cols, target){
       return(NA)
    }
 
+   label_setup <- create_label_setup_num(length(view_cols))
+
    ## Easy case: just one plot
    if (length(view_cols) == 1){
-      p <- draw_1d_num_influence(data, view_cols[1], target=target,
-                                 standalone = T)
+      p <- draw_1d_num_influence(data, view_cols[1],
+                                 target=target, label_setup, standalone = T)
       return(p)
    }
 
@@ -868,11 +1019,13 @@ plot_views_num_to_predict_num <- function(data, view_cols, target){
             p <- draw_1d_num_influence(data,
                                  col_i,
                                  target = target,
+                                 label_setup,
                                  standalone = F)
          else
-            p <- draw_2d_influence_num(data,
+            p <- draw_2d_num_influence(data,
                                   col_j, col_i,
                                   target = target,
+                                  label_setup,
                                   standalone = F)
          # Appends it to the list
          plot_index <- layout_matrix[i,j]
@@ -909,9 +1062,12 @@ plot_views_cat_to_predict_num <- function(data, view_cols, target){
       return(NA)
    }
 
+   n_plots <- length(view_cols)
+   label_setup <- create_label_setup_cat(n_plots)
+
    ## Simple case: just one plot
-   if (length(view_cols) == 1){
-      p <- draw_1d_cat_influence(data, view_cols[1], target)
+   if (n_plots == 1){
+      p <- draw_1d_cat_influence(data, view_cols[1], target, label_setup)
       return(p)
    }
 
@@ -920,10 +1076,10 @@ plot_views_cat_to_predict_num <- function(data, view_cols, target){
    layout_matrix <- make_layout_matrix_hist(data, view_cols)
 
    # Generates the plots
-   n_plots <- length(view_cols)
    plots <- vector("list", n_plots)
    for (i in 1:n_plots){
-      plots[[i]] <- draw_1d_cat_influence(data, view_cols[i], target)
+      plots[[i]] <- draw_1d_cat_influence(data, view_cols[i],
+                                          target, label_setup)
    }
 
    # Done!
