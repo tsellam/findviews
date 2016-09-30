@@ -285,10 +285,10 @@ findviews_trunk <- function(data,  view_size_max=NULL, clust_method="complete"){
    else if (!is.data.frame(data)) stop("Input data is not a data frame")
    if (nrow(data) < 2) stop("The data set is too small.")
 
-   # Sets view_size_max = min(log2(ncol(data)), 5) if no value specified
+   # Sets view_size_max = min(log2(ncol(data)), 6) if no value specified
    if (is.null(view_size_max)) view_size_max <- max(1, log2(ncol(data)))
    stopifnot(is.numeric(view_size_max), view_size_max >= 1)
-   view_size_max <- min(ceiling(view_size_max), 5)
+   view_size_max <- min(ceiling(view_size_max), 6)
 
    # Type detection and conversions
    # Flat columns = pimary keys, or columns with only 1 distinct value

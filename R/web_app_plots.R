@@ -155,7 +155,7 @@ preprocess_for_histogram <- function(data, colx, faceted = F){
 trim_axis_title <- function(label, max){
    if (nchar(label) <= max) return(label)
    label <- strtrim(label, max)
-   label <- paste0(label, '...')
+   label <- paste0(label, '.')
    label
 }
 
@@ -293,10 +293,9 @@ draw_1d_density <- function(data, colx, standalone=F, colgroup=NULL, stacked=F){
    minx <- min(data[[colx]], na.rm = T)
    maxx <- max(data[[colx]], na.rm = T)
 
-   x_title <- trim_axis_title(colx, MAX_XLABEL_SIZE)
-
    # Adjustements related to 'standalone' and 'stacked'
    if (!standalone){
+      x_title <- trim_axis_title(colx, MAX_XLABEL_SIZE)
       scale_x <- ggplot2::scale_x_continuous(name = x_title,
                                              limits=c(minx, maxx),
                                              breaks=c(minx, maxx))
@@ -312,7 +311,8 @@ draw_1d_density <- function(data, colx, standalone=F, colgroup=NULL, stacked=F){
          axis.text.y = ggplot2::element_text(angle=90)
       )
    } else {
-      scale_x <- ggplot2::scale_x_continuous()
+      x_title <- trim_axis_title(colx, MAX_XLABEL_SIZE_STANDALONE)
+      scale_x <- ggplot2::scale_x_continuous(name=x_title)
       title <- paste0('Distribution (density function, ',
                       ifelse(stacked, 'stacked', 'normalized'),
                      ' )')
@@ -424,8 +424,6 @@ draw_1d_num_influence <- function(data, colx, target, standalone=F){
    miny <- min(data[[target]], na.rm = T)
    maxy <- max(data[[target]], na.rm = T)
 
-   x_title <- trim_axis_title(colx,   MAX_XLABEL_SIZE)
-   y_title <- trim_axis_title(target, MAX_YLABEL_SIZE)
 
    scat_pt_size <- if (nrow(data) > 1500) .35
    else if (nrow(data) > 1000) .5
@@ -438,7 +436,11 @@ draw_1d_num_influence <- function(data, colx, target, standalone=F){
          panel.background = ggplot2::element_rect(fill = "grey95")
       )
       geom <- ggplot2::geom_point(size=scat_pt_size)
-      x_axis <- ggplot2::scale_x_continuous()
+      x_title <- trim_axis_title(colx,   MAX_XLABEL_SIZE_STANDALONE)
+      y_title <- trim_axis_title(target, MAX_YLABEL_SIZE_STANDALONE)
+      x_axis <- ggplot2::scale_x_continuous(name = x_title)
+      y_axis <- ggplot2::scale_y_continuous(name = y_title)
+
    } else {
       theme <- ggplot_theme(
          axis.title.y =ggplot2::element_text(face="bold.italic"),
@@ -448,7 +450,12 @@ draw_1d_num_influence <- function(data, colx, target, standalone=F){
       )
       geom <- ggplot2::geom_point(ggplot2::aes_string(color=target),
                                   size=scat_pt_size)
-      x_axis <- ggplot2::scale_x_continuous(name = x_title)
+      x_title <- trim_axis_title(colx,   MAX_XLABEL_SIZE)
+      y_title <- trim_axis_title(target, MAX_YLABEL_SIZE)
+      x_axis <- ggplot2::scale_x_continuous(name = x_title,
+                                            breaks = c(minx,maxx))
+      y_axis <- ggplot2::scale_y_continuous(name = y_title)
+
    }
 
    g <- ggplot2::ggplot(data, ggplot2::aes_string(x = colx,
@@ -456,6 +463,7 @@ draw_1d_num_influence <- function(data, colx, target, standalone=F){
       geom +
       ggplot2::geom_smooth(se = F) +
       x_axis +
+      y_axis +
       theme
    g
 }

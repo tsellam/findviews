@@ -1,4 +1,4 @@
-Package: findivews
+Package: findviews
 Type: Package
 Title: findviews: a View Generator for Multidimensional Data
 Version: 0.1.0
@@ -12,7 +12,6 @@ LazyData: TRUE
 Imports:
    shiny,
    ggplot2,
-   GGally,
    grDevices,
    gridExtra
 Suggests:
