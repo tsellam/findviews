@@ -103,7 +103,7 @@ create_fdviews_server <- function(fdviews_out, app_type, data,
       output$viewPlot <- shiny::renderPlot({
          view_type <- shiny::isolate(input$viewTab)
          view_id   <- selected_view_id()
-         if(is.na(view_id)) return(NULL)
+         if(is.na(view_id) | view_type == 'exc') return(NULL)
 
          plot_selection(view_id, view_type, app_type,
                         fdviews_out, data,

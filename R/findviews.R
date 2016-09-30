@@ -8,7 +8,7 @@ score_influence <- function(views, dep_mat){
    scores <- sapply(views, function(cols){
       out_weights <- dep_mat[!rownames(dep_mat) %in% cols, cols]
       if (length(out_weights) == 0) return(NA)
-      mean(out_weights)
+      sum(out_weights, na.rm=T)
    })
    scores <- as.numeric(scores)
 

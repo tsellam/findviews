@@ -273,11 +273,10 @@ draw_1d_stacked_histogram <- function(data, colx, colgroup, standalone=F){
 
    # Makes the actual chart
    p <- ggplot2::ggplot(data, ggplot2::aes_string(x=colx)) +
-      ggplot2::geom_bar(ggplot2::aes_string(y='..prop..',
-                                            group = colgroup,
+      ggplot2::geom_bar(ggplot2::aes_string(y='(..count..)/sum(..count..)',
                                             color = colgroup,
                                             fill  = colgroup),
-                        position = 'fill') +
+                        position = 'stack') +
       ggplot2::scale_y_continuous(ytitle, labels = scales::percent) +
       ggplot2::scale_fill_discrete() +
       ggplot2::scale_color_discrete() +
