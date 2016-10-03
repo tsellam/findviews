@@ -152,8 +152,8 @@ create_fdviews_app <- function(fdviews_out, app_type,
 #' resulting structure, and starts a Shiny application to display the results.
 #'
 #' The function processes numerical and categorical data separately. It excludes
-#' the columns with only one value, or the columns in which all the values are
-#' distinct (e.g., primary keys).
+#' the columns with only one value, the columns in which all the values are
+#' distinct (e.g., primary keys), and the columns with more than 75\% missing values.
 #'
 #' \code{findviews} computes the dependency between the columns differently
 #' depending on their type. It uses Pearson's coefficient of correlation for
@@ -200,20 +200,17 @@ findviews <- function(data, view_size_max=NULL, clust_method="complete", ...){
 #' of rows differ. It plots the results with ggplot and Shiny.
 #'
 #'
-#' The function \code{findviews_to_compare} takes two groups of rows as input,
+#' The function \code{findviews_to_compare} takes two groups of rows as input
 #' and detects views on which the statistical distribution of those two groups
 #' differ.
 #'
-#' To detect the initial set of views, \code{findviews_to_compare} concatenates
-#' the two groups and applies the same method as \code{\link{findview}}.
+#' To detect the set of views, \code{findviews_to_compare} eliminates
+#' the rows which are present in neither group and applies \code{\link{findviews}}.
 #'
-#' To evaluate their differentiation power, it behaves as follows. For
-#' continuous data, it computes a synthetic score, based on the difference
-#' between the means, the difference between the variances and the difference
-#' between coefficient of of correlations. For categorical data, it exploits the
-#' cosine distance between the histograms.
+#' To evaluate the differentiation power of the views, findviews computes the
+#' histograms of both groups and compares them with the Euclidean distance.
 #'
-#' This method is roughly based on the following paper: \preformatted{
+#' This method is loosely based on the following paper: \preformatted{
 #' Fast, Explainable View Detection to Characterize Exploration Queries
 #' Thibault Sellam, Martin Kersten
 #' SSDBM, 2016}
@@ -225,8 +222,6 @@ findviews <- function(data, view_size_max=NULL, clust_method="complete", ...){
 #' @param group2 Logical vector, which describes the second group to compare.
 #'   The value \code{TRUE} at position i indicates the the i-th row of
 #'   \code{data} belongs to the group.
-#' @param nbins Number of bins used to discretize the target variable.
-#'
 #'
 #' @examples
 #' findviews_to_compare(mtcars$mpg >= 20 , mtcars$mpg < 20 , mtcars)
@@ -277,19 +272,16 @@ findviews_to_compare <- function(group1, group2, data,
 #'
 #' @inheritParams findviews
 #' @param target Name of the variable to be predicted.
-#' @param nbins Number of bins used to discretize the target variable.
-#'
 #'
 #' @examples
 #' findviews_to_predict('mpg', mtcars)
-#' findviews_to_predict('mpg', mtcars, view_size_max = 4, nbins = 3)
+#' findviews_to_predict('mpg', mtcars, view_size_max = 4)
 #'
 #' @export
-findviews_to_predict <- function(target, data,
-                                 view_size_max=NULL, clust_method="complete",
-                                 nbins=16, ...){
+findviews_to_predict <- function(target, data, view_size_max=NULL,
+                                 clust_method="complete", ...){
    fdviews_out <- findviews_to_predict_core(target, data,
-                                            view_size_max, clust_method, nbins)
+                                            view_size_max, clust_method)
 
    # Creates and launches the Shiny server
    data_name <- deparse(substitute(data))

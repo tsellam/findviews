@@ -171,12 +171,11 @@ preprocess_target <- function(target_data, nbins=4){
 #'
 #' @examples
 #' findviews_to_predict_core('mpg', mtcars)
-#' findviews_to_predict_core('mpg', mtcars, view_size_max = 4, nbins = 3)
+#' findviews_to_predict_core('mpg', mtcars, view_size_max = 4)
 #'
 #' @export
-findviews_to_predict_core <- function(target, data,
-                                      view_size_max=NULL, clust_method="complete",
-                                      nbins = 4){
+findviews_to_predict_core <- function(target, data, view_size_max=NULL,
+                                      clust_method="complete"){
 
    if (!is.character(target))
       stop("The target must be a column name.")
@@ -199,7 +198,7 @@ findviews_to_predict_core <- function(target, data,
    data <- data[!target_NAs,,drop=F]
 
    # If necessary, discretizes the target column
-   target_data <- preprocess_target(target_data, nbins)
+   target_data <- preprocess_target(target_data, NBINS_CONT_VARIABLES)
 
    # Creates the views
    data_and_views <- findviews_trunk(data, view_size_max, clust_method)
