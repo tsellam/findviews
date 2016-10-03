@@ -51,3 +51,20 @@ test_that("Binning function does the job", {
    test_bin(c(1,1,1,1,1,1,1), 5)
    test_bin(c(1,NA), 2)
 })
+
+test_that("Merge table levels does the job", {
+   t1 <- table(c(1,2,3,3))
+   t2 <- table(c(1,12,3,1))
+
+   expect_named(
+      merge_table_names(t1, t2),
+      c("1", "2", "3", "12"),
+      ignore.order=TRUE
+   )
+   expect_named(
+      merge_table_names(t2, t1),
+      c("1", "2", "3", "12"),
+      ignore.order=TRUE
+   )
+
+})

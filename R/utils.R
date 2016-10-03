@@ -116,3 +116,17 @@ safe_table <- function(v){
    names(t)[nchar(names(t)) == 0] <- '_empty_'
    t
 }
+
+# Injects the levels of tab2 to tab1, with value 0
+merge_table_names <- function(tab1, tab2){
+   stopifnot(is.numeric(tab1) & is.numeric(tab2))
+
+   missing <- setdiff(names(tab2), names(tab1))
+
+   if (length(missing) == 0) return(tab1)
+   new_elements <- rep(0, length(missing))
+   names(new_elements) <- missing
+
+   new_table <- c(tab1, new_elements)
+   return(new_table)
+}

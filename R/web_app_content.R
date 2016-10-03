@@ -1,6 +1,6 @@
-##############
-# View Table #
-##############
+#####################
+#### View Table #####
+#####################
 #-------------------------#
 # Table-related functions #
 #-------------------------#
@@ -118,9 +118,9 @@ create_view_table <- function(view_type, app_type, fdviews_out){
 }
 
 
-#-------------------------------#
-# Columns exclusion description #
-#-------------------------------#
+################################
+#### Excluded Columns Text #####
+################################
 this_or_these_column_s <- function(cols){
    if (length(cols) == 1) "this column"
    else "these columns"
@@ -217,9 +217,9 @@ describeExclusions <- function(fdviews_out){
 }
 
 
-###########################
-# Plotting & View Details #
-###########################
+#################################
+#### Plotting & View Details ####
+#################################
 retrieve_view <- function(view_id, view_type, fdviews_out){
    stopifnot(is.integer(view_id))
    stopifnot(view_type %in% c('num', 'cat'))
@@ -232,21 +232,6 @@ retrieve_view <- function(view_id, view_type, fdviews_out){
       stop("Incorrect view requested.")
 
    return(to_output[[view_id]])
-}
-
-retrieve_details <- function(view_id, view_type, fdviews_out){
-   stopifnot(is.integer(view_id))
-   stopifnot(view_type %in% c('num', 'cat'))
-   stopifnot(c('views_num', 'views_cat') %in% names(fdviews_out))
-
-   to_output <- if (view_type == 'num') fdviews_out$details_num
-   else fdviews_out$details_cat
-
-   if (!view_id >= 1 | !view_id <= nrow(to_output))
-      stop("Incorrect view requested.")
-
-   out <- unlist(to_output[view_id,,drop=F], recursive = F)
-   return(out)
 }
 
 #-------#
@@ -353,78 +338,4 @@ plot_selection <- function(view_id, view_type, app_type,
           else NA
 
    return(plot)
-}
-
-
-#-------------------#
-# Comments the view #
-#-------------------#
-rewrite_comment_text <- function(comment){
-   stopifnot(is.character(comment))
-
-   rw_rules <- list(
-      c(paste0("<li>the difference between the ([a-zA-Z]+) on ([a-zA-Z, ]+)</li>",
-               "\n<li>the difference between the ([a-zA-Z]+) on \\2"),
-        paste0("<li>the difference between the \\1 on \\2</li>",
-               "\n<li>the difference between the \\3 on the same columns"))
-      #c("<ul>\n<li>the difference between the ([a-zA-Z]+)",
-      #  paste0("<li>the difference between the \\1 ",
-      #         "of the tuples inside and outside the selection"))
-   )
-
-   for (rule in rw_rules)
-      comment <- gsub(rule[[1]], rule[[2]], comment)
-
-   return(comment)
-}
-
-create_view_comments <- function(view_id, view_type, app_type, fdviews_out){
-   stopifnot(is.integer(view_id))
-   stopifnot(view_type %in% c('num', 'cat'))
-   stopifnot(app_type %in% APP_TYPES)
-
-   # For most app types, we can already stop here
-   if (app_type %in% c("findviews", "findviews_to_predict"))
-      return(shiny::HTML(""))
-
-   # For other types, we continue
-   stopifnot(c('details_num', 'details_cat') %in% names(fdviews_out))
-   components <- retrieve_details(view_id, view_type, fdviews_out)
-
-   tip_lines <- sapply(components, function(component){
-      if ('tip' %in% names(component)) component$tip
-      else NA
-   })
-   tip_lines <- as.character(tip_lines)
-   tip_lines <- na.omit(tip_lines)
-   tip_lines <- tip_lines[nchar(tip_lines) > 0]
-
-   if (length(tip_lines) == 0) {
-      tip_html <- ""
-      tip_lines_html <- ""
-
-   } else if (length(tip_lines) == 1) {
-      tip_html <- "I chose this view because of "
-      tip_lines_html <- tip_lines
-
-   } else if (length(tip_lines) > 1) {
-      tip_html <- "I chose this view because of\n"
-      tip_lines_html <- sapply(tip_lines,
-                               function(s) paste0('<li>',s,'</li>'))
-      tip_lines_html <- paste0(tip_lines_html, collapse = "\n")
-      tip_lines_html <- paste0('<ul>\n',tip_lines_html,'\n</ul>')
-   }
-
-   html_block <- paste0(tip_html, tip_lines_html, collapse = ' ')
-   if (nchar(html_block) > 0){
-      html_block <- rewrite_comment_text(html_block)
-      html_block <- paste0("<div><h4>Comments</h4>",
-                           html_block,
-                           "</div>",
-                           collapse = '\n')
-   }
-
-   html_block <- shiny::HTML(html_block)
-
-   return(html_block)
 }

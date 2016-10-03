@@ -51,8 +51,7 @@ create_fdviews_client <- function(app_type, data_name, target=NULL){
 
          shiny::mainPanel(
             shiny::htmlOutput("viewTitle"),
-            shiny::plotOutput("viewPlot"),
-            shiny::htmlOutput("viewComment")
+            shiny::plotOutput("viewPlot")
           )
        )
    ))
@@ -112,13 +111,6 @@ create_fdviews_server <- function(fdviews_out, app_type, data,
                         target)
       })
 
-      output$viewComment <- shiny::renderUI({
-         view_type <- shiny::isolate(input$viewTab)
-         view_id   <- selected_view_id()
-         if(is.na(view_id)) return(NULL)
-
-         create_view_comments(view_id, view_type, app_type, fdviews_out)
-      })
    })
 }
 
