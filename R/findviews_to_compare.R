@@ -117,8 +117,8 @@ score_comparison_num <- function(views, group1, group2, data){
 #' findviews_to_compare_core(mtcars$mpg >= 20 , mtcars$mpg < 20 , mtcars)
 #'
 #' @export
-findviews_to_compare_core <- function(group1, group2, data,
-                                      view_size_max=NULL, clust_method="complete"){
+findviews_to_compare_core <- function(group1, group2, data, view_size_max=NULL,
+                                      clust_method="complete"){
 
    if (!(is.logical(group1) & is.logical(group2)))
       stop('The input variables group1 and group2 must be vectors of booleans')
@@ -181,3 +181,56 @@ findviews_to_compare_core <- function(group1, group2, data,
    ))
 }
 
+#' Views of a multidimensional dataset, ranked by their differentiation power.
+#'
+#' \code{findviews_to_compare} detects views on which two arbitrary sets
+#' of rows differ. It plots the results with ggplot and Shiny.
+#'
+#'
+#' The function \code{findviews_to_compare} takes two groups of rows as input
+#' and detects views on which the statistical distribution of those two groups
+#' differ.
+#'
+#' To detect the set of views, \code{findviews_to_compare} eliminates
+#' the rows which are present in neither group and applies \code{\link{findviews}}.
+#'
+#' To evaluate the differentiation power of the views, findviews computes the
+#' histograms of the two groups to be compared, and computes their dissimilarity
+#' them with the Euclidean distance.
+#'
+#' This method is loosely based on the following paper: \preformatted{
+#' Fast, Explainable View Detection to Characterize Exploration Queries
+#' Thibault Sellam, Martin Kersten
+#' SSDBM, 2016}
+#'
+#' @inheritParams findviews
+#' @param group1 Logical vector of size \code{nrow(data)}, which describes the
+#'   first group to compare. The value \code{TRUE} at position i indicates the
+#'   the i-th row of \code{data} belongs to the group.
+#' @param group2 Logical vector, which describes the second group to compare.
+#'   The value \code{TRUE} at position i indicates the the i-th row of
+#'   \code{data} belongs to the group.
+#'
+#' @examples
+#' findviews_to_compare(mtcars$mpg >= 20 , mtcars$mpg < 20 , mtcars)
+#'
+#' @export
+findviews_to_compare <- function(group1, group2, data,
+                                 view_size_max=NULL, clust_method="complete", ...){
+   fdviews_out <- findviews_to_compare_core(group1, group2, data,
+                                            view_size_max, clust_method)
+
+   # Creates and launches the Shiny server
+   data_name <- deparse(substitute(data))
+   group1_name <- deparse(substitute(group1))
+   group2_name <- deparse(substitute(group2))
+
+   fdviews_app <- create_fdviews_app(fdviews_out, "findviews_to_compare",
+                                     data, data_name = data_name,
+                                     fdviews_group1 = group1,
+                                     fdviews_group2 = group2,
+                                     fdviews_group1_name = group1_name,
+                                     fdviews_group2_name = group2_name
+   )
+   shiny::runApp(fdviews_app, display.mode = "normal", ...)
+}

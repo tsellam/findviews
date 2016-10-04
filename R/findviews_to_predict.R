@@ -234,3 +234,42 @@ findviews_to_predict_core <- function(target, data, view_size_max=NULL,
       target_data = target_data
    ))
 }
+
+#' Views of a multidimensional dataset, ranked by their prediction power.
+#'
+#' \code{findviews_to_predict} detects groups of mutually dependent columns,
+#' ranks them by predictive power, and plots them with Shiny and ggplot.
+#'
+#'
+#' The function \code{findviews_to_predict} takes a data set and a target
+#' variable as input. It detects clusters of statistically dependent columns in
+#' the data set - e.g., views - and ranks those groups according to how well
+#' they predict the target variable.
+#'
+#' To detect the views, \code{findviews_to_predict} relies on \code{findviews}.
+#' To evaluate their predictive power, it uses the \emph{mutual information}
+#' between the joint distribution of the columns and that of the target
+#' variable. Internally, \code{findviews_to_predict} discretizes all the
+#' continuous variables with equi-width binning.
+#'
+#'
+#' @inheritParams findviews
+#' @param target Name of the variable to be predicted.
+#'
+#' @examples
+#' findviews_to_predict('mpg', mtcars)
+#' findviews_to_predict('mpg', mtcars, view_size_max = 4)
+#'
+#' @export
+findviews_to_predict <- function(target, data, view_size_max=NULL,
+                                 clust_method="complete", ...){
+   fdviews_out <- findviews_to_predict_core(target, data,
+                                            view_size_max, clust_method)
+
+   # Creates and launches the Shiny server
+   data_name <- deparse(substitute(data))
+   fdviews_app <- create_fdviews_app(fdviews_out, "findviews_to_predict",
+                                     data, data_name = data_name,
+                                     target = target)
+   shiny::runApp(fdviews_app, display.mode = "normal", ...)
+}

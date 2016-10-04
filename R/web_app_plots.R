@@ -221,9 +221,9 @@ draw_legend_cat <- function(data, view_cols, colgroup, type){
    else colgroup
 
    geom <-  if (type=='num')
-      ggplot2::geom_point(ggplot2::aes_string(y = dummy_col), size=8)
+      ggplot2::geom_point(ggplot2::aes_string(y = dummy_col), size=8,na.rm=T)
    else
-      ggplot2::geom_bar()
+      ggplot2::geom_bar(na.rm = T)
 
    dummy_plot <- ggplot2::ggplot(data = data,
                                  ggplot2::aes_string(x = dummy_col,
@@ -245,7 +245,7 @@ draw_legend_cont <- function(data, view_cols, target){
                                  ggplot2::aes_string(x = view_cols[1],
                                                      y = view_cols[2],
                                                      z = target)) +
-      ggplot2::stat_summary_2d() +
+      ggplot2::stat_summary_2d(na.rm = T) +
       ggplot2::scale_fill_continuous('Target') +
       ggplot2::scale_color_continuous('Target') +
       ggplot_theme()
@@ -275,7 +275,8 @@ draw_1d_histogram <- function(data, colx, setup){
 
    # Makes the actual chart
       p <- ggplot2::ggplot(data, ggplot2::aes_string(x=colx)) +
-         ggplot2::geom_bar(ggplot2::aes(y=(..count..)/sum(..count..))) +
+         ggplot2::geom_bar(ggplot2::aes(y=(..count..)/sum(..count..)),
+                           na.rm = T) +
          ggplot2::scale_x_discrete(name = title_x) +
          ggplot2::scale_y_continuous('Prop.', labels = scales::percent) +
          ggplot_theme(axis.text.x=ggplot2::element_text(size=size_title,
@@ -302,7 +303,8 @@ draw_1d_faceted_histogram <- function(data, colx, colgroup, setup){
 
    # Makes the actual chart
    p <- ggplot2::ggplot(data, ggplot2::aes_string(x=colx)) +
-      ggplot2::geom_bar(ggplot2::aes_string(y='..prop..', group = colgroup)) +
+      ggplot2::geom_bar(ggplot2::aes_string(y='..prop..', group = colgroup),
+                        na.rm = T) +
       ggplot2::scale_x_discrete(name = title_x) +
       ggplot2::scale_y_continuous('Prop.', labels = scales::percent) +
       ggplot_theme(
@@ -340,7 +342,9 @@ draw_1d_stacked_histogram <- function(data, colx, colgroup, setup, standalone=F)
    p <- ggplot2::ggplot(data, ggplot2::aes_string(x=colx)) +
       ggplot2::geom_bar(ggplot2::aes_string(y='(..count..)/sum(..count..)',
                                             color = colgroup,
-                                            fill  = colgroup),
+                                            fill  = colgroup,
+                                            ),
+                        na.rm = T,
                         position = 'stack') +
       ggplot2::scale_x_discrete(name = title_x) +
       ggplot2::scale_y_continuous(ytitle, labels = scales::percent) +
@@ -373,7 +377,7 @@ draw_1d_cat_influence <- function(data, colx, target, setup){
 
    # Makes the actual chart
    p <- ggplot2::ggplot(data, ggplot2::aes_string(x=colx, y=target)) +
-      ggplot2::geom_boxplot() +
+      ggplot2::geom_boxplot(na.rm = T) +
       ggplot2::scale_x_discrete(name = title_x) +
       ggplot2::scale_y_continuous() +
       ggplot_theme(
@@ -434,7 +438,7 @@ draw_1d_density <- function(data, colx, setup, standalone=F,
 
    # Adjustements related to 'colgroup' and 'stacked'
    if (is.null(colgroup)){
-      density_curve <- ggplot2::geom_density(fill = 'grey')
+      density_curve <- ggplot2::geom_density(fill = 'grey', na.rm = T)
       scale_fill <- NULL
       scale_color  <- NULL
    } else {
@@ -443,7 +447,8 @@ draw_1d_density <- function(data, colx, setup, standalone=F,
                                         fill  = colgroup)
          density_curve <- ggplot2::geom_density(show.legend = standalone,
                                                 mapping,
-                                                alpha = 0.5)
+                                                alpha = 0.5,
+                                                na.rm = T)
       } else {
          mapping <- ggplot2::aes_string(y = '..count..',
                                         color = colgroup,
@@ -451,7 +456,8 @@ draw_1d_density <- function(data, colx, setup, standalone=F,
          density_curve <- ggplot2::geom_density(show.legend = standalone,
                                                 mapping,
                                                 position = "stack",
-                                                alpha = 0.75)
+                                                alpha = 0.75,
+                                                na.rm = T)
       }
       legend_title <- if (colgroup == GROUP_COL_NAME) 'Group' else colgroup
       scale_fill <- ggplot2::scale_fill_discrete(legend_title)
@@ -495,7 +501,7 @@ draw_2d_scatterplot <- function(data, colx, coly, setup,
 
    # Adjustements related to colgroup
    if (is.null(colgroup)){
-      points       <- ggplot2::geom_point(size = scat_pt_size)
+      points       <- ggplot2::geom_point(size = scat_pt_size, na.rm = T)
       scale_fill   <- NULL
       scale_color  <- NULL
       smooth       <- NULL
@@ -504,19 +510,21 @@ draw_2d_scatterplot <- function(data, colx, coly, setup,
       alpha   <- if (nrow(data) > 50) .5 else 1
       points      <- ggplot2::geom_point(mapping,
                                          size = scat_pt_size,
-                                         alpha = alpha)
+                                         alpha = alpha,
+                                         na.rm = T)
       scale_fill  <- ggplot2::scale_fill_discrete(guide=FALSE)
       scale_color <- ggplot2::scale_color_discrete(guide=FALSE)
    }
 
    # Attempts a 2D kernel estimate
-   if (is.null(colgroup)){
-      surface <- NULL
-   } else if (nrow(data) > 50){
+  if (nrow(data) > 50){
       surface <- ggplot2::geom_density_2d(
-         ggplot2::aes_string(color = colgroup)
+         ggplot2::aes_string(color = colgroup),
+         na.rm=T
       )
-   }
+  } else {
+     surface <- NULL
+  }
 
 
    p <- ggplot2::ggplot(data=data, ggplot2::aes_string(x = colx,
@@ -557,7 +565,7 @@ draw_1d_num_influence <- function(data, colx, target, setup, standalone=F){
    else 1
 
    title_x <- trim_axis_title(colx, setup$nchar_x)
-   title_y <- trim_axis_title(colx, setup$nchar_y)
+   title_y <- trim_axis_title('Target', setup$nchar_y)
    size_title <- setup$size
 
    if (standalone){
@@ -567,7 +575,7 @@ draw_1d_num_influence <- function(data, colx, target, setup, standalone=F){
                                               face ="bold.italic"),
          panel.background = ggplot2::element_rect(fill = "grey95")
       )
-      geom <- ggplot2::geom_point(size=scat_pt_size)
+      geom <- ggplot2::geom_point(size=scat_pt_size, na.rm = T)
       x_axis <- ggplot2::scale_x_continuous(name = title_x)
       y_axis <- ggplot2::scale_y_continuous(name = title_y)
 
@@ -581,7 +589,7 @@ draw_1d_num_influence <- function(data, colx, target, setup, standalone=F){
          axis.text.y = ggplot2::element_text(angle=90)
       )
       geom <- ggplot2::geom_point(ggplot2::aes_string(color=target),
-                                  size=scat_pt_size)
+                                  size=scat_pt_size, na.rm = T)
       x_axis <- ggplot2::scale_x_continuous(name = title_x,
                                             breaks = c(minx,maxx))
       y_axis <- ggplot2::scale_y_continuous(name = title_y)
@@ -591,7 +599,7 @@ draw_1d_num_influence <- function(data, colx, target, setup, standalone=F){
    g <- ggplot2::ggplot(data, ggplot2::aes_string(x = colx,
                                                   y = target)) +
       geom +
-      ggplot2::geom_smooth(se = F) +
+      ggplot2::geom_smooth(se = F, na.rm = T) +
       x_axis +
       y_axis +
       theme
@@ -613,12 +621,12 @@ draw_2d_num_influence <- function(data, colx, coly, target, setup, standalone = 
    maxy <- max(data[[coly]], na.rm = T)
 
    title_x <- trim_axis_title(colx, setup$nchar_x)
-   title_y <- trim_axis_title(colx, setup$nchar_y)
+   title_y <- trim_axis_title(coly, setup$nchar_y)
    size_title <- setup$size
 
    p <- ggplot2::ggplot(data=data, ggplot2::aes_string(x = colx,
                                                        y = colx)) +
-      ggplot2::stat_summary_2d(ggplot2::aes_string(z = target)) +
+      ggplot2::stat_summary_2d(ggplot2::aes_string(z = target), na.rm=T) +
       ggplot2::scale_x_continuous(name = title_x,
                                   limits=c(minx, maxx), breaks=c(minx, maxx)) +
       ggplot2::scale_y_continuous(name = title_y,

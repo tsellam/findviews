@@ -16,6 +16,57 @@ score_influence <- function(views, dep_mat){
 }
 
 
+#' Views of a multidimensional dataset.
+#'
+#' \code{findviews} detects and plots groups of mutually dependent columns.
+#' It is based on Shiny and ggplot.
+#'
+#
+#' The function \code{findviews} takes a data frame or a matrix as input. It
+#' computes the pairwise dependency between the columns, detects clusters in the
+#' resulting structure and displays the results with a Shiny app.
+#'
+#' \code{findviews} processes numerical and categorical data separately. It excludes
+#' the columns with only one value, the columns in which all the values are
+#' distinct (e.g., primary keys), and the columns with more than 75\% missing values.
+#'
+#' \code{findviews} computes the dependency between the columns differently
+#' depending on their type. It uses Pearson's coefficient of correlation for
+#' numerical data, and Cramer's V for categorical data.
+#'
+#' To cluster the columns, \code{findviews} uses the function
+#' \code{\link[stats]{hclust}}, R's implementation of agglomerative hierarchical
+#' clustering. The parameter \code{clust_method} specifies which flavor of
+#' agglomerative clustering to use. The number of clusters is determined by the
+#' parameter \code{view_size_max}.
+#'
+#'
+#' @param data Data frame or matrix to be processed
+#' @param view_size_max Maximum number of columns in the views. If set to
+#'   \code{NULL}, findviews uses \code{log2(ncol(data))}, rounded upwards and
+#'   capped at 6.
+#' @param clust_method Character describing a clustering method, used internally
+#'   by \code{\link[stats]{hclust}}. Example values are "complete", "single" or
+#'   "average".
+#' @param ... Optional Shiny parameters, used in Shiny's
+#'   \code{\link[shiny]{runApp}} function.
+#'
+#' @examples
+#' findviews(mtcars)
+#' findviews(mtcars, view_size_max = 4,  port = 7000)
+#'
+#' @export
+findviews <- function(data, view_size_max=NULL, clust_method="complete", ...){
+   # Generates the views
+   fdviews_out <- findviews_core(data, view_size_max, clust_method)
+
+   # Creates and launches the Shiny server
+   data_name <- deparse(substitute(data))
+   fdviews_app <- create_fdviews_app(fdviews_out, "findviews", data, data_name)
+   shiny::runApp(fdviews_app, display.mode = "normal", ...)
+}
+
+
 #' Views of a multidimensional dataset, non-Shiny version
 #'
 #' \code{findviews_core} generates views of a multidimensional data set. It
