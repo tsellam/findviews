@@ -1,9 +1,9 @@
 # Named used for dummy column representing groups
 GROUP_COL_NAME <- 'GROUP_DUMMY__'
 
-#######################
-# Layouting Functions #
-#######################
+#############################
+#### Layouting Functions ####
+#############################
 # Creates a lower triangular matrix with numbers from 1 to n
 make_layout_matrix <- function(view_cols){
    stopifnot(is.vector(view_cols))
@@ -57,9 +57,24 @@ make_layout_matrix_hist <- function(data, view_cols){
    layout_matrix
 }
 
-##################
-# Plotting utils #
-##################
+########################
+#### Plotting utils ####
+########################
+get_breaks <- function(low, high){
+   stopifnot(is.numeric(low), is.numeric(high), low<=high)
+
+   r_breaks <- pretty(c(low, high), min.n=2)
+
+   r_breaks <- r_breaks[r_breaks >= low & r_breaks <= high]
+   if (length(na.omit(r_breaks)) <= 1){
+      return(c(low, high))
+   } else if (length(r_breaks) == 2){
+      return(r_breaks)
+   } else {
+      return(c(min(r_breaks), max(r_breaks)))
+   }
+}
+
 # Removes axise labels for plots located inside a grid
 format_axis_labels <- function(plots, layout, colnames, ignore_diag=F){
    stopifnot(is.list(plots))
@@ -257,9 +272,9 @@ draw_legend_cont <- function(data, view_cols, target){
 
 
 
-#######################
-# Collection of Plots #
-#######################
+#############################
+#### Collection of Plots ####
+#############################
 ## 1D categorical data
 draw_1d_histogram <- function(data, colx, setup){
    stopifnot(is.data.frame(data))
@@ -407,7 +422,8 @@ draw_1d_density <- function(data, colx, setup, standalone=F,
    if (!standalone){
       scale_x <- ggplot2::scale_x_continuous(name = title_x,
                                              limits=c(minx, maxx),
-                                             breaks=c(minx, maxx))
+                                             breaks=get_breaks(minx, maxx),
+                                             expand = c(.05, .02))
       scale_y <- ggplot2::scale_y_continuous(name = 'Distribution',
                                              breaks=c(0,1))
       theme <- ggplot_theme(
@@ -495,7 +511,7 @@ draw_2d_scatterplot <- function(data, colx, coly, setup,
                    else 1
 
    title_x <- trim_axis_title(colx, setup$nchar_x)
-   title_y <- trim_axis_title(colx, setup$nchar_y)
+   title_y <- trim_axis_title(coly, setup$nchar_y)
    size_title <- setup$size
 
 
@@ -517,7 +533,7 @@ draw_2d_scatterplot <- function(data, colx, coly, setup,
    }
 
    # Attempts a 2D kernel estimate
-  if (nrow(data) > 50){
+  if (nrow(data) > 50 & !is.null(colgroup)){
       surface <- ggplot2::geom_density_2d(
          ggplot2::aes_string(color = colgroup),
          na.rm=T
@@ -531,9 +547,13 @@ draw_2d_scatterplot <- function(data, colx, coly, setup,
                                                        y = coly)) +
       points + surface +
       ggplot2::scale_x_continuous(name = title_x,
-                                  limits=c(minx, maxx), breaks=c(minx, maxx)) +
+                                  limits=c(minx, maxx),
+                                  breaks=get_breaks(minx, maxx),
+                                  expand = c(.05, .02)) +
       ggplot2::scale_y_continuous(name = title_y,
-                                  limits=c(miny, maxy), breaks=c(miny, maxy)) +
+                                  limits=c(miny, maxy),
+                                  breaks=get_breaks(miny, maxy),
+                                  expand = c(.05, .02)) +
       scale_fill +
       scale_color +
       ggplot_theme(
@@ -591,8 +611,13 @@ draw_1d_num_influence <- function(data, colx, target, setup, standalone=F){
       geom <- ggplot2::geom_point(ggplot2::aes_string(color=target),
                                   size=scat_pt_size, na.rm = T)
       x_axis <- ggplot2::scale_x_continuous(name = title_x,
-                                            breaks = c(minx,maxx))
-      y_axis <- ggplot2::scale_y_continuous(name = title_y)
+                                            breaks = get_breaks(minx,maxx),
+                                            limits = c(minx, maxx),
+                                            expand = c(.05, .02))
+      y_axis <- ggplot2::scale_y_continuous(name = title_y,
+                                            breaks = get_breaks(miny,maxy),
+                                            limits =  c(miny,maxy),
+                                            expand = c(.05, .02))
 
    }
 
@@ -625,12 +650,18 @@ draw_2d_num_influence <- function(data, colx, coly, target, setup, standalone = 
    size_title <- setup$size
 
    p <- ggplot2::ggplot(data=data, ggplot2::aes_string(x = colx,
-                                                       y = colx)) +
+                                                       y = coly)) +
       ggplot2::stat_summary_2d(ggplot2::aes_string(z = target), na.rm=T) +
       ggplot2::scale_x_continuous(name = title_x,
-                                  limits=c(minx, maxx), breaks=c(minx, maxx)) +
+                                  breaks=get_breaks(minx, maxx),
+                                  limits =c(minx,maxx),
+                                  expand = c(.05, .02),
+                                  oob = scales::squish) +
       ggplot2::scale_y_continuous(name = title_y,
-                                  limits=c(miny, maxy), breaks=c(miny, maxy)) +
+                                  breaks=get_breaks(miny, maxy),
+                                  limits =  c(miny,maxy),
+                                  expand = c(.05, .02),
+                                  oob = scales::squish) +
       ggplot2::scale_fill_continuous(guide = if(standalone) 'colourbar' else FALSE) +
       ggplot_theme(
          axis.title.x = ggplot2::element_text(size = size_title),
@@ -644,9 +675,9 @@ draw_2d_num_influence <- function(data, colx, coly, target, setup, standalone = 
 
 
 
-#################################
-# High Level Plotting Functions #
-#################################
+#######################################
+#### High Level Plotting Functions ####
+#######################################
 plot_views_num <- function(data, view_cols){
    stopifnot(is.data.frame(data))
    stopifnot(is.character(view_cols))
