@@ -22,13 +22,13 @@ devtools::install_github("tsellam/findviews")
 
 The findviews package is based on three functions:
 
-1. `findviews` detects and plots groups of dependent variables. This function
+* `findviews` detects and plots groups of dependent variables. This function
    is useful to explore new datasets.
-2. `findviews_to_compare` calls `findviews` and ranks the views by how well
+* `findviews_to_compare` calls `findviews` and ranks the views by how well
    they separate two arbitrary subsets of the data. This function is useful 
    to compare groups - for instance young vs. old in a survey dataset, or
    winners vs. losers in a sports use case.
-3. `findviews_to_predict` calls `findviews` and ranks the views by how well
+* `findviews_to_predict` calls `findviews` and ranks the views by how well
    they predict an arbitrary variable. This function is useful to understand
    how one particular column is influenced by the other variables in the
    database (e.g., salary in a census) 
