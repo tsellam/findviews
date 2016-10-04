@@ -268,6 +268,9 @@ findviews_to_predict <- function(target, data, view_size_max=NULL,
 
    # Creates and launches the Shiny server
    data_name <- deparse(substitute(data))
+   #target_name <- deparse(substitute(target))
+
+
    fdviews_app <- create_fdviews_app(fdviews_out, "findviews_to_predict",
                                      data, data_name = data_name,
                                      target = target)

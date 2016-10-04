@@ -261,8 +261,8 @@ draw_legend_cont <- function(data, view_cols, target){
                                                      y = view_cols[2],
                                                      z = target)) +
       ggplot2::stat_summary_2d(na.rm = T) +
-      ggplot2::scale_fill_continuous('Target') +
-      ggplot2::scale_color_continuous('Target') +
+      ggplot2::scale_fill_continuous(target) +
+      ggplot2::scale_color_continuous(target) +
       ggplot_theme()
 
    legend <- extract_legend(dummy_plot)
@@ -585,7 +585,7 @@ draw_1d_num_influence <- function(data, colx, target, setup, standalone=F){
    else 1
 
    title_x <- trim_axis_title(colx, setup$nchar_x)
-   title_y <- trim_axis_title('Target', setup$nchar_y)
+   title_y <- trim_axis_title(target, setup$nchar_y)
    size_title <- setup$size
 
    if (standalone){
@@ -976,7 +976,7 @@ plot_views_cat_to_predict_cat <- function(data, view_cols, target){
    label_setup <- create_label_setup_cat(n_plots)
 
    ## Simple case: just one plot
-   if (n_plots){
+   if (n_plots == 1){
       p <- draw_1d_stacked_histogram(data, view_cols[1],
                                      colgroup = target,
                                      standalone = T,

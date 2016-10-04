@@ -54,7 +54,7 @@ findviews(mtcars)
 
 As a result, R will start a browser and display the views.
 
-![Screenshot of findviews](screenshot-findviews.png?raw=true "Screenshot of findviews")
+![Screenshot of findviews](img/screenshot-findviews.png?raw=true "Screenshot of findviews")
 
 You can pick a view on the left panel and visualize it in the main panel.
 
@@ -78,7 +78,7 @@ findviews_to_compare(mtcars$mpg >= 20 , mtcars$mpg < 20 , mtcars)
 
 The result is a set of views on which the two groups have different statistical
 distributions:
-![Screenshot of findviews_to_compare](screenshot-findviews_to_compare.png?raw=true "Screenshot of findviews_to_compare")
+![Screenshot of findviews_to_compare](img/screenshot-findviews_to_compare.png?raw=true "Screenshot of findviews_to_compare")
 
 The aim of `findviews_to_predict` is to help users understand how a specific
 column is influenced by the other columns in the database.  For instance,
@@ -90,7 +90,7 @@ findviews_to_predict('mpg', mtcars)
 ```
 
 The result is a ranked set of views, as shown below.
-![Screenshot of findviews_to_predict](screenshot-findviews_to_predict.png?raw=true "Screenshot of findviews_to_predict")
+![Screenshot of findviews_to_predict](img/screenshot-findviews_to_predict.png?raw=true "Screenshot of findviews_to_predict")
 
 
 ### `_core` functions

@@ -12,6 +12,7 @@ LazyData: TRUE
 Imports:
    shiny,
    ggplot2,
+   scales,
    grDevices,
    gridExtra
 Suggests:
