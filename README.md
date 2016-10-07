@@ -26,12 +26,12 @@ The findviews package is based on three functions:
    is useful to explore new datasets.
 * `findviews_to_compare` calls `findviews` and ranks the views by how well
    they separate two arbitrary subsets of the data. This function is useful 
-   to compare groups - for instance young vs. old in a survey dataset, or
-   winners vs. losers in a sports use case.
+   to compare groups - for instance "Young people" vs. "Old  people" in a survey dataset, or
+   "Winners" vs. "Losers" for a sports use case.
 * `findviews_to_predict` calls `findviews` and ranks the views by how well
    they predict an arbitrary variable. This function is useful to understand
    how one particular column is influenced by the other variables in the
-   database (e.g., salary in a census) 
+   database - for instance, "Salary" in a census database.
 
 The following sections describe these 3 functions in more detail.
 
