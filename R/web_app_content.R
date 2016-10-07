@@ -23,14 +23,14 @@ data_table_options <- function(app_type){
    params[["columnDefs"]] <- if (app_type == 'findviews')
       list(
          list('targets' = 0, 'visible' = FALSE),
-         list('targets' = 1, 'title' = NULL)
+         list('targets' = 1, 'title' = NULL, 'className' = 'view_cell')
       )
    else if (app_type %in% c('findviews_to_compare', 'findviews_to_predict'))
       list(
          list('targets' = 0, 'visible' = FALSE),
          list('targets' = 1, 'visible' = FALSE),
          list('targets' = 2, 'title' = NULL),
-         list('targets' = 3, 'title' = NULL)
+         list('targets' = 3, 'title' = NULL, 'className' = 'view_cell')
       )
 
    return(params)

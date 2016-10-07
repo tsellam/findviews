@@ -103,14 +103,18 @@ format_axis_labels <- function(plots, layout, colnames, ignore_diag=F){
          # Removes/Scales axises and ticks
          if (i < nrow(layout))
             plot <- plot + ggplot2::theme(
-               axis.title.x=ggplot2::element_blank(),
-               axis.text.x=ggplot2::element_blank()
+               axis.title.x=ggplot2::element_text(color='white'),
+               axis.text.x=ggplot2::element_text(color='white')
+               # axis.title.x=ggplot2::element_blank(),
+               # axis.text.x=ggplot2::element_blank()
             )
 
          if (j > 1)
             plot <- plot + ggplot2::theme(
-               axis.title.y=ggplot2::element_blank(),
-               axis.text.y=ggplot2::element_blank()
+               axis.title.y=ggplot2::element_text(color='white'),
+               axis.text.y=ggplot2::element_text(color='white')
+               # axis.title.y=ggplot2::element_blank(),
+               # axis.text.y=ggplot2::element_blank()
             )
 
          # Puts it back in list
@@ -422,8 +426,7 @@ draw_1d_density <- function(data, colx, setup, standalone=F,
    if (!standalone){
       scale_x <- ggplot2::scale_x_continuous(name = title_x,
                                              limits=c(minx, maxx),
-                                             breaks=get_breaks(minx, maxx),
-                                             expand = c(.05, .02))
+                                             breaks=get_breaks(minx, maxx))
       scale_y <- ggplot2::scale_y_continuous(name = 'Distribution',
                                              breaks=c(0,1))
       theme <- ggplot_theme(
@@ -548,12 +551,10 @@ draw_2d_scatterplot <- function(data, colx, coly, setup,
       points + surface +
       ggplot2::scale_x_continuous(name = title_x,
                                   limits=c(minx, maxx),
-                                  breaks=get_breaks(minx, maxx),
-                                  expand = c(.05, .02)) +
+                                  breaks=get_breaks(minx, maxx)) +
       ggplot2::scale_y_continuous(name = title_y,
                                   limits=c(miny, maxy),
-                                  breaks=get_breaks(miny, maxy),
-                                  expand = c(.05, .02)) +
+                                  breaks=get_breaks(miny, maxy)) +
       scale_fill +
       scale_color +
       ggplot_theme(
@@ -612,12 +613,10 @@ draw_1d_num_influence <- function(data, colx, target, setup, standalone=F){
                                   size=scat_pt_size, na.rm = T)
       x_axis <- ggplot2::scale_x_continuous(name = title_x,
                                             breaks = get_breaks(minx,maxx),
-                                            limits = c(minx, maxx),
-                                            expand = c(.05, .02))
+                                            limits = c(minx, maxx))
       y_axis <- ggplot2::scale_y_continuous(name = title_y,
                                             breaks = get_breaks(miny,maxy),
-                                            limits =  c(miny,maxy),
-                                            expand = c(.05, .02))
+                                            limits =  c(miny,maxy))
 
    }
 
@@ -655,12 +654,10 @@ draw_2d_num_influence <- function(data, colx, coly, target, setup, standalone = 
       ggplot2::scale_x_continuous(name = title_x,
                                   breaks=get_breaks(minx, maxx),
                                   limits =c(minx,maxx),
-                                  expand = c(.05, .02),
                                   oob = scales::squish) +
       ggplot2::scale_y_continuous(name = title_y,
                                   breaks=get_breaks(miny, maxy),
                                   limits =  c(miny,maxy),
-                                  expand = c(.05, .02),
                                   oob = scales::squish) +
       ggplot2::scale_fill_continuous(guide = if(standalone) 'colourbar' else FALSE) +
       ggplot_theme(

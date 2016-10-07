@@ -13,6 +13,9 @@ create_fdviews_client <- function(app_type, data_name, target=NULL){
                margin-top: 5px;
                overflow: scroll;
             }
+            td.view_cell {
+               cursor: pointer;
+            }
            "))
          ),
 
