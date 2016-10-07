@@ -44,7 +44,7 @@ score_influence <- function(views, dep_mat){
 #' @param data Data frame or matrix to be processed
 #' @param view_size_max Maximum number of columns in the views. If set to
 #'   \code{NULL}, findviews uses \code{log2(ncol(data))}, rounded upwards and
-#'   capped at 6.
+#'   capped at 5.
 #' @param clust_method Character describing a clustering method, used internally
 #'   by \code{\link[stats]{hclust}}. Example values are "complete", "single" or
 #'   "average".

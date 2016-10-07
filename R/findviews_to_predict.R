@@ -210,7 +210,7 @@ findviews_to_predict_core <- function(target, data, view_size_max=NULL,
    sampled_rows <- data_and_views$sampled_rows
 
    # Subsamples the target if necessary
-   sampled_target_data <- if (!is.na(sampled_rows)) target_data[sampled_rows]
+   sampled_target_data <- if (!all(is.na(sampled_rows))) target_data[sampled_rows]
                           else target_data
 
    # Aggregates all the Diff-Components into one score
@@ -252,6 +252,10 @@ findviews_to_predict_core <- function(target, data, view_size_max=NULL,
 #' variable. Internally, \code{findviews_to_predict} discretizes all the
 #' continuous variables with equi-width binning.
 #'
+#' Note: \code{findviews_to_predict} removes the column to be predicted (the
+#' target column) from the dataset before it creates the column groups. Hence,
+#' the views it returns may be different from those return by calling by
+#' \code{findviews} directly on the dataset.
 #'
 #' @inheritParams findviews
 #' @param target Name of the variable to be predicted.
