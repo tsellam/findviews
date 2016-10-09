@@ -1,12 +1,11 @@
 Package: findviews
 Type: Package
-Title: findviews: a View Generator for Multidimensional Data
+Title: A View Generator for Multidimensional Data
 Version: 0.1.0
 Author: Thibault Sellam
 Maintainer: Thibault Sellam <thibault.sellam@cwi.nl>
-Description: findviews helps exploring wide data sets, by detecting, ranking
-    and plotting groups of statistically dependent columns. It relies heavily
-    on ggplot and shiny.
+Description: A tool to explore wide data sets, by detecting, ranking
+    and plotting groups of statistically dependent columns.
 License: MIT + file LICENSE
 LazyData: TRUE
 Imports:
@@ -14,7 +13,8 @@ Imports:
    ggplot2,
    scales,
    grDevices,
-   gridExtra
+   gridExtra,
+   stats
 Suggests:
     testthat
 RoxygenNote: 5.0.1

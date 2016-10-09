@@ -1,4 +1,4 @@
 library(testthat)
-library(ziggy)
+library(findviews)
 
-test_check("ziggy")
+test_check("findviews")

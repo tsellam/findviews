@@ -66,7 +66,7 @@ get_breaks <- function(low, high){
    r_breaks <- pretty(c(low, high), min.n=2)
 
    r_breaks <- r_breaks[r_breaks >= low & r_breaks <= high]
-   if (length(na.omit(r_breaks)) <= 1){
+   if (length(stats::na.omit(r_breaks)) <= 1){
       return(c(low, high))
    } else if (length(r_breaks) == 2){
       return(r_breaks)
@@ -147,7 +147,7 @@ preprocess_for_histogram <- function(data, colx, faceted = F){
 
    # Crops long labels
    long_labels <- nchar(series) > MAX_CHAR_HIST
-   long_labels <- na.omit(long_labels)
+   long_labels <- stats::na.omit(long_labels)
    series[long_labels] <- substr(series[long_labels], 1, MAX_CHAR_HIST)
 
    data[[colx]] <- series
@@ -294,7 +294,7 @@ draw_1d_histogram <- function(data, colx, setup){
 
    # Makes the actual chart
       p <- ggplot2::ggplot(data, ggplot2::aes_string(x=colx)) +
-         ggplot2::geom_bar(ggplot2::aes(y=(..count..)/sum(..count..)),
+         ggplot2::geom_bar(ggplot2::aes_string(y='(..count..)/sum(..count..)'),
                            na.rm = T) +
          ggplot2::scale_x_discrete(name = title_x) +
          ggplot2::scale_y_continuous('Prop.', labels = scales::percent) +

@@ -97,16 +97,16 @@ test_that("findviews fails properly", {
    expect_error(findviews_core(df_onerow, 3))
 })
 
-# Checks sampling
-test_that("sampling works properly", {
-   OLD <- SAMPLE_SIZE
-   SAMPLE_SIZE <<- 4
-   expect_warning(findviews_core(df_mix))
-   out <- suppressWarnings(findviews_core(df_mix))
-   expect_true(all(!is.na(out$sampled_rows)))
-   expect_length(out$sampled_rows, SAMPLE_SIZE)
-   SAMPLE_SIZE <<- OLD
-})
+# # Checks sampling
+# test_that("sampling works properly", {
+#    OLD <- SAMPLE_SIZE
+#    SAMPLE_SIZE <<- 4
+#    expect_warning(findviews_core(df_mix))
+#    out <- suppressWarnings(findviews_core(df_mix))
+#    expect_true(all(!is.na(out$sampled_rows)))
+#    expect_length(out$sampled_rows, SAMPLE_SIZE)
+#    SAMPLE_SIZE <<- OLD
+# })
 
 test_that("findviews can handle 0 length strings", {
    check_output(df_cat_emptystring, 3)

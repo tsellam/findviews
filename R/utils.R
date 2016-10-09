@@ -70,9 +70,9 @@ map_to_colors <- function(data, start_col, end_col, missing_col = '#CCCCCC'){
    if (max <=  min) return(rep(missing_col, length(data)))
    clean_data <- (clean_data - min)  / (max - min)
 
-   map_fn <- colorRamp(c(start_col, end_col))
+   map_fn <- grDevices::colorRamp(c(start_col, end_col))
    colors <- map_fn(clean_data)
-   html_colors <- rgb(colors, max = 255)
+   html_colors <- grDevices::rgb(colors, max = 255)
 
    out <- character(length(data))
    out[NAs]  <- missing_col

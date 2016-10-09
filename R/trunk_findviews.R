@@ -35,7 +35,7 @@ preprocess <- function(data){
 
    # Removes flat columns
    is_flat_cat <- sapply(data_cat, function(col){
-      n <- length(na.omit(unique(col)))
+      n <- length(stats::na.omit(unique(col)))
       return(n/nrow(data_cat) > .9 | n < 2)
    })
    is_flat_cat   <- as.logical(is_flat_cat)
@@ -43,7 +43,7 @@ preprocess <- function(data){
    data_cat      <- data_cat[, !is_flat_cat, drop=FALSE]
 
    is_flat_num <- sapply(data_num, function(col){
-      n <- length(na.omit(unique(col)))
+      n <- length(stats::na.omit(unique(col)))
       return(n < 2)
    })
    is_flat_num <- as.logical(is_flat_num)
@@ -52,7 +52,7 @@ preprocess <- function(data){
 
    # Removes sparse columns
    is_sparse_cat <- sapply(data_cat, function(col){
-      n <- length(na.omit(col))
+      n <- length(stats::na.omit(col))
       return(n/nrow(data_cat) < .25 | n < 3)
    })
    is_sparse_cat   <- as.logical(is_sparse_cat)
@@ -60,7 +60,7 @@ preprocess <- function(data){
    data_cat      <- data_cat[, !is_sparse_cat, drop=FALSE]
 
    is_sparse_num <- sapply(data_num, function(col){
-      n <- length(na.omit(col))
+      n <- length(stats::na.omit(col))
       return(n/nrow(data_num) < .25 | n < 3)
    })
    is_sparse_num   <- as.logical(is_sparse_num)
@@ -105,7 +105,7 @@ cor_matrix <- function(data){
       return(m)
    }
 
-   abs(cor(data, use = "pairwise.complete.obs"))
+   abs(stats::cor(data, use = "pairwise.complete.obs"))
 }
 
 #----------------------------------#
@@ -123,7 +123,7 @@ cramerV <- function(v1, v2){
 
    if (r < 2 | c < 2) return(NA)
 
-   chi2_out <- suppressWarnings(chisq.test(v1, v2, correct = F))
+   chi2_out <- suppressWarnings(stats::chisq.test(v1, v2, correct = F))
    chi2 <- as.numeric(chi2_out$stat)
    norm <- min(r - 1, c - 1)
    V <- sqrt(chi2 / (length(v1) * norm))
@@ -260,9 +260,9 @@ cluster_columns <- function(dependency_mat, view_size_max,
    inv_dependency[is.na(inv_dependency)] <- 1.1
 
    # Clusters it
-   dist_obj <-  as.dist(inv_dependency)
-   clust_out <- hclust(dist_obj, method = clust_method)
-   dendrogram <- as.dendrogram(clust_out)
+   dist_obj <-  stats::as.dist(inv_dependency)
+   clust_out <- stats::hclust(dist_obj, method = clust_method)
+   dendrogram <- stats::as.dendrogram(clust_out)
 
    # Cuts the dendrogram
    clusters <- cut_max_size(dendrogram, view_size_max)

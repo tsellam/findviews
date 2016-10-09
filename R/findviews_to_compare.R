@@ -7,8 +7,8 @@ distribution_distance <- function(s1, s2){
    if (all(is.na(s1)) | all(is.na(s2))) return(NA_real_)
    stopifnot(is.factor(s1) & is.factor(s2))
 
-   s1 <- na.omit(s1)
-   s2 <- na.omit(s2)
+   s1 <- stats::na.omit(s1)
+   s2 <- stats::na.omit(s2)
 
    table1 <- safe_table(s1)[]/length(s1)
    table2 <- safe_table(s2)[]/length(s2)
@@ -96,16 +96,16 @@ score_comparison_num <- function(views, group1, group2, data){
 #'
 #'\code{findviews_to_compare_core} detects views on which two arbitrary sets of
 #' tuples are well separated. It produces the same
-#' results as \code{\link[stats]{findviews_to_compare}}, but does \emph{not}
+#' results as \code{\link{findviews_to_compare}}, but does \emph{not}
 #' present them with a Shiny app.
 #'
 #'The function \code{findviews_to_compare_core} takes two groups of tuples as
 #'input, and detects views on which the statistical distribution of those two
 #'groups is different. See the documentation of
-#'\code{\link[stats]{findviews_to_compare}} for more details.
+#'\code{\link{findviews_to_compare}} for more details.
 #'
-#' The  difference between \code{\link[stats]{findviews_to_compare}} and
-#' \code{\link[stats]{findviews_to_compare_core}} is that the former presents
+#' The  difference between \code{\link{findviews_to_compare}} and
+#' \code{\link{findviews_to_compare_core}} is that the former presents
 #' its results with a Shiny app, while the latter simply outputs them as R
 #' stuctures.
 #'
@@ -114,7 +114,9 @@ score_comparison_num <- function(views, group1, group2, data){
 #'
 #'
 #' @examples
+#' \dontrun{
 #' findviews_to_compare_core(mtcars$mpg >= 20 , mtcars$mpg < 20 , mtcars)
+#' }
 #'
 #' @export
 findviews_to_compare_core <- function(group1, group2, data, view_size_max=NULL,
@@ -212,7 +214,9 @@ findviews_to_compare_core <- function(group1, group2, data, view_size_max=NULL,
 #'   \code{data} belongs to the group.
 #'
 #' @examples
+#' \dontrun{
 #' findviews_to_compare(mtcars$mpg >= 20 , mtcars$mpg < 20 , mtcars)
+#' }
 #'
 #' @export
 findviews_to_compare <- function(group1, group2, data,

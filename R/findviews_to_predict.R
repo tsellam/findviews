@@ -6,7 +6,7 @@ sum_prod_log <- function(probs){
    if (all(is.na(probs))) return(NA_real_)
 
    stopifnot(is.numeric(probs))
-   probs <- na.omit(probs)
+   probs <- stats::na.omit(probs)
    probs <- probs[probs!=0]
    sum(sapply(probs, function(x){x * log2(x)})) * -1
 }
@@ -17,7 +17,7 @@ entropy <- function(s1){
    if (all(is.na(s1))) return(NA_real_)
 
    stopifnot(is.factor(s1))
-   s1 <- na.omit(s1)
+   s1 <- stats::na.omit(s1)
    freq <- table(s1)[]/length(s1)
    sum_prod_log(freq)
 }
@@ -150,7 +150,7 @@ preprocess_target <- function(target_data, nbins=4){
 #'
 #' \code{findviews_to_predict_core} detects groups of mutually dependent
 #' columns, and ranks them by their predictive power.  It produces the same
-#' results as \code{\link[stats]{findviews_to_predict}}, but does \emph{not}
+#' results as \code{\link{findviews_to_predict}}, but does \emph{not}
 #' present them with a Shiny app.
 #'
 #'
@@ -158,11 +158,11 @@ preprocess_target <- function(target_data, nbins=4){
 #' variable as input. It detects clusters of statistically dependent columns in
 #' the data set - e.g., views - and ranks those groups according to how well
 #' they predict the target variable.
-#' See the documentation of \code{\link[stats]{findviews_to_predict}} for more
+#' See the documentation of \code{\link{findviews_to_predict}} for more
 #' details.
 #'
-#' The  difference between \code{\link[stats]{findviews_to_predict}} and
-#' \code{\link[stats]{findviews_to_predict_core}} is that the former presents its results
+#' The  difference between \code{\link{findviews_to_predict}} and
+#' \code{\link{findviews_to_predict_core}} is that the former presents its results
 #' with a Shiny app, while the latter simply outputs them as R stuctures.
 #'
 #' @inheritParams findviews
@@ -170,8 +170,10 @@ preprocess_target <- function(target_data, nbins=4){
 #'
 #'
 #' @examples
+#' \dontrun{
 #' findviews_to_predict_core('mpg', mtcars)
 #' findviews_to_predict_core('mpg', mtcars, view_size_max = 4)
+#' }
 #'
 #' @export
 findviews_to_predict_core <- function(target, data, view_size_max=NULL,
@@ -261,8 +263,10 @@ findviews_to_predict_core <- function(target, data, view_size_max=NULL,
 #' @param target Name of the variable to be predicted.
 #'
 #' @examples
+#' \dontrun{
 #' findviews_to_predict('mpg', mtcars)
 #' findviews_to_predict('mpg', mtcars, view_size_max = 4)
+#' }
 #'
 #' @export
 findviews_to_predict <- function(target, data, view_size_max=NULL,

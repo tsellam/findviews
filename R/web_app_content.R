@@ -193,7 +193,7 @@ describeExclusions <- function(fdviews_out){
       NA
    }
 
-   comments <- na.omit(comments)
+   comments <- stats::na.omit(comments)
 
    html <- if (length(comments) == 0){
       ""

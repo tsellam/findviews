@@ -157,13 +157,13 @@ test_that("findviews_to_compare fails properly", {
 })
 
 
-# Checks sampling
-test_that("sampling works properly", {
-   OLD <- SAMPLE_SIZE
-   SAMPLE_SIZE <<- 4
-   expect_warning(findviews_to_compare_core(to_describe, !to_describe, df_num))
-   SAMPLE_SIZE <<- OLD
-})
+# # Checks sampling
+# test_that("sampling works properly", {
+#    OLD <- SAMPLE_SIZE
+#    SAMPLE_SIZE <<- 4
+#    expect_warning(findviews_to_compare_core(to_describe, !to_describe, df_num))
+#    SAMPLE_SIZE <<- OLD
+# })
 
 
 # Checks target with NA

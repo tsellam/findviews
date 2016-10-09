@@ -166,16 +166,16 @@ test_that("findviews_to_predict can handle 0 length strings", {
 })
 
 
-# Checks sampling
-test_that("sampling works properly", {
-   # Generates a phony target column
-   target <- sample(factor(c('1', '2', '3')), nrow(df_num), replace = T)
-   df <- cbind(df_num, target)
-   names(df)[[length(names(df))]] <- 'target'
-
-   OLD <- SAMPLE_SIZE
-   SAMPLE_SIZE <<- 4
-   expect_warning(findviews_to_predict_core('target', df))
-   SAMPLE_SIZE <<- OLD
-})
+# # Checks sampling
+# test_that("sampling works properly", {
+#    # Generates a phony target column
+#    target <- sample(factor(c('1', '2', '3')), nrow(df_num), replace = T)
+#    df <- cbind(df_num, target)
+#    names(df)[[length(names(df))]] <- 'target'
+#
+#    OLD <- SAMPLE_SIZE
+#    SAMPLE_SIZE <<- 4
+#    expect_warning(findviews_to_predict_core('target', df))
+#    SAMPLE_SIZE <<- OLD
+# })
 
