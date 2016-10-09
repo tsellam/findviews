@@ -115,7 +115,7 @@ salt.  Some of its views are absurd - they are artifacts of the algorithms, or
 the system just "got lucky" and made totally spurious findings. Inversely,
 *findviews will almost surely miss important aspects of the data*.
 
-In summary findviews is designed to help you get started with a data set and
+In summary, findviews is designed to help you get started with a data set and
 give some inspiration. But *it cannot replace critical judgement*. In
 fact, the best way to use it is to understand what it does. To this end, I
 encourage you to read the functions' R documentation.
