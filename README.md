@@ -54,7 +54,7 @@ findviews(mtcars)
 
 As a result, R will start a browser and display the views.
 <p align="center">
-<img src="img/screenshot-findviews.png" width="600">
+<img src="screenshot-findviews.png" width="600">
 </p>
 
 You can pick a view on the left panel and visualize it in the main panel.
@@ -80,7 +80,7 @@ findviews_to_compare(mtcars$mpg >= 20 , mtcars$mpg < 20 , mtcars)
 The result is a set of views on which the two groups have different statistical
 distributions:
 <p align="center">
-<img src="img/screenshot-findviews_to_compare.png" width="600">
+<img src="screenshot-findviews_to_compare.png" width="600">
 </p>
 
 
@@ -95,7 +95,7 @@ findviews_to_predict('mpg', mtcars)
 
 The result is a ranked set of views, as shown below.
 <p align="center">
-<img src="img/screenshot-findviews_to_predict.png" width="600">
+<img src="screenshot-findviews_to_predict.png" width="600">
 </p>
 
 ### `_core` functions
