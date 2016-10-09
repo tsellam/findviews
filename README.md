@@ -110,8 +110,8 @@ return their results as lists and data frames.
 
 ## WARNING
 
-Beware - the recommendations of findviews must be taken with a huge grain of
-salt.  Some of its views are absurd - they are artifacts of the algorithms, or
+Beware: the recommendations of findviews must be taken with a huge grain of
+salt.  Some of its views are absurd. They are artifacts of the algorithms, or
 the system just "got lucky" and made totally spurious findings. Inversely,
 *findviews will almost surely miss important aspects of the data*.
 
