@@ -166,7 +166,7 @@ ggplot_theme <- function(...){
                   legend.title =
                      ggplot2::element_text(face = 'bold'),
                   legend.key.size =
-                     ggplot2::unit(.4, "cm"),
+                     grid::unit(.4, "cm"),
                   ...)
 }
 
