@@ -10,8 +10,12 @@ your data in a data frame, call `findviews`, and you are ready to go.
 
 ## Installation
 
-The findviews package is currently under heavy development. You may install the latest
-version as follows:
+You may download findviews' latest release as follows:
+```R
+install.packages("findviews")
+```
+
+Alternatively, you may install the latest development version:
 ```R
 devtools::install_github("tsellam/findviews")
 ```
