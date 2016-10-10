@@ -18,3 +18,4 @@ Imports:
 Suggests:
     testthat
 RoxygenNote: 5.0.1
+URL: https://github.com/tsellam/findviews
