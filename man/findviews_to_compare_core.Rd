@@ -17,11 +17,11 @@ the i-th row of \code{data} belongs to the group.}
 The value \code{TRUE} at position i indicates the the i-th row of
 \code{data} belongs to the group.}
 
-\item{data}{Data frame or matrix to be visualized}
+\item{data}{Data frame or matrix to be processed}
 
 \item{view_size_max}{Maximum number of columns in the views. If set to
-\code{NULL}, findviews uses \code{log2(ncol(data))}, rounded upwards if
-necessary.}
+\code{NULL}, findviews uses \code{log2(ncol(data))}, rounded upwards and
+capped at 5.}
 
 \item{clust_method}{Character describing a clustering method, used internally
 by \code{\link[stats]{hclust}}. Example values are "complete", "single" or
@@ -30,22 +30,24 @@ by \code{\link[stats]{hclust}}. Example values are "complete", "single" or
 \description{
 \code{findviews_to_compare_core} detects views on which two arbitrary sets of
 tuples are well separated. It produces the same
-results as \code{\link[stats]{findviews_to_compare}}, but does \emph{not}
+results as \code{\link{findviews_to_compare}}, but does \emph{not}
 present them with a Shiny app.
 }
 \details{
 The function \code{findviews_to_compare_core} takes two groups of tuples as
 input, and detects views on which the statistical distribution of those two
 groups is different. See the documentation of
-\code{\link[stats]{findviews_to_compare}} for more details.
+\code{\link{findviews_to_compare}} for more details.
 
-The  difference between \code{\link[stats]{findviews_to_compare}} and
-\code{\link[stats]{findviews_to_compare_core}} is that the former presents
+The  difference between \code{\link{findviews_to_compare}} and
+\code{\link{findviews_to_compare_core}} is that the former presents
 its results with a Shiny app, while the latter simply outputs them as R
 stuctures.
 }
 \examples{
+\dontrun{
 findviews_to_compare_core(mtcars$mpg >= 20 , mtcars$mpg < 20 , mtcars)
+}
 
 }
 

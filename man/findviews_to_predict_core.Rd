@@ -5,29 +5,25 @@
 \title{Views of a multidimensional dataset, ranked by their prediction power, non-Shiny version.}
 \usage{
 findviews_to_predict_core(target, data, view_size_max = NULL,
-  clust_method = "complete", nbins = 4)
+  clust_method = "complete")
 }
 \arguments{
-\item{target}{Name of the variable to be predicted.
-\code{findviews_to_predit} discretizes the continuous variables with
-equi-width binning.}
+\item{target}{Name of the variable to be predicted.}
 
-\item{data}{Data frame or matrix to be visualized}
+\item{data}{Data frame or matrix to be processed}
 
 \item{view_size_max}{Maximum number of columns in the views. If set to
-\code{NULL}, findviews uses \code{log2(ncol(data))}, rounded upwards if
-necessary.}
+\code{NULL}, findviews uses \code{log2(ncol(data))}, rounded upwards and
+capped at 5.}
 
 \item{clust_method}{Character describing a clustering method, used internally
 by \code{\link[stats]{hclust}}. Example values are "complete", "single" or
 "average".}
-
-\item{nbins}{Number of bins used to discretize the target variable.}
 }
 \description{
 \code{findviews_to_predict_core} detects groups of mutually dependent
 columns, and ranks them by their predictive power.  It produces the same
-results as \code{\link[stats]{findviews_to_predict}}, but does \emph{not}
+results as \code{\link{findviews_to_predict}}, but does \emph{not}
 present them with a Shiny app.
 }
 \details{
@@ -35,16 +31,18 @@ The function \code{findviews_to_predict_core} takes a data set and a target
 variable as input. It detects clusters of statistically dependent columns in
 the data set - e.g., views - and ranks those groups according to how well
 they predict the target variable.
-See the documentation of \code{\link[stats]{findviews_to_predict}} for more
+See the documentation of \code{\link{findviews_to_predict}} for more
 details.
 
-The  difference between \code{\link[stats]{findviews_to_predict}} and
-\code{\link[stats]{findviews_to_predict_core}} is that the former presents its results
+The  difference between \code{\link{findviews_to_predict}} and
+\code{\link{findviews_to_predict_core}} is that the former presents its results
 with a Shiny app, while the latter simply outputs them as R stuctures.
 }
 \examples{
+\dontrun{
 findviews_to_predict_core('mpg', mtcars)
-findviews_to_predict_core('mpg', mtcars, view_size_max = 4, nbins = 3)
+findviews_to_predict_core('mpg', mtcars, view_size_max = 4)
+}
 
 }
 
