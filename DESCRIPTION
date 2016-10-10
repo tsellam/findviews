@@ -10,7 +10,7 @@ License: MIT + file LICENSE
 LazyData: TRUE
 Imports:
    shiny,
-   ggplot2,
+   ggplot2 (>= 2.0.0),
    scales,
    grDevices,
    gridExtra,

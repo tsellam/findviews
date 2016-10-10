@@ -4,7 +4,6 @@
 
 ## R CMD check results
 There were no ERRORs or WARNINGs.
-One NOTE: "New submission" (indeed, findviews is a new submission).
 
 ## Downstream dependencies
 I have run R CMD check on all the downstream dependencies of findviews.

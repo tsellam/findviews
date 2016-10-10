@@ -55,9 +55,10 @@ test_that("Cramer V function gives correct output", {
       M <- cramerV_matrix(df)
       tests <- sapply(1:nrow(M), function(i){
          sapply(1:ncol(M), function(j){
-            M[i,j] == abs(cramerV(df[,i], df[,j]))
+            abs(M[i,j] - abs(cramerV(df[,i], df[,j]))) < .001
          })
       })
+      tests <- as.logical(tests)
       expect_true(all(tests))
    }
 
