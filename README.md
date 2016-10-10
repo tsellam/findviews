@@ -10,8 +10,12 @@ your data in a data frame, call `findviews`, and you are ready to go.
 
 ## Installation
 
-The findviews package is currently under heavy development. You may install the latest
-version as follows:
+You may download findviews' latest release as follows:
+```R
+install.packages("findviews")
+```
+
+Alternatively, you may install the latest development version:
 ```R
 devtools::install_github("tsellam/findviews")
 ```
@@ -119,4 +123,13 @@ In summary, findviews is designed to help you get started with a data set and
 give some inspiration. But *it cannot replace critical judgement*. In
 fact, the best way to use it is to understand what it does. To this end, I
 encourage you to read the functions' R documentation.
+
+## Papers and Acknowledgements
+
+findviews was inspired by the following paper:
+> *Semi-Automated Exploration of Data Warehouses*  
+> T. Sellam, E. M&uuml;ller and M. Kersten  
+> CIKM 2015
+
+This work is carried out at the Dutch center for mathematics and computer science (CWI). It is funded by the national project COMMIT.
 
