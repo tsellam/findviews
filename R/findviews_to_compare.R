@@ -75,7 +75,8 @@ score_comparison_num <- function(views, group1, group2, data){
    discretized_data <- lapply(view_cols, function(colname){
       bin_equiwidth(data[[colname]], NBINS_CONT_VARIABLES)
    })
-   discretized_data <- as.data.frame(discretized_data, col.names = view_cols)
+   discretized_data <- as.data.frame(discretized_data)
+   names(discretized_data) <- view_cols
 
    # Computes the scores
    scores <- sapply(views, function(cols){

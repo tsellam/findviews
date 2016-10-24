@@ -100,7 +100,8 @@ score_predictive_num <- function(views, data, target){
    discretized_data <- lapply(view_cols, function(colname){
       bin_equiwidth(data[[colname]], NBINS_CONT_VARIABLES)
    })
-   discretized_data <- as.data.frame(discretized_data, col.names = view_cols)
+   discretized_data <- as.data.frame(discretized_data)
+   names(discretized_data) <- view_cols
 
    # Computes the scores
    scores <- sapply(views, function(cols){
