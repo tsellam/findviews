@@ -5,3 +5,4 @@
 ^screenshot-findviews\.png$
 ^screenshot-findviews_to_compare\.png$
 ^screenshot-findviews_to_predict\.png$
+^\.travis\.yml$

@@ -1,3 +1,5 @@
+[![Travis-CI Build Status](https://travis-ci.org/tsellam/findviews.svg?branch=master)](https://travis-ci.org/tsellam/findviews)
+
 # findviews
 
 The findviews package helps exploring wide data sets, by detecting, ranking and
