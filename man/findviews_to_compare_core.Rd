@@ -45,9 +45,7 @@ its results with a Shiny app, while the latter simply outputs them as R
 stuctures.
 }
 \examples{
-\dontrun{
 findviews_to_compare_core(mtcars$mpg >= 20 , mtcars$mpg < 20 , mtcars)
-}
 
 }
 

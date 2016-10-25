@@ -1,6 +1,6 @@
 ## Test environments
 * local OS X install, R 3.3.0
-* win-builder (R Under development, 2016-10-22 r71574)
+* win-builder (R Under development, 2016-10-22 r71581)
 
 ## R CMD check results
 There were no ERRORs and no WARNINGs.

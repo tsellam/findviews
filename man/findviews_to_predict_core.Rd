@@ -39,10 +39,8 @@ The  difference between \code{\link{findviews_to_predict}} and
 with a Shiny app, while the latter simply outputs them as R stuctures.
 }
 \examples{
-\dontrun{
 findviews_to_predict_core('mpg', mtcars)
 findviews_to_predict_core('mpg', mtcars, view_size_max = 4)
-}
 
 }
 

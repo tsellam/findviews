@@ -87,10 +87,8 @@ findviews <- function(data, view_size_max=NULL, clust_method="complete", ...){
 #' @inheritParams findviews
 #'
 #' @examples
-#' \dontrun{
 #' findviews_core(mtcars)
 #' findviews_core(mtcars, view_size_max = 4)
-#' }
 #'
 #' @export
 findviews_core <- function(data, view_size_max=NULL, clust_method="complete"){

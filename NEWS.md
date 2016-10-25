@@ -2,7 +2,7 @@
 
 ## Bug fixes
 - Fixed colnames bug to enforced compatibility with R 3.2.5
-
+- Removed three dontrun's in the documentation to allow CRAN checks
 
 # findviews 0.1.1
 

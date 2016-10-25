@@ -171,10 +171,8 @@ preprocess_target <- function(target_data, nbins=4){
 #'
 #'
 #' @examples
-#' \dontrun{
 #' findviews_to_predict_core('mpg', mtcars)
 #' findviews_to_predict_core('mpg', mtcars, view_size_max = 4)
-#' }
 #'
 #' @export
 findviews_to_predict_core <- function(target, data, view_size_max=NULL,

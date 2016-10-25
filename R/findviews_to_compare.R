@@ -115,9 +115,7 @@ score_comparison_num <- function(views, group1, group2, data){
 #'
 #'
 #' @examples
-#' \dontrun{
 #' findviews_to_compare_core(mtcars$mpg >= 20 , mtcars$mpg < 20 , mtcars)
-#' }
 #'
 #' @export
 findviews_to_compare_core <- function(group1, group2, data, view_size_max=NULL,

@@ -33,10 +33,8 @@ The  difference between \code{\link{findviews}} and
 with a Shiny app, while the latter simply outputs them as R stuctures.
 }
 \examples{
-\dontrun{
 findviews_core(mtcars)
 findviews_core(mtcars, view_size_max = 4)
-}
 
 }
 
