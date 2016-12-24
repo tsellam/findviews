@@ -1,3 +1,6 @@
+# findviews 0.1.3
+Updated author's email address
+
 # findviews 0.1.2
 
 ## Bug fixes

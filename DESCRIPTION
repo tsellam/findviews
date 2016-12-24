@@ -1,9 +1,9 @@
 Package: findviews
 Type: Package
 Title: A View Generator for Multidimensional Data
-Version: 0.1.3.9000
+Version: 0.1.3
 Author: Thibault Sellam
-Maintainer: Thibault Sellam <thibault.sellam@cwi.nl>
+Maintainer: Thibault Sellam <thibault.sellam@gmail.com>
 Description: A tool to explore wide data sets, by detecting, ranking
     and plotting groups of statistically dependent columns.
 License: MIT + file LICENSE
